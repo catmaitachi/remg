@@ -1,0 +1,3 @@
+# Os CSV de data/ saem com \n do prep_osm; sem isto o git do Windows os troca por \r\n e o leitor dos CSV (T10) recebe \r.
+data/**/*.csv text eol=lf
+data/**/*.json text eol=lf
