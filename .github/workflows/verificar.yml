@@ -1,0 +1,67 @@
+name: 🛡️ verificador
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+jobs:
+  # Completa o PR sozinho (Closes #N, milestone, label de IA, revisor). Ver docs/spec/13-automacao.md
+  arrumar:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Arrumar o PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/dev/arrumar_pr.py
+
+  # Nome "verificar" = check obrigatório no ruleset da main. Não renomear.
+  verificar:
+    needs: arrumar
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read  # para reler o PR depois do "arrumar" (repo privado: o padrão não inclui)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Testes do verificador e das automações
+        run: |
+          python -m unittest discover -s tools/verificar
+          python -m unittest discover -s tools/dev
+      - name: Regras do projeto no PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/verificar/verificar.py --pr
+      - name: Testes do núcleo Python
+        if: hashFiles('tests/**/test_*.py') != ''
+        run: python -m unittest discover -s tests -t .
+      - name: Build e testes do núcleo C++
+        if: hashFiles('CMakeLists.txt') != ''
+        run: |
+          cmake -B build
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+      - uses: actions/setup-node@v4
+        if: hashFiles('front/package.json') != ''
+        with:
+          node-version: "20"
+      - name: Build do front
+        if: hashFiles('front/package.json') != ''
+        working-directory: front
+        run: |
+          npm ci
+          npm run build

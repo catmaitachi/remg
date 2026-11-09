@@ -1,0 +1,4 @@
+#!/bin/sh
+# Verificador do projeto (docs/spec/11-verificador.md). Instalar: git config core.hooksPath .githooks
+PY=$(command -v python || command -v python3) || { echo "🛡️ verificador: Python não encontrado"; exit 1; }
+exec "$PY" "$(dirname "$0")/../tools/verificar/verificar.py" --mensagem "$1"
