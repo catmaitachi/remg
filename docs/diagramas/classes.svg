@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="classes-claro-title classes-claro-desc" id="classes-root">
+<title id="classes-claro-title">Classes do núcleo do Cintilante</title><desc id="classes-claro-desc">Pacote grafo: Grafo e os algoritmos Dinic, Tarjan, Dijkstra e BFS, que dependem de Grafo. Pacote domínio: RedeEletrica compõe subestações, pontos, trechos e linhas AT; Chave herda de Trecho; RedeEletrica monta o Grafo e guarda a tabela de ids. Nota: um Dinic novo por pedido.</desc>
+<defs>
+      <style>#classes-root { font-family: 'Geist', system-ui, sans-serif; color: #2d3142; }
+      #classes-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#classes-root .diagram-container { overflow-x: visible; }
+}</style>
+<pattern id="classes-classes-claro-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="#2d3142" fill-opacity="0.10"/></pattern>
+<marker id="classes-classes-claro-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+<marker id="classes-classes-claro-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+<marker id="classes-classes-claro-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+<marker id="classes-classes-claro-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#4f5d75" stroke-width="1.2"/></marker>
+<marker id="classes-classes-claro-tri" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="1 1, 11 5, 1 9" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+<marker id="classes-classes-claro-dia" markerWidth="16" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="1 4, 8 1, 15 4, 8 7" fill="#2d3142"/></marker>
+<marker id="classes-classes-claro-diah" markerWidth="16" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="1 4, 8 1, 15 4, 8 7" fill="#f5f5f5" stroke="#2d3142" stroke-width="1"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#f5f5f5"/><rect width="100%" height="100%" fill="url(#classes-classes-claro-dots)" opacity="0.55"/>
+<rect x="40" y="56" width="576" height="504" rx="8" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+<rect x="48" y="60" width="84" height="12" rx="2" fill="#f5f5f5"/>
+<text x="90" y="69" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">PACOTE GRAFO</text>
+<rect x="648" y="56" width="592" height="524" rx="8" fill="#2d3142" stroke="#2d3142" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+<rect x="656" y="60" width="96" height="12" rx="2" fill="#f5f5f5"/>
+<text x="704" y="69" fill="#5a6580" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">PACOTE DOMÍNIO</text>
+<path d="M 312,176 H 280 Q 272,176 272,184 V 260 Q 272,268 264,268 H 256" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#classes-classes-claro-open)" stroke-dasharray="4,3"/>
+<path d="M 312,264 H 296 Q 288,264 288,272 V 280 Q 288,288 280,288 H 256" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#classes-classes-claro-open)" stroke-dasharray="4,3"/>
+<path d="M 312,348 H 296 Q 288,348 288,340 V 320 Q 288,312 280,312 H 256" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#classes-classes-claro-open)" stroke-dasharray="4,3"/>
+<path d="M 312,424 H 280 Q 272,424 272,416 V 340 Q 272,332 264,332 H 256" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#classes-classes-claro-open)" stroke-dasharray="4,3"/>
+<path d="M 456,124 V 140" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/>
+<path d="M 772,392 V 512 Q 772,520 764,520 H 164 Q 156,520 156,512 V 356" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#classes-classes-claro-open)" stroke-dasharray="4,3"/>
+<rect x="435.4" y="500" width="49.2" height="12" rx="2" fill="#f5f5f5"/>
+<text x="460" y="509" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">«MONTA»</text>
+<path d="M 872,256 H 896 Q 904,256 904,248 V 145 Q 904,137 912,137 H 976" fill="none" stroke="#2d3142" stroke-width="1.2" marker-start="url(#classes-classes-claro-dia)"/>
+<path d="M 872,292 H 924 Q 932,292 932,284 V 235 Q 932,227 940,227 H 976" fill="none" stroke="#2d3142" stroke-width="1.2" marker-start="url(#classes-classes-claro-dia)"/>
+<path d="M 872,324 H 976" fill="none" stroke="#2d3142" stroke-width="1.2" marker-start="url(#classes-classes-claro-dia)"/>
+<path d="M 872,360 H 908 Q 916,360 916,368 V 420 Q 916,428 924,428 H 976" fill="none" stroke="#2d3142" stroke-width="1.2" marker-start="url(#classes-classes-claro-dia)"/>
+<rect x="884.2" y="238" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="892" y="247" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">1</text>
+<rect x="950.2" y="119" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="958" y="128" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">*</text>
+<rect x="884.2" y="274" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="892" y="283" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">1</text>
+<rect x="950.2" y="209" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="958" y="218" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">*</text>
+<rect x="884.2" y="306" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="892" y="315" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">1</text>
+<rect x="950.2" y="306" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="958" y="315" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">*</text>
+<rect x="884.2" y="342" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="892" y="351" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">1</text>
+<rect x="950.2" y="410" width="15.6" height="12" rx="2" fill="#f5f5f5"/>
+<text x="958" y="419" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">*</text>
+<path d="M 1092,506 V 470" fill="none" stroke="#2d3142" stroke-width="1.2" marker-end="url(#classes-classes-claro-tri)"/>
+<rect x="56" y="244" width="200" height="112" rx="6" fill="#f5f5f5"/>
+<rect x="56" y="244" width="200" height="112" rx="6" fill="#bf4520" stroke="#bf4520" stroke-width="1" fill-opacity="0.08"/>
+<text x="156" y="262" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Grafo</text>
+<line x1="56" y1="272" x2="256" y2="272" stroke="#bf4520" stroke-width="0.6" opacity="0.5"/>
+<text x="66" y="289" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ V: int</text>
+<text x="66" y="303" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ head, prox, para: vector&lt;int&gt;</text>
+<text x="66" y="317" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ cap: vector&lt;long&gt;</text>
+<line x1="56" y1="328" x2="256" y2="328" stroke="#bf4520" stroke-width="0.6" opacity="0.5"/>
+<text x="66" y="345" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ addAresta(u, v, cap): int</text>
+<rect x="312" y="140" width="288" height="70" rx="6" fill="#f5f5f5"/>
+<rect x="312" y="140" width="288" height="70" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="456" y="158" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Dinic</text>
+<line x1="312" y1="168" x2="600" y2="168" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="322" y="185" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ fluxoMaximo(Grafo, s, t): ResultadoFluxo</text>
+<text x="322" y="199" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ corteMinimo(): vector&lt;int&gt;</text>
+<rect x="312" y="230" width="288" height="70" rx="6" fill="#f5f5f5"/>
+<rect x="312" y="230" width="288" height="70" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="456" y="248" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Tarjan</text>
+<line x1="312" y1="258" x2="600" y2="258" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="322" y="275" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ pontes(Grafo): vector&lt;int&gt;</text>
+<text x="322" y="289" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ articulacoes(Grafo): vector&lt;int&gt;</text>
+<rect x="312" y="320" width="288" height="56" rx="6" fill="#f5f5f5"/>
+<rect x="312" y="320" width="288" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="456" y="338" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Dijkstra</text>
+<line x1="312" y1="348" x2="600" y2="348" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="322" y="365" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ caminhos(Grafo, fontes, peso): ResultadoCaminhos</text>
+<rect x="312" y="396" width="288" height="56" rx="6" fill="#f5f5f5"/>
+<rect x="312" y="396" width="288" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="456" y="414" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">BFS</text>
+<line x1="312" y1="424" x2="600" y2="424" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="322" y="441" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ componentes(Grafo): vector&lt;int&gt;</text>
+<path d="M 312,84 H 592 L 600,92 V 124 H 312 Z" fill="#f5f5f5"/>
+<path d="M 312,84 H 592 L 600,92 V 124 H 312 Z M 592,84 V 92 H 600" fill="#2d3142" stroke="#5a6580" stroke-width="0.8" fill-opacity="0.03"/>
+<text x="322" y="100" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">um Dinic novo por pedido</text>
+<text x="322" y="114" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">(guarda estado entre as chamadas)</text>
+<rect x="672" y="224" width="200" height="168" rx="6" fill="#f5f5f5"/>
+<rect x="672" y="224" width="200" height="168" rx="6" fill="#bf4520" stroke="#bf4520" stroke-width="1" fill-opacity="0.08"/>
+<text x="772" y="242" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">RedeEletrica</text>
+<line x1="672" y1="252" x2="872" y2="252" stroke="#bf4520" stroke-width="0.6" opacity="0.5"/>
+<text x="682" y="269" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ subestacoes</text>
+<text x="682" y="283" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ pontos</text>
+<text x="682" y="297" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ trechos</text>
+<text x="682" y="311" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ chaves</text>
+<text x="682" y="325" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ linhasAT</text>
+<line x1="672" y1="336" x2="872" y2="336" stroke="#bf4520" stroke-width="0.6" opacity="0.5"/>
+<text x="682" y="353" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ montarGrafo(): Grafo</text>
+<text x="682" y="367" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ indice(id): int</text>
+<text x="682" y="381" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ idExterno(indice): string</text>
+<rect x="976" y="102" width="232" height="70" rx="6" fill="#f5f5f5"/>
+<rect x="976" y="102" width="232" height="70" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1092" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">LinhaAT</text>
+<line x1="976" y1="130" x2="1208" y2="130" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="986" y="147" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ tensao</text>
+<text x="986" y="161" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ capacidadeKVA</text>
+<rect x="976" y="192" width="232" height="70" rx="6" fill="#f5f5f5"/>
+<rect x="976" y="192" width="232" height="70" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1092" y="210" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Subestacao</text>
+<line x1="976" y1="220" x2="1208" y2="220" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="986" y="237" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ nome</text>
+<text x="986" y="251" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ capacidadeKVA</text>
+<rect x="976" y="282" width="232" height="84" rx="6" fill="#f5f5f5"/>
+<rect x="976" y="282" width="232" height="84" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1092" y="300" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Ponto</text>
+<line x1="976" y1="310" x2="1208" y2="310" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="986" y="327" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ lat</text>
+<text x="986" y="341" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ lon</text>
+<text x="986" y="355" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ demandaKVA</text>
+<rect x="976" y="386" width="232" height="84" rx="6" fill="#f5f5f5"/>
+<rect x="976" y="386" width="232" height="84" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1092" y="404" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Trecho</text>
+<line x1="976" y1="414" x2="1208" y2="414" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="986" y="431" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ capacidadeKVA</text>
+<text x="986" y="445" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ comprimento</text>
+<text x="986" y="459" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ emFalha</text>
+<rect x="976" y="506" width="232" height="56" rx="6" fill="#f5f5f5"/>
+<rect x="976" y="506" width="232" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+<text x="1092" y="524" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Chave</text>
+<line x1="976" y1="534" x2="1208" y2="534" stroke="#2d3142" stroke-width="0.6" opacity="0.5"/>
+<text x="986" y="551" fill="#4f5d75" font-size="9" font-family="'Geist Mono', ui-monospace, monospace">+ aberta</text>
+<line x1="40" y1="600" x2="1240" y2="600" stroke="#2d3142" stroke-width="0.8" stroke-opacity="0.10"/>
+<text x="40" y="616" fill="#4f5d75" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGENDA</text>
+<path d="M 40,635 H 68" fill="none" stroke="#2d3142" stroke-width="1.2" marker-end="url(#classes-classes-claro-tri)"/>
+<text x="78" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Herança</text>
+<path d="M 141,635 H 169" fill="none" stroke="#2d3142" stroke-width="1" marker-end="url(#classes-classes-claro-tri)" stroke-dasharray="5,4"/>
+<text x="179" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Realização</text>
+<path d="M 257,635 H 287" fill="none" stroke="#2d3142" stroke-width="1.2" marker-start="url(#classes-classes-claro-dia)"/>
+<text x="295" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Composição</text>
+<path d="M 373,635 H 403" fill="none" stroke="#2d3142" stroke-width="1.2" marker-start="url(#classes-classes-claro-diah)"/>
+<text x="411" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Agregação</text>
+<path d="M 484,635 H 512" fill="none" stroke="#4f5d75" stroke-width="1.2"/>
+<text x="522" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Associação</text>
+<path d="M 600,635 H 628" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#classes-classes-claro-open)" stroke-dasharray="4,3"/>
+<text x="638" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Dependência (usa)</text>
+<rect x="751" y="630" width="14" height="10" rx="2" fill="#bf4520" stroke="#bf4520" stroke-width="1" fill-opacity="0.08"/>
+<text x="771" y="638" fill="#4f5d75" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Classe em foco</text>
+</svg>
