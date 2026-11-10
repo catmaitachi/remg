@@ -1,0 +1,26 @@
+name: 🏷️ release
+
+# Fechou a última issue de uma milestone → fecha a milestone e cria a tag vX.Y.0.
+# Milestone fechada à mão → cria a tag. Ver docs/spec/12-releases.md e 13-automacao.md
+on:
+  issues:
+    types: [closed]
+  milestone:
+    types: [closed]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Milestone e release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/dev/release.py
