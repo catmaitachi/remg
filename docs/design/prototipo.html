@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cintilante · protótipo</title>
+<meta name="description" content="Protótipo clicável da tela principal do Cintilante: a rede elétrica de exemplo sobre o mapa de Belo Horizonte, com falha e religamento.">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="prototipo/estilo.css">
+<script>
+  // Tema antes do primeiro desenho, para não piscar.
+  try { if (matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.dataset.theme = "escuro"; } catch (e) {}
+</script>
+</head>
+<body>
+<h1 class="so-leitor">Cintilante: rede elétrica de Belo Horizonte (protótipo com dados de exemplo)</h1>
+<div id="mapa" role="region" aria-label="Mapa de Belo Horizonte com a rede elétrica de exemplo"></div>
+<p id="sem-mapa" class="sem-mapa hud" hidden>Mapa indisponível sem internet. Os passos e os números continuam funcionando.</p>
+
+<aside class="barra hud" aria-label="Painel da demonstração">
+  <header class="barra-topo"><span class="marca">Cintilante</span></header>
+
+  <section class="cartao" aria-live="polite" aria-label="Situação da cidade">
+    <div id="bateria" class="bateria" style="--p: 100%">
+      <div class="bateria-carga"></div>
+      <div id="bateria-texto" class="bateria-texto">
+        <span class="bateria-esq"><span id="area" class="cartao-area"></span><span id="casas" class="cartao-casas">toda a cidade com luz</span></span>
+        <strong id="pct">100%</strong>
+      </div>
+    </div>
+    <p id="nota" class="cartao-nota" hidden></p>
+  </section>
+
+  <section class="acoes" aria-label="Próximo passo">
+    <p id="dica" class="dica" hidden></p>
+    <div id="cenarios" class="cenarios" hidden></div>
+    <button type="button" id="principal" class="botao">Derrubar uma linha</button>
+    <button type="button" id="restaurar" class="botao sec" hidden>Restaurar</button>
+  </section>
+
+  <section id="selecionado" class="selecionado" aria-live="polite" hidden>
+    <div class="sel-topo">
+      <h2 id="sel-titulo" class="secao-titulo"></h2>
+      <button type="button" id="sel-fechar" class="sel-fechar" aria-label="Limpar seleção" title="Limpar seleção (Esc)">×</button>
+    </div>
+    <dl class="sel-dados">
+      <div><dt>Situação</dt><dd id="sel-situacao"></dd></div>
+      <div><dt>Região</dt><dd id="sel-regiao"></dd></div>
+      <div><dt>Capacidade</dt><dd id="sel-capacidade"></dd></div>
+      <div><dt>Fluxo</dt><dd id="sel-fluxo"></dd></div>
+    </dl>
+    <div class="sel-uso"><span class="barra-uso"><span id="sel-uso-barra"></span></span><span id="sel-uso"></span></div>
+  </section>
+
+  <section class="blocos" aria-label="Indicadores">
+    <p class="bloco"><span id="d-fluxo" class="bloco-valor"></span><span class="bloco-rotulo">energia entregue</span></p>
+    <p class="bloco"><span id="d-demanda" class="bloco-valor"></span><span class="bloco-rotulo">demanda</span></p>
+    <p class="bloco"><span id="d-gargalos" class="bloco-valor"></span><span class="bloco-rotulo">gargalos</span></p>
+    <p class="bloco"><span id="d-tempo" class="bloco-valor"></span><span class="bloco-rotulo">tempo de cálculo</span></p>
+    <p class="suposicao">Números de exemplo; casas estimadas com 2,5 kVA por casa.</p>
+  </section>
+
+  <section class="regioes" aria-labelledby="titulo-regioes">
+    <h2 id="titulo-regioes" class="secao-titulo">Regiões <span id="n-regioes" class="secao-conta"></span></h2>
+    <ol id="lista-regioes" class="lista-regioes"></ol>
+  </section>
+
+</aside>
+
+<section id="legenda" class="legenda-barra hud" aria-label="Legenda">
+  <ul>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><line x1="2" y1="6" x2="30" y2="6" class="l-normal"/></svg>Uso normal</li>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><line x1="2" y1="6" x2="30" y2="6" class="l-alerta"/></svg>Perto do limite</li>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><line x1="2" y1="6" x2="30" y2="6" class="l-halo"/><line x1="2" y1="6" x2="30" y2="6" class="l-gargalo"/><path d="M16 1 L21 10 H11 Z" class="l-icone"/></svg>Gargalo</li>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><line x1="2" y1="6" x2="30" y2="6" class="l-caiu"/></svg>Linha caída</li>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><line x1="2" y1="6" x2="30" y2="6" class="l-apagado"/></svg>Linha sem energia</li>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><rect x="2" y="1.5" width="28" height="9" rx="4" class="l-zona"/></svg>Região com luz</li>
+    <li><svg viewBox="0 0 32 12" aria-hidden="true"><rect x="2" y="1.5" width="28" height="9" rx="4" class="l-zona-off"/></svg>Área sem luz</li>
+    <li><svg viewBox="0 0 32 16" aria-hidden="true" class="l-icone-grande"><rect x="8.5" y="0.5" width="15" height="15" rx="3.5" class="l-chave"/><path d="M10.5 11 H13.5 M18.5 11 H21.5" class="l-traco"/><circle cx="13.5" cy="11" r="1.1" class="l-ponto"/><circle cx="18.5" cy="11" r="1.1" class="l-ponto"/><path d="M13.5 11 L18 5.5" class="l-traco"/></svg>Chave de manobra</li>
+    <li><svg viewBox="0 0 32 16" aria-hidden="true" class="l-icone-grande"><circle cx="16" cy="8" r="7.5" class="l-sub"/><path d="M13.6 13.3 L16 2.8 L18.4 13.3 M12.3 5.6 H19.7 M13.1 8.3 H18.9 M14.8 8.3 L18.4 13.3 M17.2 8.3 L13.6 13.3" class="l-traco"/></svg>Subestação</li>
+  </ul>
+</section>
+
+<div class="controles hud" role="group" aria-label="Controles do mapa">
+  <button type="button" id="bussola" class="controle" aria-label="Voltar ao norte e ao plano" title="Voltar ao norte e ao plano">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><g id="rosa"><path d="M16 3 L20 16 L16 14 L12 16 Z" class="rosa-norte"/><path d="M16 29 L12 16 L16 18 L20 16 Z" class="rosa-sul"/><circle cx="16" cy="16" r="1.6" class="rosa-centro"/></g></svg>
+  </button>
+  <button type="button" id="mais" class="controle" aria-label="Aproximar" title="Aproximar">+</button>
+  <button type="button" id="menos" class="controle" aria-label="Afastar" title="Afastar">−</button>
+  <button type="button" id="tres-d" class="controle texto" aria-pressed="true" title="Prédios e relevo em 3D">3D</button>
+  <span class="controles-divisor" aria-hidden="true"></span>
+  <button type="button" id="tema" class="controle" aria-pressed="false" aria-label="Mapa escuro" title="Mapa escuro">
+    <svg class="ic-lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+    <svg class="ic-sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+  </button>
+  <button type="button" id="btn-legenda" class="controle" aria-pressed="true" aria-controls="legenda" aria-label="Legenda" title="Mostrar ou recolher a legenda">
+    <svg class="ic-legenda" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="7" r="1.6"/><circle cx="5" cy="12" r="1.6"/><circle cx="5" cy="17" r="1.6"/><path d="M9.5 7H20M9.5 12H20M9.5 17H20"/></svg>
+  </button>
+  <div class="camadas">
+    <button type="button" id="camadas" class="controle" aria-expanded="false" aria-controls="painel-camadas" aria-label="Camadas" title="Camadas">
+      <svg class="ic-camadas" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 8 12 13 3 8Z"/><path d="M3 12.5 12 17.5 21 12.5"/><path d="M3 16.5 12 21.5 21 16.5"/></svg>
+    </button>
+    <fieldset id="painel-camadas" class="painel hud" hidden>
+      <legend>Mostrar no mapa</legend>
+      <label class="interruptor"><span>Alta tensão</span><input type="checkbox" role="switch" data-grupo="at" checked></label>
+      <label class="interruptor"><span>Distribuição</span><input type="checkbox" role="switch" data-grupo="dist" checked></label>
+      <label class="interruptor"><span>Chaves</span><input type="checkbox" role="switch" data-grupo="chave" checked></label>
+    </fieldset>
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="prototipo/cenarios.js"></script>
+<script src="prototipo/eletrico.js"></script>
+<script src="prototipo/luz.js"></script>
+<script src="prototipo/mapa.js"></script>
+</body>
+</html>
