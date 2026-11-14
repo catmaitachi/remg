@@ -1,0 +1,20 @@
+{
+ "chavesParaFechar": [
+  "c:1"
+ ],
+ "caminho": [
+  "t:2",
+  "c:1",
+  "t:3",
+  "t:17",
+  "t:19",
+  "t:21",
+  "t:15"
+ ],
+ "religado": {
+  "pontos": 2,
+  "demanda": 25.0
+ },
+ "parcial": false,
+ "tempoMs": 2
+}
