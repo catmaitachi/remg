@@ -1,0 +1,16 @@
+{
+  "data_osm": "2026-11-14T16:06:48Z",
+  "area": "area[\"boundary\"=\"administrative\"][\"admin_level\"=\"8\"][\"IBGE:GEOCODIGO\"=\"3106200\"]",
+  "consulta": "[out:json][timeout:180];\narea[\"boundary\"=\"administrative\"][\"admin_level\"=\"8\"][\"IBGE:GEOCODIGO\"=\"3106200\"]->.a;\n(\n  way[\"highway\"~\"^(trunk|primary|secondary|tertiary|unclassified|residential)(_link)?$\"](area.a);\n  nwr[\"power\"=\"substation\"](area.a);\n  way[\"power\"=\"line\"](area.a);\n  rel[\"boundary\"=\"administrative\"][\"admin_level\"=\"9\"](area.a);\n);\n(._;>;);\nout body;",
+  "contagens": {
+    "pontos": 35829,
+    "trechos_rua": 53230,
+    "subestacoes": 25,
+    "linhas_at": 60,
+    "regionais": 9
+  },
+  "opcao_b": {
+    "pontos_curva": 60018,
+    "media_por_trecho": 1.13
+  }
+}

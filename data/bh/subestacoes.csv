@@ -1,0 +1,26 @@
+id_osm,nome,lat,lon,tensoes,tipo
+30166665,Subestação Gutierrez,-19.9389211,-43.9609250,138000;13800,distribution
+30789570,Subestação Centro,-19.9273721,-43.9342169,138000;13800,distribution
+32023007,Subestação Carlos Prates,-19.9170523,-43.9525031,138000,distribution
+154944876,Subestação Adelaide,-19.9030625,-43.9786714,138000;13800,
+173217432,Subestação Atalaia,-19.9388712,-44.0154371,138000;13800,distribution
+173545960,Subestação Serrano,-19.8732366,-44.0042434,,distribution
+175495373,Subestação Pampulha,-19.8261625,-43.9518776,,distribution
+198024646,Subestação Bonsucesso,-19.9835090,-43.9800688,138000;13800,distribution
+320063926,Subestação Maracanã,-19.8731967,-43.9383167,138000;34000;5000;13800,distribution
+326993753,Subestação Horto,-19.8962203,-43.9220250,138000;13800,distribution
+362639210,Subestação Sion,-19.9499299,-43.9392623,138000;13800,distribution
+499127581,Subestação CBTU,-19.8240541,-43.9437430,,industrial
+518724581,Subestação Santa Luzia 4,-19.8152087,-43.8838107,138000;13800,distribution
+541764172,Subestação CBTU,-19.8953484,-43.9107667,,industrial
+578575371,Subestação Barreiro,-20.0005784,-43.9910917,345000;138000;13800,transmission
+584816441,Subestação Jatobá,-19.9966124,-44.0248581,138000;13800,distribution
+585518758,Subestação CBTU,-19.9442116,-44.0206517,,industrial
+585518764,Subestação Vallourec,-19.9634680,-44.0085014,,industrial
+585518765,Subestação Vallourec,-19.9663640,-44.0046624,,industrial
+585521997,Subestação Santa Efigênia,-19.9273869,-43.9129448,138000;13800,distribution
+585521998,Subestação Barro Preto,-19.9193117,-43.9500909,138000;13800,distribution
+585521999,Subestação Calafate,-19.9259500,-43.9733166,,distribution
+585526702,Subestação São Marcos,-19.8741478,-43.9109119,,distribution
+585536028,Subestação Serra Verde,-19.7770016,-43.9504989,138000;13800,distribution
+1223652770,Subestação Barreiro 3,-19.9663386,-44.0043441,,distribution
