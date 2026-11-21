@@ -1,7 +1,7 @@
 """Cria as milestones (releases) e as issues do GitHub a partir de docs/tasks/T*.md.
 
 Sem --criar, só mostra o que faria. Precisa do `gh` logado no repositório.
-Uso: python tools/kanban/criar_issues.py [--criar] [--projeto "luzes"]
+Uso: python tools/kanban/criar_issues.py [--criar] [--projeto "remg"]
 """
 import argparse, json, pathlib, subprocess, sys
 
@@ -9,7 +9,6 @@ TASKS = pathlib.Path(__file__).resolve().parents[2] / "docs" / "tasks"
 
 # Previsão de releases: docs/spec/12-releases.md (mudou lá? mude aqui também)
 RELEASES = {
-    "v0.1": ("🧱 Base", "2026-11-11"),
     "v0.2": ("🧮 Núcleo", "2026-11-14"),
     "v0.3": ("⚡ Análises", "2026-11-17"),
     "v0.4": ("🗺️ Tela completa", "2026-11-17"),
