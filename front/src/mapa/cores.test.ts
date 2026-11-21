@@ -55,3 +55,8 @@ for (const tema of ["claro", "escuro"] as const) {
       expect(deltaE(ver(rgb(p.normal)), ver(rgb(p.primario))), visao).toBeGreaterThanOrEqual(20);
   });
 }
+
+test("semLuz e caído têm os valores do tokens.md", () => {
+  expect([PALETA.claro.semLuz, PALETA.escuro.semLuz]).toEqual(["#8a8a86", "#3d3d3d"]);
+  expect([PALETA.claro.caido, PALETA.escuro.caido]).toEqual(["#7f7f7f", "#e0e0e0"]);
+});

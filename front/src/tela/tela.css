@@ -128,3 +128,43 @@
   .switch::after { transition: none; }
   .segmentos button { transition: none; }
 }
+
+/* modo Derrubar (T20) */
+.modo { display: grid; gap: var(--espaco-2); }
+.segmentos-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.modo-dica { margin: 0; font-size: 13px; color: var(--texto-apoio); }
+
+.calculando { display: flex; align-items: center; gap: var(--espaco-2); min-height: 18px; font-size: 13px; font-weight: 600; color: var(--primario); }
+.calculando:empty { display: none; }
+.calculando-ponto { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulsar 900ms cubic-bezier(0.16, 1, 0.3, 1) infinite alternate; }
+@keyframes pulsar { from { opacity: 1; transform: scale(1); } to { opacity: 0.35; transform: scale(0.7); } }
+
+.falhas { display: grid; gap: var(--espaco-2); padding-top: var(--espaco-4); border-top: 1px solid var(--separador); }
+.falhas-topo { display: flex; align-items: center; justify-content: space-between; gap: var(--espaco-2); }
+.falhas-titulo { margin: 0; font-size: var(--texto-rotulo); font-weight: 700; }
+.falhas-titulo span {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: var(--espaco-1); padding: 0 6px;
+  border-radius: var(--raio-pilula); background: var(--bloco); font-size: 12px; font-variant-numeric: tabular-nums;
+}
+.botao-texto {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 var(--espaco-3);
+  border: 0; border-radius: var(--raio-pilula); background: transparent;
+  color: var(--primario); font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.botao-texto:hover { background: var(--bloco); }
+.falhas-lista { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; max-height: 168px; overflow-y: auto; }
+.falhas-lista li {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--espaco-2);
+  min-height: 36px; padding-left: var(--espaco-3); border-radius: var(--raio-md); background: var(--bloco);
+  font-size: var(--texto-rotulo);
+}
+.falhas-lista li > span { min-width: 0; overflow-wrap: anywhere; }
+.falhas-tirar {
+  display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0;
+  border: 0; border-radius: var(--raio-pilula); background: transparent; color: var(--texto-apoio); cursor: pointer;
+}
+.falhas-tirar:hover { background: var(--vidro-forte); color: var(--erro); }
+
+@media (prefers-reduced-motion: reduce) {
+  .calculando-ponto { animation: none; }
+}

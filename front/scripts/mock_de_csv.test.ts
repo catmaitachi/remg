@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "vitest";
 import { validarAnalise, validarRede } from "../src/api/validar";
-import { gerarAnalise, gerarRede, lerCsv } from "./mock_de_csv.mjs";
+import { gerarAnalise } from "./analise_sintetica.mjs";
+import { gerarRede, lerCsv } from "./mock_de_csv.mjs";
 
 const CSV_EXEMPLO = {
   pontos: "id_osm,lat,lon\n10,-19.1234567,-43.9000000\n11,-19.1240000,-43.9010000\n",
@@ -66,29 +67,29 @@ const triangulo = {
 const fluxoDe = (a: { fluxo: [string, number, number][] }) => Object.fromEntries(a.fluxo.map(([id, f, u]) => [id, { f, u }]));
 
 test("fluxo soma a demanda a jusante da subestação", () => {
-  const f = fluxoDe(gerarAnalise(cadeia, () => 0));
+  const f = fluxoDe(gerarAnalise(cadeia, {}, () => 0));
   expect(Math.abs(f["t:ab"].f)).toBe(2);
   expect(Math.abs(f["t:bc"].f)).toBe(1);
 });
 
 test("o sinal do fluxo segue o sentido da BFS", () => {
-  const f = fluxoDe(gerarAnalise(cadeia, () => 0));
+  const f = fluxoDe(gerarAnalise(cadeia, {}, () => 0));
   expect(f["t:ab"].f).toBe(2); // escrito a → b, energia vai de a para b
   expect(f["t:bc"].f).toBe(-1); // escrito c → b, energia vai de b para c
 });
 
 test("uso é fluxo/capacidade limitado a 1 e gargalo é uso ≥ 0,9", () => {
-  const a = gerarAnalise(cadeia, () => 0);
+  const a = gerarAnalise(cadeia, {}, () => 0);
   expect(fluxoDe(a)["t:ab"].u).toBe(1);
   expect(a.gargalos).toEqual(["t:ab"]);
 });
 
 test("ponto sem alcance vira semEnergia", () => {
-  expect(gerarAnalise(cadeia, () => 0).semEnergia).toEqual({ pontos: ["p:x"], demanda: 1 });
+  expect(gerarAnalise(cadeia, {}, () => 0).semEnergia).toEqual({ pontos: ["p:x"], demanda: 1 });
 });
 
 test("totais e contrato", () => {
-  const a = gerarAnalise(cadeia, () => 0);
+  const a = gerarAnalise(cadeia, {}, () => 0);
   expect(a.demandaTotal).toBe(4);
   expect(a.fluxoTotal).toBe(3);
   expect(a.tempoMs).toBe(0);
@@ -96,7 +97,7 @@ test("totais e contrato", () => {
 });
 
 test("aresta do ciclo fora da árvore não entra em fluxo", () => {
-  const f = fluxoDe(gerarAnalise(triangulo, () => 0));
+  const f = fluxoDe(gerarAnalise(triangulo, {}, () => 0));
   expect(f["t:ab"].f).toBe(1);
   expect(f["t:ca"].f).toBe(-1); // escrito c → a, energia vai de a para c
   expect(f["t:bc"]).toBeUndefined();
@@ -105,5 +106,5 @@ test("aresta do ciclo fora da árvore não entra em fluxo", () => {
 test("analise.bh.json commitado segue o contrato e é o que o gerador produz", () => {
   const analiseBh = JSON.parse(readFileSync(new URL("../src/mocks/analise.bh.json", import.meta.url), "utf-8"));
   expect(validarAnalise(analiseBh)).toEqual([]);
-  expect({ ...analiseBh, tempoMs: 0 }).toEqual(gerarAnalise(bh, () => 0));
+  expect({ ...analiseBh, tempoMs: 0 }).toEqual(gerarAnalise(bh, {}, () => 0));
 });

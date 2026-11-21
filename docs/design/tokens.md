@@ -78,6 +78,23 @@ Escolhida pelo Lucas vendo a prévia com os dados reais (jeito C, com botão par
 - **Marcadores de gargalo:** gargalos encostados viram um marcador só (no trecho mais perto do centro do grupo), e no zoom atual some o marcador a menos de 28 px de outro.
 - **FPS medido (T19):** arrastando BH inteira com a animação ligada, **86,4 · 80,1 · 85,9** (3 medições de 4 s, arraste por eventos de mouse no próprio navegador, contando `requestAnimationFrame`, janela de 800×522, modo dev). Pelo mesmo método: animação desligada 99,4 · 99,2 · 97,6; de perto, com o raio, 126,6 · 127,8 · 125,8. Antes de tirar o brilho largo das linhas normais dava 41,2 · 40,7 · 41,7: o `MapboxOverlay` redesenha a cada quadro do arraste e a animação pede outro desenho.
 
+## 💥 Derrubar (T20) ✅ decidido
+
+| Estado | ☀️ Claro | 🌙 Escuro | Além da cor |
+|---|---|---|---|
+| ✕ Trecho caído | `#7f7f7f` | `#e0e0e0` | 4 traços (o trecho em 7 partes) + ✕ desenhado no meio, com contorno do fundo |
+| ✕ Subestação caída | contorno `#7f7f7f`, sem preenchimento | contorno `#e0e0e0` | ✕ por cima |
+| 🌑 Trecho sem luz | `#8a8a86` | `#3d3d3d` | sólido, sem brilho, ondas nem raio |
+
+- **Sem luz** = as duas pontas em `semEnergia`. Vale também para as 702 ilhas que o mock já tem com a rede intacta.
+- **Barra:** `Observar | Derrubar` no padrão `.segmentos`; a dica "Clique num trecho ou numa subestação para derrubar." só aparece no Derrubar sem falhas. "Calculando…" com um ponto pulsando (parado com `prefers-reduced-motion`).
+- **Clique:** `pickingRadius` 6 px; cursor de mão e destaque `primario` só no Derrubar.
+- **Medido (mock de BH, Vite dev, 21/11):**
+  - `gerarAnalise` com uma subestação caída leva 928 a 1.298 ms por chamada na aba em primeiro plano (5 chamadas), e a tela fica parada nesse tempo;
+  - numa aba nova, com trechos caídos, o "Tempo de cálculo" da barra mostrou 183 e 203 ms;
+  - no Node, 293 a 513 ms por chamada.
+  - Passa dos ~100 ms do design: é achado, não muda o design. O FPS com falhas não foi medido.
+
 > Fonte da verdade: [`prototipo/estilo.css`](prototipo/estilo.css). Os testes [`cores.test.cjs`](prototipo/cores.test.cjs) conferem contraste e daltonismo: `node --test docs/design/prototipo/`.
 > Tudo aqui é 🟡 **proposta** até o grupo aprovar o protótipo. Depois disso vira ✅ e entra na [07-frontend](../spec/07-frontend.md).
 

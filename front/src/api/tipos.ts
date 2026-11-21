@@ -18,7 +18,8 @@ export interface Rede {
   geometriaAT: Record<string, [number, number][]>;
 }
 
-export interface Falhas {
+/** Pedido do POST /analise e /rota-alternativa; vazio ({}) = rede sem falhas. */
+export interface Pedido {
   falhas?: { arestas: string[]; subestacoes: string[] };
   chavesFechadas?: string[];
 }

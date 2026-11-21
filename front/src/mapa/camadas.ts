@@ -1,5 +1,6 @@
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
-import type { Analise, Rede, Subestacao } from "../api/tipos";
+import type { Analise, Rede, Subestacao, TipoAresta } from "../api/tipos";
+import type { Alvo } from "../tela/falhas";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
 import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
@@ -16,7 +17,11 @@ export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolea
 export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true };
 
 export type LonLat = [number, number];
-export interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido }
+export interface Caminho {
+  id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido; tipo?: TipoAresta;
+  /** as duas pontas sem energia */
+  semLuz?: boolean;
+}
 export interface Marco { id: string; posicao: LonLat }
 export interface Dados {
   trechos: Caminho[]; comFluxo: Caminho[]; destaques: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
@@ -33,6 +38,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
   for (const [id, , lat, lon] of rede.subestacoes) lonLat.set(id, [lon, lat]);
   const uso = new Map(analise?.fluxo.map(([id, , u]) => [id, u]));
   const sentidos = analise ? sentidoDoFluxo(rede, analise) : new Map<string, Sentido>();
+  const semEnergia = new Set(analise?.semEnergia.pontos); // Set: includes por ponta seria quadrático em BH
 
   const trechos: Caminho[] = [];
   const chaves: Marco[] = [];
@@ -40,7 +46,10 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
     const a = lonLat.get(de), b = lonLat.get(para);
     if (tipo === "linha_at" || !a || !b) continue;
     const u = uso.get(id);
-    trechos.push({ id, path: [a, b], faixa: u === undefined ? null : faixaDoUso(u), sentido: sentidos.get(id) });
+    trechos.push({
+      id, path: [a, b], faixa: u === undefined ? null : faixaDoUso(u), sentido: sentidos.get(id), tipo,
+      semLuz: semEnergia.has(de) && semEnergia.has(para),
+    });
     if (tipo === "chave") chaves.push({ id, posicao: meio([a, b]) });
   }
   const porId = new Map(trechos.map((t) => [t.id, t]));
@@ -56,6 +65,49 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
     })),
   };
 }
+
+/** O que caiu, desenhado já no clique (antes da resposta): tracejado e ✕. */
+export interface Caidos { ids: Set<string>; tracos: Caminho[]; marcas: Marco[] }
+const SEM_CAIDOS: Caidos = { ids: new Set(), tracos: [], marcas: [] };
+
+/** 4 traços com vãos iguais: o trecho em 7 partes, traço nas pares. Sem @deck.gl/extensions. */
+function tracejar(c: Caminho): Caminho[] {
+  const [a, b] = c.path;
+  const em = (k: number): LonLat => [a[0] + ((b[0] - a[0]) * k) / 7, a[1] + ((b[1] - a[1]) * k) / 7];
+  return [0, 2, 4, 6].map((k) => ({ id: c.id, path: [em(k), em(k + 1)], faixa: null, tipo: c.tipo }));
+}
+
+/**
+ * Tira os caídos do brilho, das ondas e dos gargalos na hora do clique. `trechos` fica o mesmo array (os
+ * 53 mil caminhos não são refeitos): o caído some da linha cheia pelo alfa, em montarCamadas.
+ */
+export function aplicarFalhas(d: Dados, falhas: Alvo[]): { dados: Dados; caidos: Caidos } {
+  if (!falhas.length) return { dados: d, caidos: SEM_CAIDOS };
+  const ids = new Set(falhas.map((f) => f.id));
+  const fora = (c: { id: string }) => !ids.has(c.id);
+  const caidosTrechos = d.trechos.filter((t) => ids.has(t.id));
+  const caidas = d.subestacoes.filter((s) => ids.has(s[0]));
+  return {
+    dados: {
+      ...d, comFluxo: d.comFluxo.filter(fora), destaques: d.destaques.filter(fora),
+      gargalos: d.gargalos.filter(fora), alertas: d.alertas.filter(fora),
+    },
+    caidos: {
+      ids,
+      tracos: caidosTrechos.flatMap(tracejar),
+      marcas: [
+        ...caidosTrechos.map((t) => ({ id: t.id, posicao: meio(t.path) })),
+        ...caidas.map((s) => ({ id: s[0], posicao: [s[3], s[2]] as LonLat })),
+      ],
+    },
+  };
+}
+
+// ✕ desenhado (não glifo de fonte), com contorno do fundo para se ler sobre a malha
+const iconeCaido = (cor: string, fundo: string) =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" stroke="${fundo}" stroke-width="7"/><path d="M6 6l12 12M18 6 6 18" stroke="${cor}" stroke-width="3.5"/></svg>`,
+  )}`;
 
 const iconeChave = (borda: string, fundo: string) =>
   `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
@@ -84,6 +136,9 @@ export interface Opcoes {
   intensidade?: Intensidade;
   /** marcadores de gargalo já espalhados para o zoom atual; sem isso, todos os de `Dados.alertas` */
   alertas?: Marco[];
+  caidos?: Caidos;
+  /** modo Derrubar: trechos e subestações respondem ao mouse */
+  derrubando?: boolean;
 }
 
 const EXTENSAO_ONDA = new ExtensaoOnda();
@@ -116,11 +171,17 @@ function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadr
 }
 
 export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null, opcoes: Opcoes = {}) {
-  const intensidade = opcoes.intensidade ?? "media", alertas = opcoes.alertas ?? d.alertas;
+  const intensidade = opcoes.intensidade ?? "media";
+  const caidos = opcoes.caidos ?? SEM_CAIDOS, clicavel = !!opcoes.derrubando;
+  // os espalhados vêm de fora; com falhas, de aplicarFalhas (já sem os caídos)
+  const alertas = opcoes.alertas ?? d.alertas;
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
+  const semLuz = rgb(p.semLuz), caido = rgb(p.caido);
+  const destaque = { pickable: clicavel, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
   const fundo = rgb(p.fundo);
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
+  const iconeX = { url: iconeCaido(p.caido, p.fundo), width: 24, height: 24, id: `caido-${tema}` };
 
   const camadas = [
     new PathLayer<Caminho>({
@@ -137,13 +198,19 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new PathLayer<Caminho>({
       id: "trechos", data: d.trechos, visible: visiveis.distribuicao, getPath: (c) => c.path,
       // com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e a onda e o raio correm por cima, como na prévia
-      getColor: (c) => (quadro ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"]),
-      updateTriggers: { getColor: [tema, !!quadro] },
-      getWidth: 2, widthUnits: "pixels", widthMinPixels: 1,
+      getColor: (c): [number, number, number] | [number, number, number, number] => {
+        if (caidos.ids.has(c.id)) return [0, 0, 0, 0]; // o tracejado da camada `caidos` ocupa o lugar
+        if (c.semLuz) return semLuz;
+        return quadro ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"];
+      },
+      updateTriggers: { getColor: [tema, !!quadro, caidos.ids] },
+      getWidth: 2, widthUnits: "pixels", widthMinPixels: 1, ...destaque,
     }),
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
       getColor: rgb(p.at), getWidth: 6, widthUnits: "pixels", jointRounded: true, capRounded: true,
+      // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai
+      pickable: clicavel,
     }),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,
@@ -151,13 +218,25 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     }),
     new ScatterplotLayer<Subestacao>({
       id: "subestacoes", data: d.subestacoes, visible: visiveis.subestacoes, getPosition: (s) => [s[3], s[2]],
-      getFillColor: rgb(p.subestacao), getLineColor: rgb(p.contorno), stroked: true,
-      getRadius: 7, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
+      getFillColor: (s) => (caidos.ids.has(s[0]) ? [0, 0, 0, 0] : rgb(p.subestacao)),
+      getLineColor: (s) => (caidos.ids.has(s[0]) ? caido : rgb(p.contorno)), stroked: true,
+      updateTriggers: { getFillColor: [tema, caidos.ids], getLineColor: [tema, caidos.ids] },
+      getRadius: 7, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, ...destaque,
     }),
+    ...(caidos.ids.size ? [
+      new PathLayer<Caminho>({
+        id: "caidos", data: caidos.tracos, getPath: (c) => c.path, getColor: () => caido, updateTriggers: { getColor: tema },
+        getWidth: 3, widthUnits: "pixels", capRounded: true, ...destaque,
+      }),
+      new IconLayer<Marco>({
+        id: "caidos-x", data: caidos.marcas, getPosition: (m) => m.posicao,
+        getIcon: () => iconeX, updateTriggers: { getIcon: tema }, getSize: 16, sizeUnits: "pixels",
+      }),
+    ] : []),
     new ScatterplotLayer<Marco>({
       id: "gargalos-alerta", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getFillColor: cor.gargalo, getLineColor: fundo, stroked: true,
-      getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
+      getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, pickable: clicavel,
     }),
     new TextLayer<Marco>({
       id: "gargalos-alerta-texto", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,

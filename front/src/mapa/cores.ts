@@ -5,15 +5,15 @@ export type Tema = "claro" | "escuro";
 export type Faixa = "normal" | "alerta" | "gargalo";
 
 export const PALETA: Record<Tema, {
-  normal: string; alerta: string; gargalo: string; semFluxo: string;
+  normal: string; alerta: string; gargalo: string; semFluxo: string; semLuz: string; caido: string;
   at: string; subestacao: string; contorno: string; primario: string; fundo: string;
 }> = {
   claro: {
-    normal: "#0081a1", alerta: "#c26a00", gargalo: "#c4004f", semFluxo: "#7f7f7f",
+    normal: "#0081a1", alerta: "#c26a00", gargalo: "#c4004f", semFluxo: "#7f7f7f", semLuz: "#8a8a86", caido: "#7f7f7f",
     at: "#34466b", subestacao: "#c97700", contorno: "#ffffff", primario: "#1351b4", fundo: "#f2f3f0",
   },
   escuro: {
-    normal: "#3db2ff", alerta: "#ffb000", gargalo: "#ff4f8b", semFluxo: "#9ba7b5",
+    normal: "#3db2ff", alerta: "#ffb000", gargalo: "#ff4f8b", semFluxo: "#9ba7b5", semLuz: "#3d3d3d", caido: "#e0e0e0",
     at: "#7f9bd1", subestacao: "#ffd27a", contorno: "#0c0c0c", primario: "#c5d4eb", fundo: "#0c0c0c",
   },
 };
