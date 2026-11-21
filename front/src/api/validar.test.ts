@@ -63,11 +63,25 @@ describe("mocks dos outros endpoints", () => {
     expect(validarAnalise(semTempo).join()).toMatch(/tempoMs/);
   });
 
+  test("fluxo negativo é aceito", () => {
+    expect(validarAnalise({ ...analise, fluxo: [["t:1", -10, 0.5]] })).toEqual([]);
+  });
+
+  test("fluxo zero, NaN e infinito são rejeitados", () => {
+    for (const v of [0, NaN, Infinity, -Infinity]) {
+      expect(validarAnalise({ ...analise, fluxo: [["t:1", v, 0.5]] }).join(), String(v)).toMatch(/fluxo/);
+    }
+  });
+
+  test("analise.json usa fluxo negativo no t:3", () => {
+    expect(analise.fluxo.find((f) => f[0] === "t:3")![1]).toBe(-95);
+  });
+
   const arestas = new Map(pequena.arestas.map((a) => [a[0] as string, a]));
 
   test("analise.json é coerente com a rede pequena", () => {
     for (const [id, fluxo, uso] of analise.fluxo as [string, number, number][]) {
-      expect(uso, id).toBeCloseTo(fluxo / (arestas.get(id)![4] as number), 2);
+      expect(uso, id).toBeCloseTo(Math.abs(fluxo) / (arestas.get(id)![4] as number), 2);
     }
     const usoDe = new Map(analise.fluxo.map((f) => [f[0], f[2] as number]));
     for (const id of analise.gargalos) expect(usoDe.get(id), id).toBeGreaterThanOrEqual(0.9);

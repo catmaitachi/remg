@@ -58,9 +58,11 @@ export function gerarAnalise(rede, agora = () => performance.now()) {
   const demanda = new Map(rede.pontos.map(([id, , , d]) => [id, d]));
   const vizinhos = new Map(rede.pontos.map(([id]) => [id, []]));
   const capacidade = new Map();
+  const pontaDe = new Map(); // sinal do fluxo: + quando a energia vai de `de` para `para`
   for (const [id, de, para, tipo, cap] of rede.arestas) {
     if (tipo !== "trecho") continue; // chaves abertas no pedido vazio; linha AT não liga pontos
     capacidade.set(id, cap);
+    pontaDe.set(id, de);
     vizinhos.get(de)?.push([para, id]);
     vizinhos.get(para)?.push([de, id]);
   }
@@ -90,7 +92,7 @@ export function gerarAnalise(rede, agora = () => performance.now()) {
     if (!de) continue;
     const f = abaixo.get(fila[i]);
     abaixo.set(de[0], abaixo.get(de[0]) + f);
-    if (f > 0) fluxo.push([de[1], f, Math.round(Math.min(1, f / capacidade.get(de[1])) * 1000) / 1000]);
+    if (f > 0) fluxo.push([de[1], pontaDe.get(de[1]) === de[0] ? f : -f, Math.round(Math.min(1, f / capacidade.get(de[1])) * 1000) / 1000]);
   }
 
   const semAlcance = rede.pontos.filter(([id]) => !pai.has(id)).map(([id]) => id);

@@ -26,7 +26,7 @@ export interface Falhas {
 export interface Analise {
   fluxoTotal: number;
   demandaTotal: number;
-  /** id, fluxo kVA, uso de 0 a 1 (só arestas com fluxo > 0) */
+  /** id, fluxo kVA com sinal (+ = de → para da aresta), uso de 0 a 1 = |fluxo| / capacidade (só fluxo ≠ 0) */
   fluxo: [id: string, fluxo: number, uso: number][];
   gargalos: string[];
   semEnergia: { pontos: string[]; demanda: number };

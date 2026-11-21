@@ -73,7 +73,7 @@ export function validarAnalise(json: unknown): string[] {
   if (!Array.isArray(json.fluxo)) erros.push("falta a lista `fluxo`");
   else json.fluxo.forEach((f: unknown, i: number) => {
     if (!Array.isArray(f) || f.length !== 3 || !ehTexto(f[0])) return erros.push(`fluxo[${i}]: esperava [id, fluxo, uso]`);
-    if (!ehNumero(f[1]) || f[1] <= 0) erros.push(`fluxo[${i}]: só entram arestas com fluxo > 0`);
+    if (!ehNumero(f[1]) || f[1] === 0) erros.push(`fluxo[${i}]: fluxo precisa ser diferente de 0 (o sinal dá o sentido)`);
     if (!ehNumero(f[2]) || f[2] < 0 || f[2] > 1) erros.push(`fluxo[${i}]: uso fora de 0 a 1`);
   });
   if (!listaDeTextos(json.gargalos)) erros.push("falta a lista `gargalos`");
