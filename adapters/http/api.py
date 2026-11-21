@@ -33,7 +33,7 @@ def ler_pedido(corpo: bytes) -> tuple[list[str], list[str], list[str]]:
         return [], [], []
     try:
         pedido = json.loads(corpo)
-    except ValueError:  # JSONDecodeError e UnicodeDecodeError
+    except (ValueError, RecursionError):  # JSONDecodeError, UnicodeDecodeError e [[[…]]] fundo demais
         raise ValueError("o corpo do pedido não é JSON válido") from None
     if not isinstance(pedido, dict):
         raise ValueError("o pedido precisa ser um objeto JSON, como {\"falhas\": {...}}")
@@ -171,7 +171,10 @@ class Pedido(BaseHTTPRequestHandler):
         try:
             tamanho = int(self.headers.get("Content-Length", 0))
         except ValueError:
-            raise ValueError("Content-Length inválido") from None
+            tamanho = -1
+        if tamanho < 0:
+            self.close_connection = True  # sem tamanho confiável, o resto da conexão não dá para ler
+            raise ValueError("Content-Length inválido")
         if tamanho > MAX_CORPO:
             self.close_connection = True  # o corpo não vai ser lido
             raise ValueError(f"pedido grande demais (máximo {MAX_CORPO // 1_000_000} MB)")
@@ -197,8 +200,11 @@ class Pedido(BaseHTTPRequestHandler):
         self._cors()
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(corpo)))
-        self.end_headers()
-        self.wfile.write(corpo)
+        try:
+            self.end_headers()
+            self.wfile.write(corpo)
+        except ConnectionError:  # o navegador desistiu enquanto o núcleo calculava: não é erro
+            self.close_connection = True
 
     def _cors(self) -> None:
         origem = self.headers.get("Origin", "")

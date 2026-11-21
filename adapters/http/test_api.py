@@ -154,6 +154,23 @@ class TestApi(unittest.TestCase):
         self.assertIn("grande", json.loads(r.read())["erro"])
         conexao.close()
 
+    def test_400_json_aninhado_demais(self):
+        # Revisão final (Codex): 20 KB de [[[…]]] estouravam a recursão do json e viravam 500.
+        status, _, r = pedir(self.base, "/api/analise", '{"falhas":' + "[" * 10_000 + "]" * 10_000 + "}")
+        self.assertEqual(status, 400)
+        self.assertIn("JSON", r["erro"])
+
+    def test_400_content_length_negativo(self):
+        # Revisão final (Codex): -1 era lido como corpo vazio e devolvia a análise sem falhas.
+        conexao = http.client.HTTPConnection("127.0.0.1", self.servidor.server_address[1], timeout=5)
+        conexao.putrequest("POST", "/api/analise")
+        conexao.putheader("Content-Length", "-1")
+        conexao.endheaders()
+        r = conexao.getresponse()
+        self.assertEqual(r.status, 400)
+        self.assertIn("Content-Length", json.loads(r.read())["erro"])
+        conexao.close()
+
     def test_500_erro_inesperado(self):
         self.servico.erro = RuntimeError("quebrou")
         status, _, r = pedir(self.base, "/api/analise", '{"falhas": {"arestas": ["t:1"]}}')
@@ -252,6 +269,30 @@ class TestFila(unittest.TestCase):
         servidor.server_close()
         self.assertEqual(respostas, {"t:A": 200, "t:C": 200})
         self.assertEqual([ch[0] for ch in servico.chamadas], [[], ["t:A"], ["t:C"]])
+
+
+class TestDesistiuDuranteOCalculo(unittest.TestCase):
+    def test_resposta_sem_ninguem_para_receber_nao_vira_erro(self):
+        # O clique novo cancela o fetch quando o cálculo já começou: a resposta não tem para onde ir.
+        servico = ServicoLento()
+        servidor = criar_servidor(0, servico)
+        erros = []
+        servidor.handle_error = lambda pedido, endereco: erros.append(endereco)
+        threading.Thread(target=servidor.serve_forever, daemon=True).start()
+        try:
+            corpo = json.dumps({"falhas": {"arestas": ["t:A"]}}).encode()
+            a = socket.create_connection(("127.0.0.1", servidor.server_address[1]), timeout=5)
+            a.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, b"\x01\x00\x00\x00\x00\x00\x00\x00")
+            a.sendall(b"POST /api/analise HTTP/1.1\r\nHost: x\r\n"
+                      + f"Content-Length: {len(corpo)}\r\n\r\n".encode() + corpo)
+            self.assertTrue(servico.a_entrou.wait(5))
+            a.close()  # com linger 0: reset, como o navegador ao abortar
+        finally:
+            servico.solta_a.set()
+        time.sleep(1)  # o handler termina de tentar responder
+        servidor.shutdown()
+        servidor.server_close()
+        self.assertEqual(erros, [])
 
 
 class ServicoLento(ServicoFalso):
