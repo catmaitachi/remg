@@ -4,6 +4,7 @@ A camada grafo não sabe o que é subestação. É aqui que subestação, chave,
 viram vértices, arestas e capacidades.
 """
 import math
+from collections import deque
 from collections.abc import Iterable
 
 from core.dominio.elementos import Chave, LinhaAT, Ponto, PontoDeSuprimento, Subestacao, Trecho
@@ -39,7 +40,7 @@ class RedeEletrica:
 
     Vértices, nesta ordem: subestações, pontos de suprimento, pontos, S e T.
     Arestas, nesta ordem: trechos, chaves, linhas AT, transformações (subestação → ponto raiz),
-    S → suprimento e ponto → T. A k-ésima aresta é sempre o arco 2k, em qualquer cenário:
+    S → suprimento, S → subestação sem alta tensão (plano B) e ponto → T. A k-ésima aresta é sempre o arco 2k, em qualquer cenário:
     chave aberta e trecho em falha continuam no grafo, só que com capacidade 0.
     """
 
@@ -75,9 +76,10 @@ class RedeEletrica:
                 if s.ponto_raiz not in self._indice or s.ponto_raiz in self._subestacao:
                     raise KeyError(f"subestação {s.id}: ponto raiz {s.ponto_raiz!r} não é um ponto da rede")
                 self._nova_aresta("transformacao", None, self._indice[s.id], self._indice[s.ponto_raiz], s)
-        # Plano B do spec 03: sem ponto de suprimento, S liga direto em cada subestação.
-        entradas = self.pontos_de_suprimento or self.subestacoes
-        for e in entradas:
+        # Plano B do spec 03, por subestação: quem não alcança suprimento pela alta tensão liga
+        # direto em S. Sem isso, a área dela fica apagada mesmo sem falha nenhuma.
+        self.subestacoes_sem_alta_tensao = self._sem_alta_tensao(ligacoes_at)
+        for e in self.pontos_de_suprimento + self.subestacoes_sem_alta_tensao:
             self._nova_aresta("fonte", None, self.s, self._indice[e.id], e)
         for p in self.pontos:
             if p.demanda_kva > 0:
@@ -181,6 +183,26 @@ class RedeEletrica:
             if d <= melhor_d:
                 melhor, melhor_d = s, d
         return melhor
+
+    def _sem_alta_tensao(self, ligacoes_at: list[tuple[LinhaAT, str, str]]) -> list[Subestacao]:
+        """Subestações que não chegam a nenhum ponto de suprimento andando pelas linhas AT.
+
+        Pega dois casos do OSM: a subestação sem nenhuma linha AT a menos de 200 m, e a "ilha" de
+        subestações ligadas entre si por linhas AT, mas sem nenhuma linha que venha de fora.
+        Sem suprimento nenhum na cidade, todas caem aqui (era o plano B original).
+        """
+        vizinhos: dict[str, list[str]] = {}
+        for _, a, b in ligacoes_at:
+            vizinhos.setdefault(a, []).append(b)
+            vizinhos.setdefault(b, []).append(a)
+        alcancados = {sp.id for sp in self.pontos_de_suprimento}
+        fila = deque(alcancados)
+        while fila:
+            for v in vizinhos.get(fila.popleft(), ()):
+                if v not in alcancados:
+                    alcancados.add(v)
+                    fila.append(v)
+        return [s for s in self.subestacoes if s.id not in alcancados]
 
     def _ligar_linhas_at(self) -> list[tuple[LinhaAT, str, str]]:
         """Cada ponta de linha AT a até 200 m de uma subestação se liga a ela (spec 03).
