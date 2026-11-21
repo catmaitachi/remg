@@ -38,15 +38,15 @@ class CalcularFluxo:
         no_corte = {e >> 1 for e in dinic.corte_minimo()}
 
         fluxo, gargalos = [], []
-        # Cada aresta é o par de arcos (2k, 2k+1) e fluxo[e ^ 1] == -fluxo[e]: o valor absoluto é o
-        # fluxo da aresta, seja qual for o sentido.
+        # Cada aresta é o par de arcos (2k, 2k+1), e o arco 2k vai de `de` para `para` (a RedeEletrica
+        # cria a aresta com u = de). O sinal de fluxo[2k] é o sentido que o 06 pede: positivo = de → para.
         for e in range(0, len(g.para), 2):
             id_ = rede.id_do_arco(e)
             if id_ is None:
                 continue  # aresta virtual (S, T, transformação): não aparece no mapa
-            f = abs(resultado.fluxo[e])
+            f = resultado.fluxo[e]
             uso = resultado.uso[e]
-            if f > 0:
+            if f != 0:
                 fluxo.append((id_, va_para_kva(f), uso))
             if eh_gargalo((e >> 1) in no_corte, uso):
                 gargalos.append(id_)
