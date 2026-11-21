@@ -54,7 +54,7 @@
 ## 🔀 Rota alternativa
 
 1. Pegar os pontos sem energia (resultado da falha).
-2. Dijkstra com várias fontes **a partir deles**, andando pelos trechos normais e podendo atravessar **chaves abertas**. O peso da chave é o comprimento + uma penalidade, para preferir fechar poucas chaves. 🟡
+2. Dijkstra com várias fontes **a partir deles**, andando pelos trechos normais e podendo atravessar **chaves abertas**. O peso é o comprimento. ✅ Sem penalidade na chave (T15): como todo ponto sem energia já é fonte, o caminho mais curto atravessa exatamente uma chave aberta, e a penalidade não mudaria a resposta.
 3. Parar ao chegar num ponto que tem energia. As chaves do caminho são as que precisam ser **fechadas**.
 4. Fechar essas chaves e rodar o Dinic de novo. **Se a capacidade não der conta, mostrar quanto da demanda foi religado** (religamento parcial).
 
