@@ -3,6 +3,7 @@
 Uso (da raiz do repo):
     python adapters/cli/main.py caminhos     grafo.txt 0 [3 ...]   Dijkstra com várias fontes
     python adapters/cli/main.py fluxo        grafo.txt S T         Dinic (fluxo máximo)
+    python adapters/cli/main.py fluxo        grafo.txt S T --algoritmo ek   Edmonds-Karp, para comparar (T24)
     python adapters/cli/main.py componentes  grafo.txt             BFS (componentes conexas)
     python adapters/cli/main.py pontes       grafo.txt             Tarjan (pontes)               ⏳ T23
     python adapters/cli/main.py articulacoes grafo.txt             Tarjan (pontos de articulação) ⏳ T23
@@ -30,9 +31,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from core.grafo.bfs import BFS  # noqa: E402
 from core.grafo.dijkstra import Dijkstra  # noqa: E402
 from core.grafo.dinic import Dinic  # noqa: E402
+from core.grafo.edmonds_karp import EdmondsKarp  # noqa: E402
 from core.grafo.grafo import Grafo  # noqa: E402
 
 FALTA_PECA = 3
+# Os dois têm a mesma interface (fluxo_maximo), então o benchmark troca um pelo outro no mesmo grafo.
+ALGORITMOS_DE_FLUXO = {"dinic": Dinic, "ek": EdmondsKarp}
 
 
 class PecaFaltando(Exception):
@@ -77,7 +81,7 @@ def cmd_caminhos(g, peso, args):
 
 
 def cmd_fluxo(g, peso, args):
-    return Dinic().fluxo_maximo(g, args.s, args.t).total
+    return ALGORITMOS_DE_FLUXO[args.algoritmo]().fluxo_maximo(g, args.s, args.t).total
 
 
 def cmd_componentes(g, peso, args):
@@ -106,9 +110,11 @@ def _parser():
 
     novo("caminhos", cmd_caminhos, "Dijkstra com várias fontes: distância de cada vértice").add_argument(
         "fontes", type=int, nargs="+")
-    f = novo("fluxo", cmd_fluxo, "Dinic: valor do fluxo máximo de S a T")
+    f = novo("fluxo", cmd_fluxo, "Dinic (ou Edmonds-Karp): valor do fluxo máximo de S a T")
     f.add_argument("s", type=int)
     f.add_argument("t", type=int)
+    f.add_argument("--algoritmo", choices=sorted(ALGORITMOS_DE_FLUXO), default="dinic",
+                   help="dinic (padrão) ou ek (Edmonds-Karp)")
     novo("componentes", cmd_componentes, "BFS: componente de cada vértice")
     novo("pontes", cmd_pontes, "Tarjan: arestas que são pontes")
     novo("articulacoes", cmd_articulacoes, "Tarjan: pontos de articulação")

@@ -74,6 +74,16 @@ class TestCli(unittest.TestCase):
         codigo, saida, _ = self.rodar("fluxo", "0", "3")
         self.assertEqual((codigo, saida.splitlines()[0]), (0, "5"))
 
+    def test_fluxo_com_edmonds_karp_da_o_mesmo_que_o_dinic(self):
+        for algoritmo in ("dinic", "ek"):
+            with self.subTest(algoritmo=algoritmo):
+                codigo, saida, _ = self.rodar("fluxo", "0", "3", "--algoritmo", algoritmo, "--json")
+                self.assertEqual((codigo, json.loads(saida)["resultado"]), (0, 5))
+
+    def test_algoritmo_desconhecido(self):
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            self.rodar("fluxo", "0", "3", "--algoritmo", "ford")
+
     def test_componentes(self):
         codigo, saida, _ = self.rodar("componentes")
         self.assertEqual((codigo, saida.splitlines()[0]), (0, "0 0 0 0 1"))
