@@ -1,4 +1,4 @@
-"""T13: CalcularFluxo e a regra de gargalo, com a rede e o Dinic falsos de tests/pecas_falsas.py.
+"""T13: CalcularFluxo e a regra de gargalo, com a RedeEletrica e o Dinic de verdade.
 
 Rede do teste (capacidades e demandas em kVA):
 
@@ -16,21 +16,25 @@ Corte mínimo: t:2 + demanda de p:2 + demanda de p:4 = 30 + 20 + 10 = 60.
 import unittest
 
 from core.casos_de_uso.calcular_fluxo import CalcularFluxo
+from core.dominio.elementos import Chave, Ponto, Subestacao, Trecho
 from core.dominio.gargalo import LIMITE_USO, eh_gargalo
-from tests.pecas_falsas import DinicDeTeste, RedeDeTeste
+from core.dominio.rede_eletrica import RedeEletrica
+from core.grafo.edmonds_karp import EdmondsKarp
 
 
 def rede(cap_t1=60):
-    return RedeDeTeste(
-        subestacoes={"s:A": (100, "p:1")},
-        pontos={"p:1": 0, "p:2": 20, "p:3": 40, "p:4": 10},
-        trechos=[("t:1", "p:1", "p:2", cap_t1), ("t:2", "p:2", "p:3", 30), ("t:3", "p:1", "p:4", 50)],
-        chaves=[("c:1", "p:3", "p:4", 100)],
+    demanda = {"p:1": 0, "p:2": 20, "p:3": 40, "p:4": 10}
+    return RedeEletrica(
+        subestacoes=[Subestacao("s:A", "A", 0, 0, 100, ponto_raiz="p:1")],
+        pontos=[Ponto(p, 0, 0, d) for p, d in demanda.items()],
+        trechos=[Trecho("t:1", "p:1", "p:2", cap_t1), Trecho("t:2", "p:2", "p:3", 30),
+                 Trecho("t:3", "p:1", "p:4", 50)],
+        chaves=[Chave("c:1", "p:3", "p:4", 100)],
     )
 
 
 def calcular(r, **kw):
-    return CalcularFluxo(r, DinicDeTeste).executar(**kw)
+    return CalcularFluxo(r).executar(**kw)
 
 
 class TestRegraDeGargalo(unittest.TestCase):
@@ -75,6 +79,12 @@ class TestCalcularFluxo(unittest.TestCase):
         self.assertEqual(r.fluxo_total, 50)
         self.assertNotIn("t:3", [x[0] for x in r.fluxo])
         self.assertNotIn("t:3", r.gargalos)
+
+    def test_edmonds_karp_da_o_mesmo_fluxo_total(self):
+        for kw in ({}, {"chaves_fechadas": ["c:1"]}, {"falhas": ["t:3"]}):
+            with self.subTest(**kw):
+                self.assertEqual(CalcularFluxo(rede(), EdmondsKarp).executar(**kw).fluxo_total,
+                                 calcular(rede(), **kw).fluxo_total)
 
 
 if __name__ == "__main__":
