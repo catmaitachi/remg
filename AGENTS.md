@@ -65,7 +65,7 @@ Quando a pessoa pedir algo que mexe no projeto:
 | Testes do servidor | `python -m unittest discover -s adapters/http` |
 | Testes da CLI | `python -m unittest discover -s adapters/cli` |
 | Servidor | `python adapters/http/servidor.py` (porta 8080) |
-| Front (dados de exemplo) | `cd front && npm install && npm run dev` (com `VITE_USAR_MOCK=true` em `front/.env.local`) |
+| Front | `cd front && npm install && npm run dev`, com o servidor ligado (para os dados de exemplo, `VITE_USAR_MOCK=true` em `front/.env.local`) |
 | Testes do front | `npm --prefix front test` |
 | Gerar o mock de BH dos CSV | `npm --prefix front run mock:bh` |
 | Ligar os hooks | `git config core.hooksPath .githooks` |
