@@ -1,6 +1,6 @@
-"""T12: GerarRedeSintetica com Grafo e elementos falsos (a T07 e a T11 ainda não estão no remg).
+"""T12: GerarRedeSintetica, da porta FonteDeRede até a RedeEletrica.
 
-Ruas do teste (comprimento em metros). s:A fica em cima de p:1 e s:B em cima de p:7:
+Ruas do teste (comprimento em metros). s:1 fica em cima de p:1 e s:2 em cima de p:7:
 
     p:1 ─100─ p:2 ─100─ p:3 ─100─ p:4 ─100─ p:5 ─100─ p:6 ─100─ p:7        p:8 ─50─ p:9
                └───────────────────1000──────────────────┘                  (sem subestação)
@@ -11,104 +11,30 @@ diferentes. Sem cabo: r8, que não chega a subestação nenhuma, e p:8 e p:9 fic
 """
 
 import unittest
-from dataclasses import dataclass
+from pathlib import Path
 
+from adapters.dados.leitor_csv import LeitorCSV
 from core.casos_de_uso.gerar_rede_sintetica import (FATOR_CABO, FOLGA_SUBESTACAO, KVA_POR_METRO, GeradorAleatorio,
                                                     GerarRedeSintetica)
+from core.dominio.rede_eletrica import RedeEletrica, va_para_kva
+from core.grafo.dinic import Dinic
+from core.portas.fonte_de_rede import DadosDaRede, PontoLido, SubestacaoLida, TrechoLido
+
+MINI = Path(__file__).parent / "dados"
 
 
-class GrafoDeTeste:
-    """Forward-star igual ao Grafo da T07."""
-
-    def __init__(self, V):
-        self.V = V
-        self.head = [-1] * V
-        self.prox, self.para, self.cap = [], [], []
-
-    def add_aresta(self, u, v, capacidade):
-        e = len(self.para)
-        for de, ate in ((u, v), (v, u)):
-            self.para.append(ate)
-            self.cap.append(capacidade)
-            self.prox.append(self.head[de])
-            self.head[de] = len(self.para) - 1
-        return e
+def dados():
+    pontos = [PontoLido(i, -19.9, -43.9 + i * 0.001) for i in range(1, 10)]
+    trechos = [TrechoLido(i, i, i + 1, 100, "residential") for i in range(1, 7)]
+    trechos += [TrechoLido(7, 2, 6, 1000, "primary"), TrechoLido(8, 8, 9, 50, "residential")]
+    subestacoes = [SubestacaoLida(1, "Sub A", -19.9, -43.899, (), "distribution"),
+                   SubestacaoLida(2, "Sub B", -19.9, -43.893, (), "distribution"),
+                   SubestacaoLida(3, "Transmissão", -19.9, -43.896, (), "transmission")]
+    return DadosDaRede(pontos, trechos, subestacoes, [], [])
 
 
-class ElementosDeTeste:
-    """Mesmos campos do core/dominio/elementos.py da T11 (PR #46 do luzes)."""
-
-    @dataclass
-    class Subestacao:
-        id: str
-        nome: str
-        lat: float
-        lon: float
-        capacidade_kva: float
-        ponto_raiz: str | None = None
-
-    @dataclass
-    class Ponto:
-        id: str
-        lat: float
-        lon: float
-        demanda_kva: float = 0.0
-
-    @dataclass
-    class Trecho:
-        id: str
-        de: str
-        para: str
-        capacidade_kva: float
-        comprimento_m: float = 0.0
-
-    @dataclass
-    class Chave(Trecho):
-        aberta: bool = True
-
-
-@dataclass
-class P:
-    id_osm: str
-    lat: float
-    lon: float
-
-
-@dataclass
-class R:
-    id: str
-    de: str
-    para: str
-    comprimento_m: float
-
-
-@dataclass
-class S:
-    id_osm: str
-    nome: str
-    lat: float
-    lon: float
-    tipo: str = "distribution"
-
-
-@dataclass
-class Ruas:
-    pontos: list
-    trechos_rua: list
-    subestacoes: list
-
-
-def ruas():
-    pontos = [P(str(i), -19.9, -43.9 + i * 0.001) for i in range(1, 10)]
-    trechos = [R(str(i), str(i), str(i + 1), 100) for i in range(1, 7)]
-    trechos += [R("7", "2", "6", 1000), R("8", "8", "9", 50)]
-    subestacoes = [S("A", "Sub A", -19.9, -43.899), S("B", "Sub B", -19.9, -43.893),
-                   S("X", "Transmissão", -19.9, -43.896, tipo="transmission")]
-    return Ruas(pontos, trechos, subestacoes)
-
-
-def gerar(semente=2026, dados=None):
-    return GerarRedeSintetica(GrafoDeTeste, ElementosDeTeste, semente).executar(dados or ruas())
+def gerar(semente=2026, entrada=None):
+    return GerarRedeSintetica(semente).executar(entrada or dados())
 
 
 def area_de_cada_ponto(rede):
@@ -147,11 +73,11 @@ class TestGerarRedeSintetica(unittest.TestCase):
         for ponto, subestacoes in area_de_cada_ponto(gerar()).items():
             with self.subTest(ponto=ponto):
                 self.assertEqual(len(subestacoes), 1)
-        self.assertEqual(area_de_cada_ponto(gerar())["p:4"], {"s:A"})
+        self.assertEqual(area_de_cada_ponto(gerar())["p:4"], {"s:1"})
 
     def test_so_subestacao_de_distribuicao_e_raiz_sem_repetir(self):
         rede = gerar()
-        self.assertEqual([(s.id, s.ponto_raiz) for s in rede.subestacoes], [("s:A", "p:1"), ("s:B", "p:7")])
+        self.assertEqual([(s.id, s.ponto_raiz) for s in rede.subestacoes], [("s:1", "p:1"), ("s:2", "p:7")])
 
     def test_demanda_e_metade_de_cada_rua_em_volta(self):
         demanda = {p.id: p.demanda_kva for p in gerar().pontos}
@@ -182,7 +108,24 @@ class TestGerarRedeSintetica(unittest.TestCase):
 
     def test_subestacao_sem_rua(self):
         with self.assertRaises(ValueError):
-            gerar(dados=Ruas([], [], [S("A", "Sub A", 0, 0)]))
+            gerar(entrada=DadosDaRede([], [], [SubestacaoLida(1, "Sub A", 0, 0, (), "distribution")], [], []))
+
+    def test_vira_rede_eletrica_e_o_fluxo_passa(self):
+        # O fator do cabo pode ficar abaixo de 1, então nem toda a demanda chega: só se sabe que
+        # passa fluxo e que ele não passa da demanda.
+        gerada = gerar()
+        rede = gerada.montar_rede()
+        self.assertIsInstance(rede, RedeEletrica)
+        total = va_para_kva(Dinic().fluxo_maximo(rede.montar_grafo(), rede.s, rede.t).total)
+        self.assertGreater(total, 0)
+        self.assertLessEqual(total, sum(p.demanda_kva for p in gerada.pontos) + 0.01)
+
+    def test_dados_lidos_do_csv_de_teste(self):
+        rede = gerar(entrada=LeitorCSV(MINI).carregar())
+        self.assertEqual([s.id for s in rede.subestacoes], ["s:201"])  # a 202 não tem tipo no OSM
+        self.assertEqual(len(rede.trechos), len(rede.pontos) - 1)      # uma subestação: a rede é uma árvore
+        self.assertEqual([l.id for l in rede.linhas_at], ["at:301", "at:302"])
+        rede.montar_rede()
 
 
 if __name__ == "__main__":

@@ -8,11 +8,8 @@ Spec 02 ("Rede de distribuição sintética") e 04 ("Gerar a rede"):
 4. Q2 🟡: demanda proporcional à rua em volta do ponto, e cabo = demanda que passa por ele × fator
    aleatório entre 0,8 e 1,5, para gerar gargalos de propósito. Semente fixa (D24).
 
-Peças injetadas enquanto a T07, a T10 e a T11 não estão no remg:
-- ruas: objeto com pontos (id_osm, lat, lon), trechos_rua (id, de, para, comprimento_m) e
-  subestacoes (id_osm, nome, lat, lon, tipo): as colunas dos CSV do spec 02, que o leitor da T10 entrega;
-- classe_grafo: o Grafo da T07 (forward-star com add_aresta);
-- elementos: o módulo core.dominio.elementos da T11 (Subestacao, Ponto, Trecho, Chave).
+Entrada: os DadosDaRede da porta FonteDeRede (T10). Saída: as peças do domínio e, com
+RedeGerada.montar_rede(), a RedeEletrica (T11) pronta para os outros casos de uso.
 
 Big-O: O(P·S) para achar as raízes (S ≈ 19 subestações) + Dijkstra O((V + E) log V) + ordenar por
 distância O(V log V).
@@ -21,7 +18,11 @@ distância O(V log V).
 import math
 from dataclasses import dataclass, field
 
+from core.dominio.elementos import Chave, LinhaAT, Ponto, Subestacao, Trecho
+from core.dominio.rede_eletrica import RedeEletrica, distancia_m
 from core.grafo.dijkstra import INFINITO, Dijkstra
+from core.grafo.grafo import Grafo
+from core.portas.fonte_de_rede import DadosDaRede
 
 SEMENTE = 2026
 TIPO_DISTRIBUICAO = "distribution"
@@ -31,15 +32,8 @@ FATOR_CABO = (0.8, 1.5)
 # A subestação aguenta a demanda da área com folga; quem deve gargalar é o cabo, não ela.
 FOLGA_SUBESTACAO = 1.2
 CAPACIDADE_MINIMA_KVA = 1.0
-_RAIO_TERRA_M = 6_371_000.0
-
-
-def distancia_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Haversine, a mesma fórmula que o prep_osm usa no comprimento das ruas."""
-    f1, f2 = math.radians(lat1), math.radians(lat2)
-    df, dl = f2 - f1, math.radians(lon2 - lon1)
-    a = math.sin(df / 2) ** 2 + math.cos(f1) * math.cos(f2) * math.sin(dl / 2) ** 2
-    return 2 * _RAIO_TERRA_M * math.asin(math.sqrt(a))
+# 🟡 O OSM não traz a capacidade da linha AT. Folgada de propósito: quem limita é a subestação.
+CAPACIDADE_LINHA_AT_KVA = 100_000.0
 
 
 class GeradorAleatorio:
@@ -61,32 +55,34 @@ class GeradorAleatorio:
 
 @dataclass
 class RedeGerada:
-    subestacoes: list = field(default_factory=list)
-    pontos: list = field(default_factory=list)
-    trechos: list = field(default_factory=list)
-    chaves: list = field(default_factory=list)
+    subestacoes: list[Subestacao] = field(default_factory=list)
+    pontos: list[Ponto] = field(default_factory=list)
+    trechos: list[Trecho] = field(default_factory=list)
+    chaves: list[Chave] = field(default_factory=list)
+    linhas_at: list[LinhaAT] = field(default_factory=list)
     pontos_isolados: int = 0     # pontos que nenhuma subestação alcança pelas ruas: ficam fora da rede
     ruas_sem_cabo: int = 0
 
+    def montar_rede(self) -> RedeEletrica:
+        return RedeEletrica(self.subestacoes, self.pontos, self.trechos, self.chaves, self.linhas_at)
+
 
 class GerarRedeSintetica:
-    def __init__(self, classe_grafo, elementos, semente: int = SEMENTE) -> None:
-        self._classe_grafo = classe_grafo
-        self._el = elementos
+    def __init__(self, semente: int = SEMENTE) -> None:
         self._semente = semente
 
-    def executar(self, ruas) -> RedeGerada:
-        pontos = list(ruas.pontos)
+    def executar(self, dados: DadosDaRede) -> RedeGerada:
+        pontos = list(dados.pontos)
         indice = {p.id_osm: i for i, p in enumerate(pontos)}
-        g = self._classe_grafo(len(pontos))
+        g = Grafo(len(pontos))
         peso, ruas_validas = [], []
-        for r in ruas.trechos_rua:
+        for r in dados.trechos:
             if r.de in indice and r.para in indice and r.de != r.para:
                 g.add_aresta(indice[r.de], indice[r.para], 1)
                 peso += [r.comprimento_m, r.comprimento_m]
                 ruas_validas.append(r)
 
-        subestacoes = [s for s in ruas.subestacoes if s.tipo == TIPO_DISTRIBUICAO]
+        subestacoes = [s for s in dados.subestacoes if s.tipo == TIPO_DISTRIBUICAO]
         raizes = self._raizes(subestacoes, pontos)
         cam = Dijkstra.caminhos(g, raizes, peso)
 
@@ -117,7 +113,7 @@ class GerarRedeSintetica:
                 filho = v if cam.arco_pai[v] >> 1 == k else u
                 cap = max(abaixo[filho] * sorteio.uniforme(*FATOR_CABO), CAPACIDADE_MINIMA_KVA)
                 cap_cabo_pai[filho] = cap
-                rede.trechos.append(self._el.Trecho(f"t:{r.id}", f"p:{r.de}", f"p:{r.para}", round(cap, 2),
+                rede.trechos.append(Trecho(f"t:{r.id}", f"p:{r.de}", f"p:{r.para}", round(cap, 2),
                                                     r.comprimento_m))
             elif cam.fonte[u] != cam.fonte[v]:
                 rede.chaves.append((k, r, u, v))  # a capacidade depende dos cabos, que ainda não acabaram
@@ -126,7 +122,7 @@ class GerarRedeSintetica:
 
         # 🟡 A chave aguenta o maior cabo que chega nas suas pontas: fechar a chave não deve virar o
         # gargalo antes do cabo que já existia ali.
-        rede.chaves = [self._el.Chave(f"c:{r.id}", f"p:{r.de}", f"p:{r.para}",
+        rede.chaves = [Chave(f"c:{r.id}", f"p:{r.de}", f"p:{r.para}",
                                       round(max(cap_cabo_pai[u], cap_cabo_pai[v], CAPACIDADE_MINIMA_KVA), 2),
                                       r.comprimento_m)
                        for k, r, u, v in rede.chaves]
@@ -136,11 +132,13 @@ class GerarRedeSintetica:
             demanda_area[cam.fonte[v]] = demanda_area.get(cam.fonte[v], 0.0) + demanda[v]
         for s, raiz in zip(subestacoes, raizes):
             cap = max(demanda_area.get(raiz, 0.0) * FOLGA_SUBESTACAO, CAPACIDADE_MINIMA_KVA)
-            rede.subestacoes.append(self._el.Subestacao(f"s:{s.id_osm}", s.nome, s.lat, s.lon, round(cap, 2),
+            rede.subestacoes.append(Subestacao(f"s:{s.id_osm}", s.nome, s.lat, s.lon, round(cap, 2),
                                                         ponto_raiz=f"p:{pontos[raiz].id_osm}"))
-        rede.pontos = [self._el.Ponto(f"p:{pontos[v].id_osm}", pontos[v].lat, pontos[v].lon, round(demanda[v], 3))
+        rede.pontos = [Ponto(f"p:{pontos[v].id_osm}", pontos[v].lat, pontos[v].lon, round(demanda[v], 3))
                        for v in alcancados]
         rede.pontos_isolados = len(pontos) - len(alcancados)
+        rede.linhas_at = [LinhaAT(f"at:{l.id_osm}", l.tensao or 0, CAPACIDADE_LINHA_AT_KVA, list(l.coords))
+                          for l in dados.linhas_at]
         return rede
 
     @staticmethod
