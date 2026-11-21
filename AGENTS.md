@@ -78,3 +78,5 @@ Quando a pessoa pedir algo que mexe no projeto:
 | Baixar o OSM (1 vez) | `python tools/prep_osm/prep_osm.py baixar --nome bh` |
 | Gerar os CSV de `data/bh/` | `python tools/prep_osm/prep_osm.py processar --nome bh` |
 | Testes do prep_osm | `python -m unittest discover -s tools/prep_osm` |
+| Benchmark núcleo × NetworkX | `python tools/benchmark/benchmark.py` (`--rapido` confere em segundos) |
+| Testes do benchmark | `python -m unittest discover -s tools/benchmark` |
