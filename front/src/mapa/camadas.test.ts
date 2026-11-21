@@ -3,7 +3,7 @@ import analiseMock from "../mocks/analise.json";
 import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede } from "../api/tipos";
 import { PALETA, rgb } from "./cores";
-import { VISIVEIS_INICIAL, estiloDoMapa, montarCamadas, prepararDados, type Quadro, type Visiveis } from "./camadas";
+import { VISIVEIS_INICIAL, aplicarFalhas, estiloDoMapa, montarCamadas, prepararDados, type Quadro, type Visiveis } from "./camadas";
 
 const rede = pequena as unknown as Rede;
 // Cópia local: o mock não tem nenhum trecho na faixa de alerta.
@@ -205,4 +205,66 @@ test("marcadores de gargalo podem vir espalhados de fora (zoom atual)", () => {
   const c = Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", null, { alertas }).map((l) => [l.id, l])) as Record<string, any>;
   expect(c["gargalos-alerta"].props.data).toBe(alertas);
   expect(c["gargalos-alerta-texto"].props.data).toBe(alertas);
+});
+
+// ---------- T20: caído e sem luz ----------
+const t1 = { tipo: "aresta" as const, id: "t:1" };
+const camadasCom = (falhas: { tipo: "aresta" | "subestacao"; id: string }[], tema: "claro" | "escuro" = "claro", derrubando = false) => {
+  const { dados: vista, caidos } = aplicarFalhas(dados, falhas);
+  return Object.fromEntries(montarCamadas(vista, VISIVEIS_INICIAL, tema, null, { caidos, derrubando }).map((c) => [c.id, c])) as Record<string, any>;
+};
+
+test("trecho com as duas pontas sem energia é sem luz", () => {
+  const d = prepararDados(rede, { ...analise, semEnergia: { pontos: ["p:2", "p:3"], demanda: 25 } });
+  expect(d.trechos.find((t) => t.id === "t:2")!.semLuz).toBe(true);
+  expect(d.trechos.find((t) => t.id === "t:1")!.semLuz).toBe(false); // fronteira: só p:2
+  const c = Object.fromEntries(montarCamadas(d, VISIVEIS_INICIAL, "claro").map((x) => [x.id, x])) as Record<string, any>;
+  expect(corDoTrecho(c, "t:2")).toEqual(rgb(PALETA.claro.semLuz));
+});
+
+test("caído vira tracejado com ✕ e some da linha cheia", () => {
+  const { caidos } = aplicarFalhas(dados, [t1]);
+  expect(caidos.tracos).toHaveLength(4);
+  expect(caidos.tracos.every((x) => x.id === "t:1")).toBe(true);
+  const [a, b] = dados.trechos.find((t) => t.id === "t:1")!.path;
+  expect(caidos.marcas).toEqual([{ id: "t:1", posicao: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] }]);
+  const c = camadasCom([t1]);
+  expect(c.caidos).toBeDefined();
+  expect(c["caidos-x"]).toBeDefined();
+  expect(corDoTrecho(c, "t:1")[3]).toBe(0);
+});
+
+test("caído para de brilhar antes da resposta", () => {
+  const { dados: vista } = aplicarFalhas(dados, [t1, { tipo: "aresta", id: "t:3" }]);
+  for (const lista of [vista.comFluxo, vista.destaques, vista.gargalos]) expect(lista.some((x) => x.id === "t:1" || x.id === "t:3")).toBe(false);
+  expect(vista.alertas.some((m) => m.id === "t:3")).toBe(false);
+  expect(vista.trechos).toBe(dados.trechos);
+});
+
+test("sem falhas, nada muda", () => {
+  expect(aplicarFalhas(dados, []).dados).toBe(dados);
+  expect(Object.keys(camadasCom([]))).not.toContain("caidos");
+});
+
+test("subestação caída fica vazada com ✕", () => {
+  const s = rede.subestacoes[0];
+  const { caidos } = aplicarFalhas(dados, [{ tipo: "subestacao", id: s[0] }]);
+  expect(caidos.marcas).toEqual([{ id: s[0], posicao: [s[3], s[2]] }]);
+  const c = camadasCom([{ tipo: "subestacao", id: s[0] }]);
+  expect(c.subestacoes.props.getFillColor(s)[3]).toBe(0);
+  expect(c.subestacoes.props.getLineColor(s)).toEqual(rgb(PALETA.claro.caido));
+  expect(c.subestacoes.props.getFillColor(rede.subestacoes[1])).toEqual(rgb(PALETA.claro.subestacao));
+});
+
+test("caído muda de cor com o tema", () => {
+  const cor = (tema: "claro" | "escuro") => { const c = camadasCom([t1], tema); return c.caidos.props.getColor(c.caidos.props.data[0]); };
+  expect(cor("escuro")).toEqual(rgb("#e0e0e0"));
+  expect(cor("claro")).toEqual(rgb("#7f7f7f"));
+});
+
+test("fora do Derrubar nada é pickable", () => {
+  for (const [derrubando, esperado] of [[false, false], [true, true]] as const) {
+    const c = camadasCom([t1], "claro", derrubando);
+    for (const id of ["trechos", "subestacoes", "caidos"]) expect(!!c[id].props.pickable, `${id} ${derrubando}`).toBe(esperado);
+  }
 });
