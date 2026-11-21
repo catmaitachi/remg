@@ -39,7 +39,7 @@ Quando a pessoa pedir algo que mexe no projeto:
 1. Rode `python tools/dev/comecar.py --buscar "<o pedido, nas palavras dela>"` e **confirme com a pessoa** qual task é. Se nenhuma bater, diga isso e combine se vira uma issue nova; não trabalhe sem task.
 2. Rode `python tools/dev/comecar.py N` (ou `--tipo docs/fix/...`). Ele confere dependências e dono, atribui a issue e cria ou **retoma** a branch. Se ele parar, explique o motivo.
 3. Lembre a pessoa de mover o card para **🔨 Fazendo**. É o único passo manual do quadro.
-4. Para abrir o PR: `gh pr create --fill`. O Actions completa `Closes #N`, milestone e revisor sozinho; a milestone e a release também fecham sozinhas ([`docs/spec/13-automacao.md`](docs/spec/13-automacao.md)).
+4. Para abrir o PR: `gh pr create --fill --title "tipo: descrição"` (sem `--title`, o `gh` usa o nome da branch quando há mais de um commit). PR não vai para o quadro: o card é a issue. O Actions completa `Closes #N`, milestone e revisor sozinho; a milestone e a release também fecham sozinhas ([`docs/spec/13-automacao.md`](docs/spec/13-automacao.md)).
 
 > No Claude Code, a guarda **barra edição com a `main` ativa** (G5), então o passo 2 vem antes de qualquer arquivo.
 

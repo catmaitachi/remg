@@ -5,7 +5,7 @@ release: v1.1
 depende: T07
 ---
 ## 🎯 O que é
-Ligar pontos novos à rede com o **mínimo de cabo**: Kruskal + union-find. Trazer do `catmaitachi/luzes` (branch `feat/32-…`, pasta `core/grafo python/`) para o `remg`, em Python, com os testes.
+Ligar pontos novos à rede com o **mínimo de cabo**: Kruskal + union-find.
 
 ## ✅ Pronto quando
 - [ ] testes em grafos pequenos (custo igual ao do papel)

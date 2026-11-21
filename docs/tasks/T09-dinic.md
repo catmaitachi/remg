@@ -5,7 +5,7 @@ release: v0.2
 depende: T07
 ---
 ## 🎯 O que é
-**Dinic** (fluxo máximo) e **corte mínimo**. Hoje está em C++ no `luzes` (branch `feat/11-…`): portar para Python.
+**Dinic** (fluxo máximo) e **corte mínimo**.
 
 ## ✅ Pronto quando
 - [ ] testes em grafos pequenos com a resposta feita no papel

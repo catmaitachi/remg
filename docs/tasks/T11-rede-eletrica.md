@@ -5,7 +5,7 @@ release: v0.2
 depende: T07, T10
 ---
 ## 🎯 O que é
-O domínio (`Subestacao`, `Ponto`, `Trecho`, `Chave`) e o `RedeEletrica.montar_grafo()`, com S, T, chaves e falhas. Trazer do `catmaitachi/luzes` (branch `feat/13-…`) para o `remg`, em Python, com os testes.
+O domínio (`Subestacao`, `Ponto`, `Trecho`, `Chave`) e o `RedeEletrica.montar_grafo()`, com S, T, chaves e falhas.
 
 ## ✅ Pronto quando
 - [ ] teste: rede pequena vira o grafo esperado
