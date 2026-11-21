@@ -4,7 +4,9 @@ import type { Visiveis } from "../mapa/camadas";
 import { CENTRO_BH } from "../mapa/camadas";
 import { PALETA, type Tema } from "../mapa/cores";
 
-interface Props { visiveis: Visiveis; aoMudar: (v: Visiveis) => void; temChaves: boolean; tema: Tema }
+interface Props {
+  visiveis: Visiveis; aoMudar: (v: Visiveis) => void; temChaves: boolean; tema: Tema; aoTrocarTema: () => void;
+}
 
 const Icone = ({ d }: { d: string }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -14,9 +16,11 @@ const MAIS = "M12 5v14M5 12h14";
 const MENOS = "M5 12h14";
 const CENTRO = "M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z";
 const CAMADAS = "M12 3 2 8l10 5 10-5-10-5zM2 16l10 5 10-5M2 12l10 5 10-5";
+const SOL = "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z";
+const LUA = "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z";
 
 /** Fica dentro do <Map>: o useMap() só enxerga o mapa nos filhos dele. */
-export function Controles({ visiveis, aoMudar, temChaves, tema }: Props) {
+export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema }: Props) {
   const { current: mapa } = useMap();
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
@@ -51,6 +55,10 @@ export function Controles({ visiveis, aoMudar, temChaves, tema }: Props) {
         <button type="button" className="controle" aria-label="Voltar para Belo Horizonte"
           onClick={() => mapa?.flyTo({ center: [CENTRO_BH.longitude, CENTRO_BH.latitude], zoom: CENTRO_BH.zoom })}>
           <Icone d={CENTRO} />
+        </button>
+        <button type="button" className="controle" onClick={aoTrocarTema}
+          aria-label={tema === "escuro" ? "Usar tema claro" : "Usar tema escuro"}>
+          <Icone d={tema === "escuro" ? SOL : LUA} />
         </button>
         <button ref={botao} type="button" className="controle" aria-label="Camadas" aria-expanded={aberto} aria-controls={idPainel}
           onClick={() => setAberto((a) => !a)}>

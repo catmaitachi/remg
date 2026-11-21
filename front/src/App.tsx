@@ -18,15 +18,18 @@ function CamadasDeck(props: MapboxOverlayProps) {
 }
 
 const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
+const temaDoSistema = (): Tema => (temaEscuro.matches ? "escuro" : "claro");
 
-function useTema(): Tema {
-  const [escuro, setEscuro] = useState(temaEscuro.matches);
+/** Começa pelo tema do sistema e segue ele até a pessoa trocar no botão dos controles. */
+function useTema(): [Tema, () => void] {
+  const [tema, setTema] = useState<Tema>(temaDoSistema);
   useEffect(() => {
-    const mudar = (e: MediaQueryListEvent) => setEscuro(e.matches);
+    const mudar = () => setTema(temaDoSistema());
     temaEscuro.addEventListener("change", mudar);
     return () => temaEscuro.removeEventListener("change", mudar);
   }, []);
-  return escuro ? "escuro" : "claro";
+  useEffect(() => { document.documentElement.dataset.tema = tema; }, [tema]);
+  return [tema, () => setTema((t) => (t === "escuro" ? "claro" : "escuro"))];
 }
 
 const USANDO_MOCK = import.meta.env.VITE_USAR_MOCK === "true";
@@ -34,7 +37,7 @@ const USANDO_MOCK = import.meta.env.VITE_USAR_MOCK === "true";
 type Carga<T> = { ok: T } | { erro: string } | null;
 
 export default function App() {
-  const tema = useTema();
+  const [tema, trocarTema] = useTema();
   const [rede, setRede] = useState<Carga<Rede>>(null);
   // A análise é opcional: sem ela o mapa fica em cinza e a barra mostra "—".
   const [analise, setAnalise] = useState<Carga<Analise>>(null);
@@ -60,7 +63,7 @@ export default function App() {
         style={{ position: "fixed", inset: 0 }}
       >
         <CamadasDeck layers={camadas} />
-        <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} />
+        <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema} />
       </Map>
 
       {redeOk && <Barra area={redeOk.area} analise={analiseOk} usandoMock={USANDO_MOCK} />}

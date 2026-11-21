@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="https://cdngovbr-ds.estaleiro.serpro.gov.br/design-system/fonts/rawline/css/rawline.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>REMG · Belo Horizonte</title>
+    <!-- tema antes da primeira pintura, para não piscar o claro -->
+    <script>document.documentElement.dataset.tema = matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";</script>
   </head>
   <body>
     <div id="root"></div>

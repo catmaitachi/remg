@@ -47,6 +47,8 @@
   display: grid;
   gap: var(--espaco-1);
   padding: 6px;
+  /* peças pequenas sobre a malha densa: vidro mais opaco para não sumir */
+  background: var(--vidro-forte);
 }
 .controle {
   display: grid; place-items: center;
@@ -63,6 +65,7 @@
   right: calc(var(--margem) + 60px);
   width: 260px;
   padding: var(--espaco-4);
+  background: var(--vidro-forte);
 }
 .painel[hidden] { display: none; }
 .painel-titulo { margin: 0 0 var(--espaco-3); font-size: var(--texto-rotulo); font-weight: 700; }
