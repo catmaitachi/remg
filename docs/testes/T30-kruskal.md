@@ -89,4 +89,4 @@ graph LR
 | 🚫 Vértice fora do grafo · número de vértices negativo | exceção | entrada inválida |
 | 🧩 Union-find | junta, diz quem já está junto e põe o menor conjunto embaixo do maior | é a peça que detecta o ciclo |
 
-> ⏳ **Falta (T22):** comparar com o `networkx.minimum_spanning_tree` no benchmark. Com `ja_conectados` vazio, o resultado é a mesma árvore geradora mínima.
+> ⏳ **Falta (T22):** comparar com o `networkx.minimum_spanning_tree` no benchmark. A CLI já responde com `python adapters/cli/main.py arvore grafo.txt --json` (custo, arestas e pedaços), usando o peso de cada aresta como custo e `ja_conectados` vazio, que dá a mesma floresta geradora mínima.

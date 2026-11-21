@@ -84,6 +84,12 @@ class TestCli(unittest.TestCase):
         with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             self.rodar("fluxo", "0", "3", "--algoritmo", "ford")
 
+    def test_arvore_minima_pelo_peso(self):
+        # Pelo peso: 0─2 (1), 1─3 (1) e 2─1 (2) entram; 0─1 (4) fecharia ciclo. O 4 fica sozinho.
+        codigo, saida, _ = self.rodar("arvore", "--json")
+        self.assertEqual(codigo, 0)
+        self.assertEqual(json.loads(saida)["resultado"], {"custo": 4.0, "arestas": [1, 2, 3], "componentes": 2})
+
     def test_componentes(self):
         codigo, saida, _ = self.rodar("componentes")
         self.assertEqual((codigo, saida.splitlines()[0]), (0, "0 0 0 0 1"))
