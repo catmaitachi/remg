@@ -1,6 +1,6 @@
 import urlBh from "../mocks/rede.bh.json?url"; // ?url: o JSON de 4 MB fica fora do bundle e é lido por fetch
 import urlAnaliseBh from "../mocks/analise.bh.json?url";
-import type { Analise, Rede } from "./tipos";
+import type { Analise, Pedido, Rede } from "./tipos";
 import { validarAnalise, validarRede } from "./validar";
 
 export const SERVIDOR = "http://localhost:8080/api";
@@ -44,4 +44,20 @@ export function carregarRede(usarMock = usarMockPadrao(), buscar: typeof fetch =
 export function carregarAnalise(usarMock = usarMockPadrao(), buscar: typeof fetch = fetch): Promise<Analise> {
   const init = usarMock ? undefined : { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" };
   return buscarValidado(urlDaAnalise(usarMock), init, usarMock, buscar, validarAnalise, "a análise");
+}
+
+/** Análise com falhas. No mock, calcula com o gerador do mock (árvore fixa) em cima da rede já carregada. */
+export async function pedirAnalise(
+  pedido: Pedido, rede: Rede, signal?: AbortSignal, usarMock = usarMockPadrao(), buscar: typeof fetch = fetch,
+): Promise<Analise> {
+  if (usarMock) {
+    // import dinâmico: o gerador fica fora do bundle de quem usa o servidor
+    const { gerarAnalise } = await import("../../scripts/analise_sintetica.mjs");
+    const analise = gerarAnalise(rede, pedido);
+    const erros = validarAnalise(analise);
+    if (erros.length) throw new Error(`a análise do mock não segue o contrato (06-api): ${erros.slice(0, 3).join("; ")}`);
+    return analise;
+  }
+  const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pedido), signal };
+  return buscarValidado(urlDaAnalise(false), init, false, buscar, validarAnalise, "a análise");
 }

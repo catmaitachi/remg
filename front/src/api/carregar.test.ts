@@ -1,7 +1,8 @@
 import { expect, test } from "vitest";
 import analise from "../mocks/analise.json";
 import pequena from "../mocks/rede.pequena.json";
-import { carregarAnalise, carregarRede, urlDaAnalise, urlDaRede } from "./carregar";
+import { carregarAnalise, carregarRede, pedirAnalise, urlDaAnalise, urlDaRede } from "./carregar";
+import { validarAnalise } from "./validar";
 
 const resposta = (status: number, corpo: unknown) =>
   Promise.resolve(new Response(JSON.stringify(corpo), { status, headers: { "Content-Type": "application/json" } }));
@@ -53,4 +54,27 @@ test("análise: servidor fora do ar cita o endereço", async () => {
 
 test("análise fora do contrato é recusada", async () => {
   await expect(carregarAnalise(false, () => resposta(200, { fluxo: "x" }))).rejects.toThrow(/contrato/);
+});
+
+const pedidoT1 = { falhas: { arestas: ["t:1"], subestacoes: [] }, chavesFechadas: [] };
+
+test("pedirAnalise sem mock faz POST com o pedido inteiro", async () => {
+  let init: RequestInit | undefined;
+  const buscar = (_: RequestInfo | URL, i?: RequestInit) => { init = i; return resposta(200, analise); };
+  const controle = new AbortController();
+  await expect(pedirAnalise(pedidoT1, pequena as never, controle.signal, false, buscar as typeof fetch)).resolves.toEqual(analise);
+  expect(init?.method).toBe("POST");
+  expect(init?.body).toBe(JSON.stringify(pedidoT1));
+  expect(init?.signal).toBe(controle.signal);
+});
+
+test("pedirAnalise com mock calcula com o gerador", async () => {
+  const a = await pedirAnalise(pedidoT1, pequena as never, undefined, true);
+  expect(validarAnalise(a)).toEqual([]);
+  expect(a.semEnergia.pontos).toEqual(["p:2", "p:3"]);
+});
+
+test("pedirAnalise repassa o erro do servidor", async () => {
+  await expect(pedirAnalise(pedidoT1, pequena as never, undefined, false, () => resposta(500, { erro: "núcleo caiu" })))
+    .rejects.toThrow(/núcleo caiu/);
 });
