@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "vitest";
-import { validarRede } from "../src/api/validar";
-import { gerarRede, lerCsv } from "./mock_de_csv.mjs";
+import { validarAnalise, validarRede } from "../src/api/validar";
+import { gerarAnalise, gerarRede, lerCsv } from "./mock_de_csv.mjs";
 
 const CSV_EXEMPLO = {
   pontos: "id_osm,lat,lon\n10,-19.1234567,-43.9000000\n11,-19.1240000,-43.9010000\n",
@@ -46,4 +46,52 @@ test("rede.bh.json é fiel aos CSV", () => {
   const maior = linhas.reduce((a, b) => (b.coords.split(";").length > a.coords.split(";").length ? b : a));
   const esperado = maior.coords.split(";").map((par) => par.split(" ").map((x) => Number(Number(x).toFixed(6))));
   expect(bh.geometriaAT[`at:${maior.id_osm}`]).toEqual(esperado);
+});
+
+// Redes à mão para o gerador da análise: subestação em (0, 0), demanda 1 por ponto.
+const sub = ["s:1", "Sub", 0, 0, 1000];
+const p = (id: string, lat: number, lon: number) => [id, lat, lon, 1];
+const t = (id: string, de: string, para: string, cap = 1000) => [id, de, para, "trecho", cap];
+// t:bc escrito de c para b: os trechos não têm direção.
+const cadeia = {
+  area: "teste", geometriaAT: {}, subestacoes: [sub],
+  pontos: [p("p:a", 0, 0.001), p("p:b", 0, 0.002), p("p:c", 0, 0.003), p("p:x", 5, 5)],
+  arestas: [t("t:ab", "p:a", "p:b", 2), t("t:bc", "p:c", "p:b"), t("t:xx", "p:x", "p:x")],
+};
+const triangulo = {
+  area: "teste", geometriaAT: {}, subestacoes: [sub],
+  pontos: [p("p:a", 0, 0.001), p("p:b", 0, 0.002), p("p:c", 0.001, 0.002)],
+  arestas: [t("t:ab", "p:a", "p:b"), t("t:bc", "p:b", "p:c"), t("t:ca", "p:c", "p:a")],
+};
+const fluxoDe = (a: { fluxo: [string, number, number][] }) => Object.fromEntries(a.fluxo.map(([id, f, u]) => [id, { f, u }]));
+
+test("fluxo soma a demanda a jusante da subestação", () => {
+  const f = fluxoDe(gerarAnalise(cadeia, () => 0));
+  expect(f["t:ab"].f).toBe(2);
+  expect(f["t:bc"].f).toBe(1);
+});
+
+test("uso é fluxo/capacidade limitado a 1 e gargalo é uso ≥ 0,9", () => {
+  const a = gerarAnalise(cadeia, () => 0);
+  expect(fluxoDe(a)["t:ab"].u).toBe(1);
+  expect(a.gargalos).toEqual(["t:ab"]);
+});
+
+test("ponto sem alcance vira semEnergia", () => {
+  expect(gerarAnalise(cadeia, () => 0).semEnergia).toEqual({ pontos: ["p:x"], demanda: 1 });
+});
+
+test("totais e contrato", () => {
+  const a = gerarAnalise(cadeia, () => 0);
+  expect(a.demandaTotal).toBe(4);
+  expect(a.fluxoTotal).toBe(3);
+  expect(a.tempoMs).toBe(0);
+  expect(validarAnalise(a)).toEqual([]);
+});
+
+test("aresta do ciclo fora da árvore não entra em fluxo", () => {
+  const f = fluxoDe(gerarAnalise(triangulo, () => 0));
+  expect(f["t:ab"].f).toBe(1);
+  expect(f["t:ca"].f).toBe(1);
+  expect(f["t:bc"]).toBeUndefined();
 });
