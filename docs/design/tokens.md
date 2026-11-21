@@ -66,7 +66,16 @@ Escolhida pelo Lucas vendo a prévia com os dados reais (jeito C, com botão par
 | Perto do limite | 2 | 3,5 px | 4% |
 | Gargalo | 3 | 5 px | 18% |
 
-- **Desligar:** botão do raio nos controles; começa desligado com `prefers-reduced-motion`.
+- **Efeito elétrico no painel de Camadas:** switch "Animação do fluxo" (começa desligado com `prefers-reduced-motion`) e intensidade em 3 níveis segmentados. A Suave é a da prévia; o padrão é a Média, a pedido do Lucas ("a intensidade está baixa").
+
+| Nível | Ganho da onda (limitado a 1) | Largura da onda | Opacidade do raio |
+|---|---|---|---|
+| Suave | ×1 | 2 px | 60% |
+| Média (padrão) | ×1,8 | 3 px | 80% |
+| Forte | ×2,6 | 4 px | 100% |
+
+- **Bússola:** a agulha gira com o mapa e o clique volta o norte para cima (e tira a inclinação). Substituiu o "voltar para BH".
+- **Marcadores de gargalo:** gargalos encostados viram um marcador só (no trecho mais perto do centro do grupo), e no zoom atual some o marcador a menos de 28 px de outro.
 - **FPS medido (T19):** arrastando BH inteira com a animação ligada, **86,4 · 80,1 · 85,9** (3 medições de 4 s, arraste por eventos de mouse no próprio navegador, contando `requestAnimationFrame`, janela de 800×522, modo dev). Pelo mesmo método: animação desligada 99,4 · 99,2 · 97,6; de perto, com o raio, 126,6 · 127,8 · 125,8. Antes de tirar o brilho largo das linhas normais dava 41,2 · 40,7 · 41,7: o `MapboxOverlay` redesenha a cada quadro do arraste e a animação pede outro desenho.
 
 > Fonte da verdade: [`prototipo/estilo.css`](prototipo/estilo.css). Os testes [`cores.test.cjs`](prototipo/cores.test.cjs) conferem contraste e daltonismo: `node --test docs/design/prototipo/`.

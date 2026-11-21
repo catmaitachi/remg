@@ -5,7 +5,7 @@ import "./tela/tela.css";
 import { carregarAnalise, carregarRede } from "./api/carregar";
 import type { Analise, Rede } from "./api/tipos";
 import { animacaoInicial } from "./mapa/animacao";
-import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, type Visiveis } from "./mapa/camadas";
+import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, type Intensidade, type Visiveis } from "./mapa/camadas";
 import { CamadasDeck } from "./mapa/CamadasDeck";
 import type { Tema } from "./mapa/cores";
 import { Barra } from "./tela/Barra";
@@ -47,6 +47,7 @@ type Carga<T> = { ok: T } | { erro: string } | null;
 export default function App() {
   const [tema, trocarTema] = useTema();
   const [animando, alternarAnimacao] = useAnimacao();
+  const [intensidade, setIntensidade] = useState<Intensidade>("media");
   const [rede, setRede] = useState<Carga<Rede>>(null);
   // A análise é opcional: sem ela o mapa fica em cinza e a barra mostra "—".
   const [analise, setAnalise] = useState<Carga<Analise>>(null);
@@ -73,11 +74,11 @@ export default function App() {
         attributionControl={{ compact: true, customAttribution: "© OpenStreetMap contributors" }}
         style={{ position: "fixed", inset: 0 }}
       >
-        <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} />
+        <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} intensidade={intensidade} />
       </Map>
 
       <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
-        animando={animando} aoAlternarAnimacao={alternarAnimacao} />
+        animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
 
       {redeOk && <Barra area={redeOk.area} analise={analiseOk} usandoMock={USANDO_MOCK} />}
       {redeOk && <Legenda tema={tema} />}

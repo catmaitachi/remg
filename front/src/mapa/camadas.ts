@@ -4,6 +4,7 @@ import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
 import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
 import { escolherRaio, montarRaio } from "./raio";
+import { agruparGargalos } from "./alertas";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
 
@@ -16,7 +17,7 @@ export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subest
 
 export type LonLat = [number, number];
 export interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido }
-interface Marco { id: string; posicao: LonLat }
+export interface Marco { id: string; posicao: LonLat }
 export interface Dados {
   trechos: Caminho[]; comFluxo: Caminho[]; destaques: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
   linhasAT: Caminho[]; chaves: Marco[]; subestacoes: Subestacao[];
@@ -49,7 +50,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
     trechos, gargalos, chaves, subestacoes: rede.subestacoes,
     comFluxo: trechos.filter((t) => t.faixa !== null),
     destaques: trechos.filter((t) => t.faixa === "alerta" || t.faixa === "gargalo"),
-    alertas: gargalos.map((g) => ({ id: g.id, posicao: meio(g.path) })),
+    alertas: agruparGargalos(gargalos),
     linhasAT: Object.entries(rede.geometriaAT).map(([id, coords]) => ({
       id, path: coords.map(([lat, lon]) => [lon, lat] as LonLat), faixa: null,
     })),
@@ -72,26 +73,40 @@ const BRILHO: Record<Faixa, { largura: number; alfa: Record<Tema, number> }> = {
 /** O que muda a cada quadro da animação. `limites` = [oeste, sul, leste, norte]. */
 export interface Quadro { tempo: number; zoom: number; limites: [number, number, number, number] }
 
+/** Intensidade dos efeitos, escolhida no painel de camadas. A suave é a da prévia aprovada. */
+export type Intensidade = "suave" | "media" | "forte";
+export const INTENSIDADE: Record<Intensidade, { ganho: number; largura: number; alfaRaio: number }> = {
+  suave: { ganho: 1, largura: 2, alfaRaio: 153 },
+  media: { ganho: 1.8, largura: 3, alfaRaio: 204 },
+  forte: { ganho: 2.6, largura: 4, alfaRaio: 255 },
+};
+export interface Opcoes {
+  intensidade?: Intensidade;
+  /** marcadores de gargalo já espalhados para o zoom atual; sem isso, todos os de `Dados.alertas` */
+  alertas?: Marco[];
+}
+
 const EXTENSAO_ONDA = new ExtensaoOnda();
 const SOMA_LUZ = {
   blend: true, blendColorSrcFactor: "one", blendColorDstFactor: "one", blendAlphaSrcFactor: "one", blendAlphaDstFactor: "one",
 } as const;
 
 /** Camadas que só existem com a animação ligada; entram logo acima dos trechos. */
-function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>) {
+function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>, intensidade: Intensidade) {
+  const forca = INTENSIDADE[intensidade];
   const { fios, faiscas } = montarRaio(escolherRaio(d.comFluxo, quadro), quadro);
   return [
     new PathLayer<Caminho, OndaProps<Caminho>>({
       id: "ondas", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => cor[c.faixa!], updateTriggers: { getColor: tema },
-      getWidth: 2, widthUnits: "pixels", widthMinPixels: 1,
-      extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro",
+      getWidth: forca.largura, widthUnits: "pixels", widthMinPixels: 1,
+      extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro", ganho: forca.ganho,
       getOnda: (c) => [c.sentido!.tempoInicio, c.sentido!.comprimento, c.sentido!.positivo ? 1 : -1, INDICE_DA_FAIXA[c.faixa!]],
       parameters: tema === "escuro" ? SOMA_LUZ : {},
     }),
     new PathLayer<Caminho>({
       id: "raio", data: fios, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: (c) => [...cor[c.faixa!], 153], getWidth: 1, widthUnits: "pixels", jointRounded: true,
+      getColor: (c) => [...cor[c.faixa!], forca.alfaRaio], updateTriggers: { getColor: intensidade }, getWidth: 1, widthUnits: "pixels", jointRounded: true,
     }),
     new PathLayer<Caminho>({
       id: "faiscas", data: faiscas, visible: visiveis.distribuicao, getPath: (c) => c.path,
@@ -100,7 +115,8 @@ function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadr
   ];
 }
 
-export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null) {
+export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null, opcoes: Opcoes = {}) {
+  const intensidade = opcoes.intensidade ?? "media", alertas = opcoes.alertas ?? d.alertas;
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
   const fundo = rgb(p.fundo);
@@ -139,16 +155,16 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       getRadius: 7, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
     }),
     new ScatterplotLayer<Marco>({
-      id: "gargalos-alerta", data: d.alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
+      id: "gargalos-alerta", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getFillColor: cor.gargalo, getLineColor: fundo, stroked: true,
       getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
     }),
     new TextLayer<Marco>({
-      id: "gargalos-alerta-texto", data: d.alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
+      id: "gargalos-alerta-texto", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getText: () => "!", getColor: [255, 255, 255], getSize: 13, sizeUnits: "pixels",
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
-  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, tema, quadro, cor));
+  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, tema, quadro, cor, intensidade));
   return camadas;
 }

@@ -185,3 +185,24 @@ test("com animação, o brilho parado fica só em alerta e gargalo", () => {
   expect(comQuadro().brilho.props.data).toBe(animado); // mesma referência: não remonta a cada quadro
   expect(porId().brilho.props.data).toBe(dados.comFluxo);
 });
+
+test("intensidade: mais forte = onda com mais ganho, mais larga, raio mais opaco", () => {
+  const perto: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
+  const em = (intensidade: "suave" | "media" | "forte") =>
+    Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "escuro", perto, { intensidade }).map((c) => [c.id, c])) as Record<string, any>;
+  const [s, m, f] = [em("suave"), em("media"), em("forte")];
+  expect(s.ondas.props.ganho).toBeLessThan(m.ondas.props.ganho);
+  expect(m.ondas.props.ganho).toBeLessThan(f.ondas.props.ganho);
+  expect(s.ondas.props.getWidth).toBeLessThan(f.ondas.props.getWidth);
+  const alfa = (c: Record<string, any>) => c.raio.props.getColor(c.raio.props.data[0])[3];
+  expect(alfa(s)).toBeLessThan(alfa(f));
+  // padrão = média
+  expect(comQuadro().ondas.props.ganho).toBe(m.ondas.props.ganho);
+});
+
+test("marcadores de gargalo podem vir espalhados de fora (zoom atual)", () => {
+  const alertas = [{ id: "x", posicao: [-43.9, -19.9] as [number, number] }];
+  const c = Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", null, { alertas }).map((l) => [l.id, l])) as Record<string, any>;
+  expect(c["gargalos-alerta"].props.data).toBe(alertas);
+  expect(c["gargalos-alerta-texto"].props.data).toBe(alertas);
+});

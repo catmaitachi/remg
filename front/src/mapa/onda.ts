@@ -18,14 +18,16 @@ const f = (n: number) => (Number.isInteger(n) ? n.toFixed(1) : String(n));
 export const GLSL_ONDA = `
 const float ONDA_VEL[3] = float[3](${ONDA.VEL.map(f).join(", ")});
 const float ONDA_FORCA[3] = float[3](${ONDA.FORCA.map(f).join(", ")});
-float brilhoDaOnda(float chegada, int faixa, float t) {
+float brilhoDaOnda(float chegada, int faixa, float t, float ganho) {
   float p = fract((chegada - t) / ${f(ONDA.PERIODO)});
-  return p < ${f(ONDA.LARG)} ? sin(3.14159265 * p / ${f(ONDA.LARG)}) * ONDA_FORCA[faixa] : 0.0;
+  return p < ${f(ONDA.LARG)} ? min(1.0, sin(3.14159265 * p / ${f(ONDA.LARG)}) * ONDA_FORCA[faixa] * ganho) : 0.0;
 }
 `;
 
 export interface OndaProps<D = unknown> {
   tempo: number;
+  /** multiplica o brilho da onda (intensidade escolhida no painel); o resultado é limitado a 1 */
+  ganho: number;
   /** escuro: a camada soma luz (blend one/one), então a cor sai pré-multiplicada pelo brilho */
   aditivo: boolean;
   /**
@@ -53,6 +55,7 @@ vFaixa = instanceOnda.w;
 uniform ondaUniforms {
   float tempo;
   float aditivo;
+  float ganho;
 } onda;
 in float vTempoInicio;
 in float vComprimento;
@@ -67,7 +70,7 @@ ${GLSL_ONDA}
   "fs:DECKGL_FILTER_COLOR": `
   float q = vSentido < 0.0 ? 1.0 - ondaQ : ondaQ;
   int faixa = int(vFaixa + 0.5);
-  float b = brilhoDaOnda(vTempoInicio + vComprimento * q / ONDA_VEL[faixa], faixa, onda.tempo);
+  float b = brilhoDaOnda(vTempoInicio + vComprimento * q / ONDA_VEL[faixa], faixa, onda.tempo, onda.ganho);
   color = onda.aditivo > 0.5 ? vec4(color.rgb * b, b) : vec4(color.rgb, color.a * b);
 `,
 };
@@ -78,11 +81,12 @@ export class ExtensaoOnda extends LayerExtension {
   static defaultProps = {
     tempo: 0,
     aditivo: false,
+    ganho: 1,
     getOnda: { type: "accessor", value: [0, 0, 1, 0] },
   };
 
   getShaders() {
-    return { modules: [{ name: "onda", inject, uniformTypes: { tempo: "f32", aditivo: "f32" } }] };
+    return { modules: [{ name: "onda", inject, uniformTypes: { tempo: "f32", aditivo: "f32", ganho: "f32" } }] };
   }
 
   initializeState(this: Layer<OndaProps>) {
@@ -92,6 +96,6 @@ export class ExtensaoOnda extends LayerExtension {
   }
 
   updateState(this: Layer<OndaProps>, _params: UpdateParameters<Layer<OndaProps>>) {
-    this.setShaderModuleProps({ onda: { tempo: this.props.tempo, aditivo: this.props.aditivo ? 1 : 0 } });
+    this.setShaderModuleProps({ onda: { tempo: this.props.tempo, aditivo: this.props.aditivo ? 1 : 0, ganho: this.props.ganho } });
   }
 }

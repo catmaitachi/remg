@@ -1,12 +1,11 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMap } from "react-map-gl/maplibre";
-import type { Visiveis } from "../mapa/camadas";
-import { CENTRO_BH } from "../mapa/camadas";
+import type { Intensidade, Visiveis } from "../mapa/camadas";
 import { PALETA, type Tema } from "../mapa/cores";
 
 interface Props {
   visiveis: Visiveis; aoMudar: (v: Visiveis) => void; temChaves: boolean; tema: Tema; aoTrocarTema: () => void;
-  animando: boolean; aoAlternarAnimacao: () => void;
+  animando: boolean; aoAlternarAnimacao: () => void; intensidade: Intensidade; aoMudarIntensidade: (i: Intensidade) => void;
 }
 
 const Icone = ({ d }: { d: string }) => (
@@ -15,20 +14,29 @@ const Icone = ({ d }: { d: string }) => (
 );
 const MAIS = "M12 5v14M5 12h14";
 const MENOS = "M5 12h14";
-const CENTRO = "M12 3v3M12 18v3M3 12h3M18 12h3M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z";
 const CAMADAS = "M12 3 2 8l10 5 10-5-10-5zM2 16l10 5 10-5M2 12l10 5 10-5";
 const SOL = "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z";
 const LUA = "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z";
-// o traço do logo do REMG (raio na malha), no viewBox de 24
-const RAIO = "M18 4.8 6 12h12L6 19.2";
+const NIVEIS: [Intensidade, string][] = [["suave", "Suave"], ["media", "Média"], ["forte", "Forte"]];
 
 /** Fica fora do <Map>, dentro do MapProvider do App: acha o mapa pelo id "mapa". */
-export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, animando, aoAlternarAnimacao }: Props) {
+export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, animando, aoAlternarAnimacao, intensidade, aoMudarIntensidade }: Props) {
   const { mapa } = useMap();
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
   const idPainel = useId();
+  const idIntensidade = useId();
+  // rumo do mapa em graus: a agulha da bússola gira ao contrário para continuar apontando o norte
+  const [rumo, setRumo] = useState(0);
+
+  useEffect(() => {
+    if (!mapa) return;
+    const ler = () => setRumo(mapa.getBearing());
+    ler();
+    mapa.on("rotate", ler);
+    return () => { mapa.off("rotate", ler); };
+  }, [mapa]);
   const p = PALETA[tema];
 
   useEffect(() => {
@@ -55,16 +63,15 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
       <div className="vidro controles" role="toolbar" aria-label="Controles do mapa" aria-orientation="vertical">
         <button type="button" className="controle" aria-label="Aproximar" onClick={() => mapa?.zoomIn()}><Icone d={MAIS} /></button>
         <button type="button" className="controle" aria-label="Afastar" onClick={() => mapa?.zoomOut()}><Icone d={MENOS} /></button>
-        <button type="button" className="controle" aria-label="Voltar para Belo Horizonte"
-          onClick={() => mapa?.flyTo({ center: [CENTRO_BH.longitude, CENTRO_BH.latitude], zoom: CENTRO_BH.zoom })}>
-          <Icone d={CENTRO} />
+        <button type="button" className="controle" aria-label="Apontar para o norte" onClick={() => mapa?.resetNorthPitch()}>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style={{ transform: `rotate(${-rumo}deg)` }}>
+            <path d="M12 2.5 16 12H8z" fill="currentColor" />
+            <path d="M12 21.5 8 12h8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          </svg>
         </button>
         <button type="button" className="controle" onClick={aoTrocarTema}
           aria-label={tema === "escuro" ? "Usar tema claro" : "Usar tema escuro"}>
           <Icone d={tema === "escuro" ? SOL : LUA} />
-        </button>
-        <button type="button" className="controle" aria-label="Animação do fluxo" aria-pressed={animando} onClick={aoAlternarAnimacao}>
-          <Icone d={RAIO} />
         </button>
         <button ref={botao} type="button" className="controle" aria-label="Camadas" aria-expanded={aberto} aria-controls={idPainel}
           onClick={() => setAberto((a) => !a)}>
@@ -84,6 +91,25 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
             </li>
           ))}
         </ul>
+
+        <h2 className="painel-titulo painel-secao">Efeito elétrico</h2>
+        <ul className="painel-lista">
+          <li>
+            <svg width="26" height="14" viewBox="0 0 26 14" aria-hidden="true">
+              <path d="M17 1.5 9 7h8l-8 5.5" fill="none" stroke={p.normal} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="painel-nome">Animação do fluxo</span>
+            <button type="button" role="switch" className="switch" aria-checked={animando} aria-label="Animação do fluxo"
+              onClick={aoAlternarAnimacao} />
+          </li>
+        </ul>
+        <p className="painel-rotulo" id={idIntensidade}>Intensidade</p>
+        <div className="segmentos" role="group" aria-labelledby={idIntensidade}>
+          {NIVEIS.map(([nivel, nome]) => (
+            <button key={nivel} type="button" aria-pressed={intensidade === nivel} disabled={!animando}
+              onClick={() => aoMudarIntensidade(nivel)}>{nome}</button>
+          ))}
+        </div>
       </section>
     </div>
   );

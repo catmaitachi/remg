@@ -32,3 +32,7 @@ test("GLSL usa as mesmas constantes", () => {
     expect(GLSL_ONDA, v).toContain(v);
   }
 });
+
+test("o shader limita o brilho com ganho a 1", () => {
+  expect(GLSL_ONDA).toContain("float ganho");
+});
