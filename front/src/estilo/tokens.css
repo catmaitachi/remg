@@ -1,0 +1,74 @@
+/* Tokens da tela do REMG (design da T18): linguagem visual do Design System gov.br
+   (@govbr-ds/core 3.7.0, core-tokens.css), sem a marca. Cores do mapa ficam em src/mapa/cores.ts. */
+:root {
+  color-scheme: light dark;
+
+  --fonte: Rawline, Raleway, sans-serif;
+  --azul-70: #1351b4;
+  --azul-90: #071d41;
+  --azul-20: #c5d4eb;
+  --azul-10: #dbe8fb;
+  --cinza-80: #333333;
+  --cinza-50: #888888;
+  --branco: #ffffff;
+  --erro: #c4004f;
+
+  --raio-sm: 4px;
+  --raio-md: 8px;
+  --raio-lg: 16px;
+  --raio-pilula: 999em;
+  --espaco-1: 4px;
+  --espaco-2: 8px;
+  --espaco-3: 12px;
+  --espaco-4: 16px;
+  --espaco-6: 24px;
+
+  --texto-corpo: 16px;
+  --texto-rotulo: 14px;
+
+  --barra-largura: clamp(280px, 23vw, 340px);
+  --margem: 12px;
+
+  /* tema claro: vidro branco */
+  --mapa-fundo: #f2f3f0;
+  --vidro: rgb(255 255 255 / 0.66);
+  --vidro-forte: rgb(255 255 255 / 0.86);
+  --vidro-borda: rgb(255 255 255 / 0.7);
+  --vidro-sombra: 0 8px 32px rgb(7 29 65 / 0.18);
+  --vidro-brilho: inset 0 1px 0 rgb(255 255 255 / 0.9);
+  --grao: 0.35;
+  --texto: var(--cinza-80);
+  --texto-apoio: #555555;
+  --primario: var(--azul-70);
+  --primario-texto: var(--branco);
+  --trilho: var(--azul-10);
+  --bloco: rgb(19 81 180 / 0.07);
+  --separador: rgb(51 51 51 / 0.12);
+  --switch-desligado: var(--cinza-50);
+  --switch-botao: var(--branco);
+  --foco: var(--azul-70);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* tema escuro: vidro azul-marinho do modo escuro do gov.br */
+    --mapa-fundo: #0c0c0c;
+    --vidro: rgb(7 29 65 / 0.7);
+    --vidro-forte: rgb(7 29 65 / 0.9);
+    --vidro-borda: rgb(255 255 255 / 0.12);
+    --vidro-sombra: 0 8px 32px rgb(0 0 0 / 0.45);
+    --vidro-brilho: inset 0 1px 0 rgb(255 255 255 / 0.08);
+    --grao: 0.45;
+    --texto: var(--branco);
+    --texto-apoio: #c5d4eb;
+    --primario: var(--azul-20);
+    --primario-texto: var(--azul-90);
+    --trilho: rgb(255 255 255 / 0.15);
+    --bloco: rgb(255 255 255 / 0.07);
+    --separador: rgb(255 255 255 / 0.14);
+    --switch-desligado: rgb(255 255 255 / 0.3);
+    --switch-botao: var(--azul-90);
+    --foco: var(--azul-20);
+    --erro: #ff4f8b;
+  }
+}
