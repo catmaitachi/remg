@@ -17,27 +17,16 @@ Big-O: O(A·(V + E) log V), com A = número de chaves fechadas (um Dijkstra por 
 """
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 
 from core.dominio.rede_eletrica import RedeEletrica, kva_para_va, va_para_kva
 from core.grafo.alcance import Alcance
 from core.grafo.dijkstra import INFINITO, Dijkstra
 from core.grafo.dinic import Dinic
 from core.grafo.grafo import Grafo
+from core.portas.servico_de_analise import ResultadoRota
 
 # Menos que isso de demanda faltando é arredondamento do kVA ↔ VA, não religamento parcial.
 TOLERANCIA_KVA = 1e-6
-
-
-@dataclass
-class ResultadoRota:
-    """Mesmos campos do POST /rota-alternativa (06), menos o tempoMs, que o adaptador mede."""
-    chaves_para_fechar: list[str]  # na ordem em que foram escolhidas
-    caminho: list[str]             # ids das arestas de cada caminho achado, rodada por rodada
-    religado_pontos: int           # pontos que estavam sem energia e voltaram
-    religado_demanda: float        # kVA que o Dinic entrega nesses pontos com as chaves fechadas
-    parcial: bool                  # fechou chave, mas sobrou demanda sem atender
-    sem_energia: list[str]         # pontos que continuam sem energia mesmo com as chaves fechadas
 
 
 class RotaAlternativa:

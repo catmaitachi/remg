@@ -1,23 +1,12 @@
 """🌊 CalcularFluxo: fluxo total, fluxo e uso por aresta e gargalos (spec 04, T13)."""
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 
 from core.dominio.gargalo import eh_gargalo
 from core.dominio.rede_eletrica import RedeEletrica, va_para_kva
 from core.grafo.dinic import Dinic
 from core.grafo.grafo import Grafo
-
-
-@dataclass
-class ResultadoAnalise:
-    """Mesmos campos do POST /analise (06), menos o tempoMs, que o adaptador mede."""
-    fluxo_total: float                        # kVA que chegam em T
-    demanda_total: float                      # kVA pedidos por todos os pontos
-    fluxo: list[tuple[str, float, float]]     # (id, fluxo kVA, uso 0..1), só arestas com fluxo > 0
-    gargalos: list[str]
-    sem_energia: list[str]                    # pontos sem energia (a SimularFalha preenche)
-    demanda_sem_energia: float
+from core.portas.servico_de_analise import ResultadoAnalise
 
 
 class CalcularFluxo:
