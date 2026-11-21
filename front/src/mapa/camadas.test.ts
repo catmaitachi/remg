@@ -159,3 +159,10 @@ test("ondas: mistura aditiva só no escuro", () => {
 test("sem análise não há ondas", () => {
   expect(comQuadro("claro", prepararDados(rede, null)).ondas.props.data).toHaveLength(0);
 });
+
+test("com quadro de perto, raio e faíscas acima das ondas", () => {
+  const perto: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
+  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "escuro", perto).map((c) => c.id);
+  const i = ids.indexOf("trechos");
+  expect(ids.slice(i, i + 5)).toEqual(["trechos", "ondas", "raio", "faiscas", "linhas-at"]);
+});

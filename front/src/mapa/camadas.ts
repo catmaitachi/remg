@@ -3,6 +3,7 @@ import type { Analise, Rede, Subestacao } from "../api/tipos";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
 import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
+import { escolherRaio, montarRaio } from "./raio";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
 
@@ -77,6 +78,7 @@ const SOMA_LUZ = {
 
 /** Camadas que só existem com a animação ligada; entram logo acima dos trechos. */
 function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>) {
+  const { fios, faiscas } = montarRaio(escolherRaio(d.comFluxo, quadro), quadro);
   return [
     new PathLayer<Caminho, OndaProps<Caminho>>({
       id: "ondas", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
@@ -85,6 +87,14 @@ function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadr
       extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro",
       getOnda: (c) => [c.sentido!.tempoInicio, c.sentido!.comprimento, c.sentido!.positivo ? 1 : -1, INDICE_DA_FAIXA[c.faixa!]],
       parameters: tema === "escuro" ? SOMA_LUZ : {},
+    }),
+    new PathLayer<Caminho>({
+      id: "raio", data: fios, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => [...cor[c.faixa!], 153], getWidth: 1, widthUnits: "pixels", jointRounded: true,
+    }),
+    new PathLayer<Caminho>({
+      id: "faiscas", data: faiscas, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => [...cor[c.faixa!], 230], getWidth: 1, widthUnits: "pixels", capRounded: true,
     }),
   ];
 }
