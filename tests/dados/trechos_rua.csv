@@ -1,0 +1,4 @@
+id,de,para,comprimento_m,tipo_via
+1,101,102,111.19,residential
+2,102,103,104.62,primary
+3,103,104,111.19,tertiary_link
