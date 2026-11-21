@@ -33,7 +33,7 @@
 | D24 | 10/11 | 🌳 Rede sintética | **Gerada ao ligar** o servidor (semente fixa). `cintilante-cli exportar` grava a rede num arquivo **fora do git**, no formato de entrada da CLI | sem arquivo velho fora de sincronia com o código, e o benchmark (T22) ainda lê a rede real |
 | D25 | 10/11 | 🔌 API | Contrato do [06](06-api.md) **congelado**. Mudar = PR com o 06 e os mocks do front juntos | front e back trabalham em paralelo sem se desencontrar |
 | D26 | 19/11 | ⚙️ Núcleo | **Python feito à mão**, nas mesmas duas camadas (grafo genérico + domínio elétrico) e **sem módulo `pybind11`**: servidor e CLI importam o núcleo direto. Os **~3 s por cálculo** medidos (📊) são aceitos: a análise inicial roda uma vez, ao ligar o servidor, e Derrubar/Religar mostram "calculando…". Substitui a ~~D5~~ e a ~~D21~~. O `remg` já nasce assim (D27) | código mais fácil de entender e explicar por todo o grupo |
-| D27 | 21/11 | 🙅 Menos IA no git | Repositório novo (`catmaitachi/remg`): **nenhum commit com coautoria de IA** (V17 barra), sem label `ia-assistida` e **sem ficha ✍️**. Commits curtos `tipo: descrição` e tasks curtas. A IA continua declarada só em `docs/ia/registro.md` e no relatório (09). O entendimento fica no **README à mão** (D9) | decisão do grupo: menos presença de IA no histórico e núcleo em Python desde o começo |
+| D27 | 21/11 | 🙅 Menos IA no git | **Nenhum commit com coautoria de IA** (V17 barra), sem label `ia-assistida` e **sem ficha ✍️**. Commits curtos `tipo: descrição` e tasks curtas. A IA continua declarada só em `docs/ia/registro.md` e no relatório (09). O entendimento fica no **README à mão** (D9) | decisão do grupo: menos presença de IA no histórico |
 
 ## 🟡 Propostas (caminho padrão, pode ajustar)
 

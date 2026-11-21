@@ -6,8 +6,8 @@
 
 | Versão | Nome | Tasks | Pronto quando… | Meta |
 |---|---|---|---|---|
-| ~~v0.0~~ | 📚 Fundação | T00 | ✅ feita no [`catmaitachi/luzes`](https://github.com/catmaitachi/luzes) (histórico) | Seg 09/11 |
-| ~~v0.1~~ | 🧱 Base | T01 a T06 | ✅ feita no `luzes` e trazida para cá na migração (D27) | Qua 11/11 |
+| ~~v0.0~~ | 📚 Fundação | T00 | ✅ feita | Seg 09/11 |
+| ~~v0.1~~ | 🧱 Base | T01 a T06 | ✅ feita | Qua 11/11 |
 | **v0.2** | 🧮 Núcleo | T07 · T08 · T09 · T10 · T11 | grafo, BFS, Dijkstra e Dinic testados, e a rede de BH carregada no núcleo | Sáb 14/11 |
 | **v0.3** | ⚡ Análises | T12 · T13 · T14 · T15 · T16 · T17 | rede sintética, fluxo, gargalos, falha e rota alternativa respondendo pela API | Ter 17/11 |
 | **v0.4** | 🗺️ Tela completa | T18 · T19 · T20 · T21 | demo de ponta a ponta: ver o fluxo, derrubar e religar | Ter 17/11 |
