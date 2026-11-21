@@ -4,7 +4,7 @@ import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { carregarRede } from "./api/carregar";
 import type { Rede } from "./api/tipos";
-import { CENTRO_BH, estiloDoMapa, montarCamadas } from "./mapa/camadas";
+import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, montarCamadas, prepararDados } from "./mapa/camadas";
 
 function CamadasDeck(props: MapboxOverlayProps) {
   const overlay = useControl(() => new MapboxOverlay(props));
@@ -35,7 +35,7 @@ export default function App() {
   }, []);
 
   const camadas = useMemo(
-    () => (estado && "rede" in estado ? montarCamadas(estado.rede, escuro) : []),
+    () => (estado && "rede" in estado ? montarCamadas(prepararDados(estado.rede, null), VISIVEIS_INICIAL, escuro ? "escuro" : "claro") : []),
     [estado, escuro],
   );
 
