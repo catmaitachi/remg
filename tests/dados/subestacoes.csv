@@ -1,0 +1,3 @@
+id_osm,nome,lat,lon,tensoes,tipo
+201,Subestação Centro,-19.9005000,-43.9005000,138000;13800,distribution
+202,"Subestação Sul, Norte",-19.9020000,-43.9020000,,
