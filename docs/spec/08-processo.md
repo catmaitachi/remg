@@ -16,7 +16,6 @@
 - Área: `arquitetura` · `grafo` · `dominio` · `http` · `cli` · `dados` · `front` · `processo` · `uml` · `relatorio` · `apresentacao`
 - Tipo: `revisao` (decisão em grupo) · `feature-principal` (exige seção do README escrita à mão, e o verificador checa)
 - Degrau: `essencial` · `desejavel` · `extra`
-- `ia-assistida`: o PR teve ajuda de IA (ver [09](09-uso-de-ia.md))
 
 ## ✔️ Definição de pronto
 

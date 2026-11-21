@@ -10,8 +10,8 @@
 | 2. 🗂️ Card → Fazendo | 👤 você (o agente lembra) | arrastar o card. É o **único passo manual do quadro**, porque mover card exige token de projeto (D20) |
 | 3. ✍️ Commits | ✅ hooks (já existe) | o verificador barra o que estiver fora da regra |
 | 4. 🔀 Abrir o PR | 🤖 agente: `gh pr create --fill` | — |
-| 5. 🪄 Arrumar o PR | ☁️ Action **automática** | põe `Closes #N` (vem do nome da branch) · copia a milestone da issue · põe o label `ia-assistida` se algum commit tem coautoria de IA · pede revisão a um colega (rodízio pela [lista da equipe](../../.github/equipe.txt)) |
-| 6. 🛡️ Check | ☁️ Action (já existe) + **build** | verificador + testes do núcleo (`python -m unittest discover -s tests -t .`, se houver `tests/**/test_*.py`) + build do C++ (só até a T33, se existir `CMakeLists.txt`) + build do front (se existir `front/package.json`). É o mesmo check obrigatório, então o build já nasce exigido |
+| 5. 🪄 Arrumar o PR | ☁️ Action **automática** | põe `Closes #N` (vem do nome da branch) · copia a milestone da issue · pede revisão a um colega (rodízio pela [lista da equipe](../../.github/equipe.txt)) |
+| 6. 🛡️ Check | ☁️ Action (já existe) + **build** | verificador + testes do verificador, das automações e do prep_osm + testes do núcleo e do servidor (`python -m unittest discover -s tests -t .` e `-s adapters/http`) + build do front (se existir `front/package.json`). É o mesmo check obrigatório, então o build já nasce exigido |
 | 7. 🗂️ Card → Revisão | ☁️ quadro (já existe) | PR ligado à issue move o card |
 | 8. ✅ Merge | 👤 colega aprova · você mergeia | a issue fecha sozinha (`Closes #N`) · card → Pronto · **branch apagada no GitHub** (configuração do repositório) |
 | 9. 🏷️ Release | ☁️ Action **automática** | fechou a última issue aberta da milestone → **fecha a milestone e cria a tag `vX.Y.0`** na mesma execução |
@@ -22,7 +22,7 @@
 | Peça | Tipo | Testada por |
 |---|---|---|
 | `tools/dev/comecar.py` | script (stdlib + `gh`) | testes das partes puras: nome da branch, leitura das dependências |
-| `tools/dev/arrumar_pr.py` | script do Action | testes das partes puras: `Closes`, label, escolha do revisor |
+| `tools/dev/arrumar_pr.py` | script do Action | testes das partes puras: `Closes` e escolha do revisor |
 | `tools/dev/release.py` | script do Action | testes: versão a partir do título, "milestone vazia?" |
 | `.github/equipe.txt` | lista de logins, um por linha | — |
 | `.github/workflows/verificar.yml` | ganha o job **arrumar** antes do check, e os passos de build | primeiro PR depois desta mudança |

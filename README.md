@@ -7,21 +7,11 @@ Trabalho Prático de Grafos, tema 4. 📚 Spec completa em [`docs/spec/`](docs/s
 
 ### 🐍 Núcleo e servidor
 
-> 🐍 O núcleo está passando para Python (D26). Até a T33 fechar, compile como abaixo.
+**Precisa ter:** Python 3.12 ou mais novo e git. Não tem nada para compilar nem instalar: o núcleo só usa a biblioteca padrão.
 
-**Precisa ter:** CMake 3.20 ou mais novo, g++ (no Windows, o MinGW 15), Python 3 e git. A internet é usada só na primeira configuração, para baixar o `pybind11` e o `doctest`.
+1. **Testes:** `python -m unittest discover -s tests -t .` (núcleo) e `python -m unittest discover -s adapters/http` (servidor).
+2. **Servidor:** `python adapters/http/servidor.py` e abra <http://localhost:8080/api/saude>. A resposta é `{"ok": true}`.
 
-1. **Configurar e compilar.** No Windows sem Visual Studio, o `-G` é obrigatório (sem ele o CMake procura o VS e falha):
-   ```bash
-   cmake -B build -G "MinGW Makefiles"
-   cmake --build build
-   ```
-   No Linux e no Mac: `cmake -B build && cmake --build build`.
-   A configuração também liga os hooks do verificador.
-2. **Testes:** `ctest --test-dir build --output-on-failure` roda os testes do núcleo e do servidor.
-3. **Servidor:** `python adapters/http/servidor.py` e abra <http://localhost:8080/api/saude>. A resposta é `{"ok": true}`.
-
-- 🧩 `módulo cintilante_py não encontrado` → falta compilar (passo 1). O módulo é gravado em `adapters/http/`.
 - 🔌 `não deu para abrir a porta 8080` → outro programa está usando a porta. Feche-o e rode de novo.
 
 ### 🗺️ Front
@@ -41,8 +31,9 @@ Trabalho Prático de Grafos, tema 4. 📚 Spec completa em [`docs/spec/`](docs/s
 
 ## 🛡️ Regras do repositório
 
-- Os hooks do verificador ligam sozinhos (Claude Code, CMake (até a T33) ou `npm install`). Para ligar à mão: `git config core.hooksPath .githooks`
+- Os hooks do verificador ligam sozinhos (Claude Code ou `npm install`). Para ligar à mão: `git config core.hooksPath .githooks`
 - Todo PR passa pelo check **verificar** e precisa de 1 aprovação. Ninguém commita direto na `main`.
+- Commit `tipo: descrição`, curto e **sem coautoria de IA** (D27): o hook barra o `Co-Authored-By` de IA. O uso de IA vai só em [`docs/ia/registro.md`](docs/ia/registro.md).
 - Detalhes: [`docs/spec/11-verificador.md`](docs/spec/11-verificador.md) · regras para IA: [`AGENTS.md`](AGENTS.md)
 
 ## 🏛️ Arquitetura
@@ -56,6 +47,6 @@ Núcleo Python feito à mão (D26), com servidor, CLI e leitura de dados como ad
 
 ## ✍️ Como o sistema funciona
 
-> Cada seção abaixo é **escrita à mão por quem fez a feature** (regra D9), depois que ela funciona, e termina com `✍️ Escrito por: <nome>`. A IA não edita esta parte: o hook do Claude e o verificador barram.
+> Cada seção abaixo é **escrita à mão por quem fez a feature** (regra D9), depois que ela funciona, e termina com `✍️ Escrito por: <nome>`. A IA não edita esta parte: a guarda do Claude barra.
 
 <!-- ✍️ ESCRITO À MÃO: daqui para baixo a IA não edita -->

@@ -15,7 +15,7 @@
 | | Uso |
 |---|---|
 | ✅ Pode | discutir ideias e arquitetura · explicar conceitos e algoritmos · revisar código e apontar bugs · sugerir casos de teste · rascunhar documentação técnica (como esta spec) · ajudar no front, nos adaptadores e nos scripts |
-| 🟡 Com cuidado | **núcleo de grafos** (D18): a IA **pode escrever o código** de `core/grafo/`, mas cada função tem uma **ficha ✍️ preenchida à mão** por quem commita, provando que entende o algoritmo ([04](04-algoritmos.md#-ficha-de-entendimento)) |
+| 🟡 Com cuidado | **núcleo de grafos**: a IA **pode ajudar no código** de `core/grafo/`, mas quem commita explica o algoritmo **à mão no README** (D9, D27) |
 | 🚫 Não pode | escrever ou reescrever a **seção do README da sua feature** (D9) · inventar números, medições ou resultados · entrar texto de IA no relatório sem revisão e sem estar declarado |
 
 ## 📒 Registro
@@ -34,10 +34,10 @@ Arquivo: [`docs/ia/registro.md`](../ia/registro.md). Uma linha por uso **relevan
 
 > 💡 O **❌ Rejeitado / mudado** é a coluna mais importante: é ela que mostra a parceria, e não só a aceitação.
 
-## 🏷️ Marcação no Git
+## 🏷️ Nada de IA no Git (D27)
 
-- PR com ajuda de IA recebe o label **`ia-assistida`**.
-- Commit em que a IA escreveu parte do código leva o trailer `Co-Authored-By:` com o nome da ferramenta.
+- Nenhum commit leva `Co-Authored-By:` de ferramenta de IA: o hook `commit-msg` e o CI barram (V17).
+- PR sem label de IA. A declaração fica só no registro e no relatório.
 
 ## 📑 No relatório: seção "Papel da IA"
 

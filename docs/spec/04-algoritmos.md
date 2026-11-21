@@ -2,32 +2,7 @@
 
 > [!IMPORTANT]
 > Tudo aqui é **implementado no projeto em Python** (D26), sem biblioteca de grafo. O NetworkX entra **só** no benchmark, como gabarito e para comparar tempo.
-> A IA pode ajudar a escrever o código, mas **cada função tem uma ficha ✍️ preenchida à mão** (abaixo).
-
-## ✍️ Ficha de entendimento
-
-✅ **D18.** A IA pode escrever o código de `core/grafo/`. Em troca, **toda função definida ali** tem, logo acima, uma ficha preenchida **à mão** por quem commita. Ela é a prova de que a pessoa entende o algoritmo, e é a base da parte dela no vídeo e no relatório.
-
-```python
-# ✍️ ENTENDIMENTO · por: Laura
-# O que faz:      acha o fluxo máximo de S até T
-# Como funciona:  BFS monta os níveis; uma DFS empurra fluxo só para o
-#                 nível seguinte; repete até T sumir dos níveis
-# Complexidade:   O(V²·E): cada fase custa O(V·E) e há no máximo V fases
-# Exemplo:        grafo do papel em tests/test_dinic.py → fluxo 23
-# Limitação:      energia não escolhe caminho assim na vida real
-def fluxo_maximo(self, g, s, t):
-```
-
-| Regra | Detalhe |
-|---|---|
-| 📍 Onde | imediatamente acima de cada função **definida** (com corpo) em `core/grafo/`: em `.py`, um bloco de linhas `#` logo acima do `def` (e dos decoradores). Vale para todo `def` do módulo e de classe, inclusive `__init__`; `def` dentro de outro `def` não conta. Até a T33, os `.cpp`/`.hpp` que restam seguem com `/* … */` |
-| ✍️ Campos | `por:` + O que faz · Como funciona · Complexidade · Exemplo · Limitação. Um campo pode ocupar várias linhas |
-| ➖ Funções triviais | **Exemplo** e **Limitação** aceitam `—` (não se aplica). Os outros campos são sempre obrigatórios |
-| 🤖 A IA | pode escrever o código e deixar o **modelo vazio** (`___` em todos os campos), mas **não preenche** a ficha |
-| 🛡️ Quem cobra | verificador **V14** (função sem ficha, com campo vazio ou com `___` → commit barrado) · **V15** (commit com coautoria de IA que mexe em ficha → barrado) · guarda **G2** (o Claude é barrado se tentar preencher) |
-
-> ⚠️ **Limite honesto:** o script não prova que **você** escreveu a ficha, só que ela existe, está completa e não veio num commit marcado como IA. O resto é a revisão do colega e o vídeo, onde quem assinou a ficha explica a função.
+> Quem faz um algoritmo explica como ele funciona **à mão no README** (D9, D27).
 
 ## 🗺️ Mapa rápido
 

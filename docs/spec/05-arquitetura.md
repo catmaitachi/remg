@@ -12,7 +12,7 @@
 <details>
 <summary>✏️ Fonte editável (Mermaid)</summary>
 
-Mudou? Gere o SVG de novo com a skill `diagram-design` (ver [design](../superpowers/specs/2026-11-10-diagrama-hexagono-design.md)).
+Mudou? Gere o SVG de novo a partir deste Mermaid.
 
 ```mermaid
 flowchart LR
@@ -83,7 +83,7 @@ flowchart LR
 ## 📁 Pastas do repositório 🟡
 
 ```text
-luzes/
+remg/
 ├── core/                  🐍 núcleo Python (feito à mão, pacote com __init__.py em cada camada)
 │   ├── grafo/             🧮 Grafo, Dinic, Tarjan, Dijkstra, BFS, HeapBinaria
 │   ├── dominio/           ⚡ RedeEletrica, Subestacao, Trecho, Chave
@@ -112,9 +112,8 @@ luzes/
     └── relatorio/         📑 LaTeX SBC
 ```
 
-## ▶️ Como rodar (depois da T33)
+## ▶️ Como rodar
 
 - Sem compilar. Python 3.12 e mais nada para o núcleo.
 - Testes do núcleo: `python -m unittest discover -s tests -t .`
 - Servidor: `python adapters/http/servidor.py`
-- Até a T33 fechar, o código que já existe ainda é C++: siga o README para compilar.
