@@ -12,6 +12,3 @@ __pycache__/
 
 # esboços do brainstorm (superpowers)
 .superpowers/
-
-# Módulo compilado pelo CMake (T03)
-adapters/http/cintilante_py*

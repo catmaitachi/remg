@@ -42,19 +42,15 @@ jobs:
         run: |
           python -m unittest discover -s tools/verificar
           python -m unittest discover -s tools/dev
+          python -m unittest discover -s tools/prep_osm
       - name: Regras do projeto no PR
         env:
           GH_TOKEN: ${{ github.token }}
         run: python tools/verificar/verificar.py --pr
-      - name: Testes do núcleo Python
-        if: hashFiles('tests/**/test_*.py') != ''
-        run: python -m unittest discover -s tests -t .
-      - name: Build e testes do núcleo C++
-        if: hashFiles('CMakeLists.txt') != ''
+      - name: Testes do núcleo e do servidor
         run: |
-          cmake -B build
-          cmake --build build
-          ctest --test-dir build --output-on-failure
+          python -m unittest discover -s tests -t .
+          python -m unittest discover -s adapters/http
       - uses: actions/setup-node@v4
         if: hashFiles('front/package.json') != ''
         with:
