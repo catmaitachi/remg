@@ -104,22 +104,27 @@ classDiagram
             +pontos
             +trechos
             +chaves
-            +linhasAT
-            +montarGrafo() Grafo
-            +indice(id) int
-            +idExterno(indice) string
+            +linhas_at
+            +pontos_de_suprimento
+            +montar_grafo(falhas, chaves_fechadas) Grafo
+            +indice(id_externo) int
+            +id_externo(indice) str
+            +arco(id_aresta) int
+            +id_do_arco(e) str
         }
-        class Subestacao { +nome +capacidadeKVA }
-        class Ponto { +lat +lon +demandaKVA }
-        class Trecho { +capacidadeKVA +comprimento +emFalha }
+        class Subestacao { +nome +capacidade_kva +ponto_raiz +tipo +em_falha }
+        class Ponto { +lat +lon +demanda_kva }
+        class PontoDeSuprimento { +lat +lon }
+        class Trecho { +de +para +capacidade_kva +comprimento_m +em_falha }
         class Chave { +aberta }
-        class LinhaAT { +tensao +capacidadeKVA }
+        class LinhaAT { +tensao +capacidade_kva +coords +em_falha }
     }
     Trecho <|-- Chave
     RedeEletrica "1" *-- "*" Subestacao
     RedeEletrica "1" *-- "*" Ponto
     RedeEletrica "1" *-- "*" Trecho
     RedeEletrica "1" *-- "*" LinhaAT
+    RedeEletrica "1" *-- "*" PontoDeSuprimento : cria nas pontas de AT
     RedeEletrica ..> Grafo : monta
     Dinic ..> Grafo
     Tarjan ..> Grafo
