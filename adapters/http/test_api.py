@@ -2,12 +2,14 @@
 
 import http.client
 import json
+import socket
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
 
-from api import criar_servidor
+from api import calcular_na_vez, cliente_desistiu, criar_servidor
 from core.portas.servico_de_analise import (DesenhoDaRede, ResultadoAnalise, ResultadoCriticos,
                                             ResultadoRota, Saude, ServicoDeAnalise)
 
@@ -188,6 +190,82 @@ class TestApi(unittest.TestCase):
         self.assertEqual(h["Access-Control-Allow-Origin"], "http://localhost:5173")
         self.assertEqual(h["Access-Control-Allow-Methods"], "GET, POST, OPTIONS")
         self.assertEqual(h["Access-Control-Allow-Headers"], "Content-Type")
+
+
+class TestFila(unittest.TestCase):
+    def test_cliente_desistiu(self):
+        a, b = socket.socketpair()
+        try:
+            self.assertFalse(cliente_desistiu(a))
+            b.close()
+            self.assertTrue(cliente_desistiu(a))
+        finally:
+            a.close()
+
+    def test_na_vez_pula_quem_desistiu(self):
+        fila, (a, b) = threading.Lock(), socket.socketpair()
+        b.close()
+        chamou = []
+        self.assertIsNone(calcular_na_vez(fila, a, lambda: chamou.append(1)))
+        self.assertEqual(chamou, [])
+        self.assertTrue(fila.acquire(blocking=False))
+        a.close()
+
+    def test_na_vez_calcula_quem_espera(self):
+        fila, (a, b) = threading.Lock(), socket.socketpair()
+        self.assertEqual(calcular_na_vez(fila, a, lambda: 42), 42)
+        self.assertTrue(fila.acquire(blocking=False))
+        a.close()
+        b.close()
+
+    def test_pedido_abandonado_na_fila_e_pulado(self):
+        servico = ServicoLento()
+        servidor = criar_servidor(0, servico)
+        porta = servidor.server_address[1]
+        base = f"http://127.0.0.1:{porta}"
+        threading.Thread(target=servidor.serve_forever, daemon=True).start()
+        respostas = {}
+
+        def pedir_em_paralelo(nome):
+            corpo = json.dumps({"falhas": {"arestas": [nome]}})
+            t = threading.Thread(target=lambda: respostas.__setitem__(nome, pedir(base, "/api/analise", corpo)[0]))
+            t.start()
+            return t
+
+        try:
+            a = pedir_em_paralelo("t:A")
+            self.assertTrue(servico.a_entrou.wait(5))
+            corpo = json.dumps({"falhas": {"arestas": ["t:B"]}}).encode()
+            b = socket.create_connection(("127.0.0.1", porta), timeout=5)
+            b.sendall(b"POST /api/analise HTTP/1.1\r\nHost: x\r\nContent-Type: application/json\r\n"
+                      + f"Content-Length: {len(corpo)}\r\n\r\n".encode() + corpo)
+            time.sleep(0.3)  # o servidor lê o B e fica esperando a vez
+            b.close()
+            c = pedir_em_paralelo("t:C")
+            time.sleep(0.3)
+        finally:
+            servico.solta_a.set()
+        a.join(5)
+        c.join(5)
+        time.sleep(1)  # dá tempo de um B que (errado) fosse calculado aparecer nas chamadas
+        servidor.shutdown()
+        servidor.server_close()
+        self.assertEqual(respostas, {"t:A": 200, "t:C": 200})
+        self.assertEqual([ch[0] for ch in servico.chamadas], [[], ["t:A"], ["t:C"]])
+
+
+class ServicoLento(ServicoFalso):
+    """Segura o pedido t:A até o teste soltar: os outros ficam na fila atrás dele."""
+
+    def __init__(self):
+        super().__init__()
+        self.a_entrou, self.solta_a = threading.Event(), threading.Event()
+
+    def analisar(self, arestas_caidas, subestacoes_caidas, chaves_fechadas):
+        if arestas_caidas == ["t:A"]:
+            self.a_entrou.set()
+            self.solta_a.wait(5)
+        return super().analisar(arestas_caidas, subestacoes_caidas, chaves_fechadas)
 
 
 if __name__ == "__main__":

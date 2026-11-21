@@ -7,9 +7,14 @@ português e o CORS para o front em localhost.
 
 import json
 import re
-import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import select
+import socket
 import sys
+import threading
+import time
+from collections.abc import Callable
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import TypeVar
 
 from core.portas.servico_de_analise import (DesenhoDaRede, ResultadoAnalise, ResultadoCriticos,
                                             ResultadoRota, ServicoDeAnalise)
@@ -17,6 +22,7 @@ from core.portas.servico_de_analise import (DesenhoDaRede, ResultadoAnalise, Res
 MAX_CORPO = 1_000_000  # bytes
 # Só o front rodando nesta máquina (Vite dev em 5173, preview em 4173…) pode chamar a API.
 ORIGEM_LOCAL = re.compile(r"http://(localhost|127\.0\.0\.1)(:\d+)?")
+T = TypeVar("T")
 
 
 # ---------- pedido ----------
@@ -79,6 +85,29 @@ def em_bytes(corpo: dict) -> bytes:
     return json.dumps(corpo, ensure_ascii=False).encode()
 
 
+# ---------- fila de um ----------
+
+def cliente_desistiu(sock: socket.socket) -> bool:
+    """O navegador já fechou a conexão (o fetch foi cancelado por um clique novo)?
+
+    O corpo do pedido já foi lido; se o socket fica legível e o peek devolve b"", o outro lado fechou.
+    """
+    try:
+        legivel, _, _ = select.select([sock], [], [], 0)
+        return bool(legivel) and sock.recv(1, socket.MSG_PEEK) == b""
+    except OSError:  # ConnectionResetError e afins: também desistiu
+        return True
+
+
+def calcular_na_vez(fila: threading.Lock, sock: socket.socket, calcular: Callable[[], T]) -> T | None:
+    """Um cálculo por vez (~2,5 s em BH, e o GIL não deixa dois andarem juntos). Quem desistiu
+    enquanto esperava a vez é pulado: None, sem chamar o núcleo."""
+    with fila:
+        if cliente_desistiu(sock):
+            return None
+        return calcular()
+
+
 # ---------- servidor ----------
 
 class Servidor(ThreadingHTTPServer):
@@ -88,6 +117,7 @@ class Servidor(ThreadingHTTPServer):
 
     def __init__(self, endereco, servico: ServicoDeAnalise) -> None:
         self.servico = servico
+        self.fila = threading.Lock()
         # A rede não muda e a análise vazia é a primeira tela: as duas ficam prontas ao ligar (D26).
         self.rede = em_bytes(rede_json(servico.rede()))
         vazia, ms = medir(lambda: servico.analisar([], [], []))
@@ -122,15 +152,20 @@ class Pedido(BaseHTTPRequestHandler):
     def do_POST(self):
         self._atender({"/api/analise": self._analise, "/api/rota-alternativa": self._rota}.get(self.path))
 
-    def _analise(self) -> bytes:
+    def _analise(self) -> bytes | None:
         pedido = self._ler_pedido()
         if not any(pedido):
             return self.server.analise_vazia
-        return em_bytes(analise_json(*medir(lambda: self.server.servico.analisar(*pedido))))
+        return self._na_vez(lambda: analise_json(*medir(lambda: self.server.servico.analisar(*pedido))))
 
-    def _rota(self) -> bytes:
+    def _rota(self) -> bytes | None:
         pedido = self._ler_pedido()
-        return em_bytes(rota_json(*medir(lambda: self.server.servico.rota_alternativa(*pedido))))
+        return self._na_vez(lambda: rota_json(*medir(lambda: self.server.servico.rota_alternativa(*pedido))))
+
+    def _na_vez(self, calcular: Callable[[], dict]) -> bytes | None:
+        # medir fica dentro de calcular: o tempoMs não conta a espera na fila
+        resposta = calcular_na_vez(self.server.fila, self.connection, calcular)
+        return None if resposta is None else em_bytes(resposta)
 
     def _ler_pedido(self) -> tuple[list[str], list[str], list[str]]:
         try:
@@ -152,6 +187,9 @@ class Pedido(BaseHTTPRequestHandler):
         except Exception as erro:  # o servidor não pode cair por um pedido
             self.log_error("erro interno: %r", erro)
             return self._responder(500, em_bytes({"erro": f"erro interno no servidor: {type(erro).__name__}"}))
+        if corpo is None:  # o navegador desistiu na fila: não há a quem responder
+            self.close_connection = True
+            return
         self._responder(200, corpo)
 
     def _responder(self, status: int, corpo: bytes) -> None:
