@@ -21,9 +21,7 @@ test("onda contínua na troca de faixa", () => {
   // trecho normal de 900 m seguido de um gargalo: o gargalo começa no tempo em que o normal termina
   const fimDoNormal = 900 / ONDA.VEL[0];
   for (const t of [0, 0.4, 1.3, 2.9, 7.7]) {
-    const fase = (chegada: number) => (((chegada - t) / ONDA.PERIODO) % 1 + 1) % 1;
-    expect(fase(0 + 900 / ONDA.VEL[0]), String(t)).toBeCloseTo(fase(fimDoNormal + 0 / ONDA.VEL[2]), 9);
-    // e o brilho só muda pela força da faixa, nunca de fase
+    // fim do normal = começo do gargalo: o brilho só muda pela força da faixa, nunca de fase
     const b = [brilhoDaOnda(fimDoNormal, "normal", t), brilhoDaOnda(fimDoNormal, "gargalo", t)];
     expect(b[0] / ONDA.FORCA[0], String(t)).toBeCloseTo(b[1] / ONDA.FORCA[2], 9);
   }

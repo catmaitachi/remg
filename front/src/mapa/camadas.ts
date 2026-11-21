@@ -118,7 +118,9 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     }),
     new PathLayer<Caminho>({
       id: "trechos", data: d.trechos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: (c) => cor[c.faixa ?? "semFluxo"], updateTriggers: { getColor: tema },
+      // com animação, a linha com fluxo vira trilho apagado (30%) e a onda e o raio correm por cima, como na prévia
+      getColor: (c) => (quadro && c.faixa ? [...cor[c.faixa], 77] : cor[c.faixa ?? "semFluxo"]),
+      updateTriggers: { getColor: [tema, !!quadro] },
       getWidth: 2, widthUnits: "pixels", widthMinPixels: 1,
     }),
     new PathLayer<Caminho>({

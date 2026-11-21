@@ -59,6 +59,8 @@
 }
 .controle:hover { background: var(--bloco); }
 .controle[aria-expanded="true"] { background: var(--primario); color: var(--primario-texto); }
+/* animação pausada: o raio fica apagado */
+.controle[aria-pressed="false"] { color: var(--texto-apoio); }
 
 .painel {
   top: var(--margem);

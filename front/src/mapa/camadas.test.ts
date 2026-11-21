@@ -166,3 +166,12 @@ test("com quadro de perto, raio e faíscas acima das ondas", () => {
   const i = ids.indexOf("trechos");
   expect(ids.slice(i, i + 5)).toEqual(["trechos", "ondas", "raio", "faiscas", "linhas-at"]);
 });
+
+test("com animação, trecho com fluxo fica apagado para a onda aparecer", () => {
+  const parado = porId().trechos.props, animado = comQuadro().trechos.props;
+  const t2 = dados.trechos.find((t) => t.id === "t:2"), t4 = dados.trechos.find((t) => t.id === "t:4");
+  expect(parado.getColor(t2)[3] ?? 255).toBe(255);
+  expect(animado.getColor(t2)[3]).toBeLessThan(128);
+  expect(animado.getColor(t4)[3] ?? 255).toBe(255); // sem fluxo não anima: fica igual
+  expect(animado.updateTriggers.getColor).not.toEqual(parado.updateTriggers.getColor);
+});
