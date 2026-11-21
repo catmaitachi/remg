@@ -55,7 +55,17 @@ export function sentidoDoFluxo(rede: Rede, analise: Analise): Map<string, Sentid
     distInicio: dist.get(s.ini) ?? 0, comprimento: s.comprimento, tempoInicio: tempo.get(s.ini) ?? 0, positivo: s.positivo,
   });
 
-  for (let i = 0; i < fila.length; i++) { // índice em vez de shift(): BH tem 35 mil pontos
+  const naFila = new Set(fila);
+  for (let i = 0; ; i++) { // índice em vez de shift(): BH tem 35 mil pontos
+    if (i === fila.length) {
+      // Kahn travou num ciclo: segue pelo ponto pendente mais perto da origem, senão a cauda do ciclo ficaria em 0
+      // shortcut: busca linear a cada ciclo (o mock é árvore); se o fluxo da T16 trouxer muitos ciclos, trocar por heap
+      let melhor: string | undefined;
+      for (const [p, d] of dist) if (!naFila.has(p) && saem.has(p) && (melhor === undefined || d < dist.get(melhor)!)) melhor = p;
+      if (melhor === undefined) break;
+      fila.push(melhor);
+      naFila.add(melhor);
+    }
     for (const s of saem.get(fila[i]) ?? []) {
       marcar(s);
       const chegada = dist.get(s.ini)! + s.comprimento;
@@ -65,10 +75,10 @@ export function sentidoDoFluxo(rede: Rede, analise: Analise): Map<string, Sentid
       }
       const resta = entram.get(s.fim)! - 1;
       entram.set(s.fim, resta);
-      if (resta === 0) fila.push(s.fim);
+      if (resta === 0 && !naFila.has(s.fim)) { fila.push(s.fim); naFila.add(s.fim); }
     }
   }
-  // o que sobrou está num ciclo: nunca teve todas as entradas resolvidas
+  // o que sobrou está num ciclo sem nenhuma origem: distância e tempo 0
   for (const setas of saem.values()) for (const s of setas) if (!resultado.has(s.id)) marcar(s);
   return resultado;
 }

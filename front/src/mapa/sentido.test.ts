@@ -50,6 +50,19 @@ test("ciclo não trava e vale 0", () => {
   for (const id of ["t:x", "t:y", "t:z"]) expect([s.get(id)!.distInicio, s.get(id)!.tempoInicio], id).toEqual([0, 0]);
 });
 
+test("ciclo alimentado por fonte não zera a cauda", () => {
+  const r = rede([
+    t("t:sa", "s:1", "p:1"), t("t:ab", "p:1", "p:2"), t("t:bc", "p:2", "p:3"), t("t:ca", "p:3", "p:1"),
+    t("t:cd", "p:3", "p:4"), t("t:de", "p:4", "p:5"),
+  ], [ponto("p:4", 0.005), ponto("p:5", 0.006)]);
+  const s = sentidoDoFluxo(r, analise(["t:sa", "t:ab", "t:bc", "t:ca", "t:cd", "t:de"].map((id) => [id, 1, 0.1] as [string, number, number])));
+  const de = (id: string) => s.get(id)!;
+  expect(de("t:ab").distInicio).toBeCloseTo(de("t:sa").comprimento, 6);
+  expect(de("t:cd").distInicio).toBeCloseTo(de("t:bc").distInicio + de("t:bc").comprimento, 6);
+  expect(de("t:de").distInicio).toBeCloseTo(de("t:cd").distInicio + de("t:cd").comprimento, 6);
+  expect(de("t:de").tempoInicio).toBeGreaterThan(de("t:cd").tempoInicio);
+});
+
 test("linha_at fica fora", () => {
   const comAt = rede([t("at:1", "s:2", "s:1", "linha_at"), t("t:a", "s:1", "p:1")]);
   const s = sentidoDoFluxo(comAt, analise([["at:1", 50, 0.5], ["t:a", 3, 0.1]]));
