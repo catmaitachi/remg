@@ -63,7 +63,7 @@ Gerada **no núcleo** a partir das ruas (detalhes em [03-modelagem](03-modelagem
 - cada subestação de distribuição é ligada ao ponto de rua mais próximo;
 - Dijkstra com várias fontes divide a cidade em **áreas de atendimento**, e cada área vira uma árvore (rede radial, como na vida real);
 - as ruas que ligam áreas de subestações diferentes viram **chaves de manobra** (normalmente abertas);
-- ❓ **Q2** · demanda por ponto e capacidade das subestações: decidir na task. Proposta: demanda proporcional ao comprimento de rua em volta do ponto, e capacidade do cabo = demanda que passa por ele × fator aleatório entre 0,8 e 1,5, para gerar gargalos de propósito.
+- ✅ **Q2** · demanda proporcional ao comprimento de rua em volta do ponto, e capacidade do cabo = demanda que passa por ele × fator aleatório entre **1,1 e 1,6**. O gargalo por uso (≥ 90%) aparece quando o fator sorteado fica abaixo de ~1,11. Medido com BH em 21/11 (rede intacta): **768 gargalos (2,2%) e 100% da demanda entregue**. Com a proposta antiga, de 0,8 a 1,5, eram 6.705 gargalos e só 84,2% entregue, porque o cabo nascia menor que a demanda.
 - 🎲 A geração usa **semente fixa**: o mesmo arquivo de entrada sempre gera a mesma rede.
 - ✅ **Gerada ao ligar** o servidor, nunca salva no git (D24). Para o benchmark ou para conferir, `cintilante-cli exportar` grava a rede num arquivo local.
 

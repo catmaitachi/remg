@@ -5,8 +5,9 @@ Spec 02 ("Rede de distribuição sintética") e 04 ("Gerar a rede"):
 2. Dijkstra com várias fontes a partir das raízes divide a cidade em áreas de atendimento;
 3. o arco pai de cada ponto vira cabo (a árvore é o alimentador), a rua entre áreas diferentes vira
    chave aberta e as outras ruas ficam sem cabo;
-4. Q2 🟡: demanda proporcional à rua em volta do ponto, e cabo = demanda que passa por ele × fator
-   aleatório entre 0,8 e 1,5, para gerar gargalos de propósito. Semente fixa (D24).
+4. Q2 ✅: demanda proporcional à rua em volta do ponto, e cabo = demanda que passa por ele × fator
+   aleatório entre 1,1 e 1,6. Abaixo de 1 o cabo nasce menor que a demanda; abaixo de ~1,11 o uso
+   passa de 90% e o cabo vira gargalo (~2% em BH). Semente fixa (D24).
 
 Entrada: os DadosDaRede da porta FonteDeRede (T10). Saída: as peças do domínio e, com
 RedeGerada.montar_rede(), a RedeEletrica (T11) pronta para os outros casos de uso.
@@ -28,7 +29,7 @@ SEMENTE = 2026
 TIPO_DISTRIBUICAO = "distribution"
 # 🟡 Q2: com ~35 mil pontos e ~53 mil ruas em BH, isto dá algumas centenas de MVA na cidade inteira.
 KVA_POR_METRO = 0.05
-FATOR_CABO = (0.8, 1.5)
+FATOR_CABO = (1.1, 1.6)
 # A subestação aguenta a demanda da área com folga; quem deve gargalar é o cabo, não ela.
 FOLGA_SUBESTACAO = 1.2
 CAPACIDADE_MINIMA_KVA = 1.0
