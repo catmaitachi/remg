@@ -1,5 +1,6 @@
 """T17: CLI. Roda com `python -m unittest discover -s adapters/cli`."""
 
+import importlib.util
 import io
 import json
 import tempfile
@@ -68,15 +69,23 @@ class TestCli(unittest.TestCase):
         self.assertEqual(codigo, 1)
         self.assertIn("❌", erro)
 
-    def test_peca_que_ainda_nao_chegou_avisa_a_task(self):
-        # Quando a T07, T09 e T23 entrarem no remg, este teste vira o teste de cada subcomando.
-        for argv, task in [(("fluxo", "0", "3"), "T09"), (("componentes",), "T07"),
-                           (("pontes",), "T23"), (("articulacoes",), "T23")]:
+    def test_cada_subcomando_responde_ou_avisa_a_task_que_falta(self):
+        # Enquanto a peça não está no remg, o subcomando sai com FALTA_PECA citando a task.
+        # Quando ela chega, o mesmo teste passa a conferir a resposta feita no papel para GRAFO.
+        casos = [(("fluxo", "0", "3"), "core.grafo.dinic", "T09", "5"),
+                 (("componentes",), "core.grafo.bfs", "T07", None),
+                 (("pontes",), "core.grafo.tarjan", "T23", "3"),
+                 (("articulacoes",), "core.grafo.tarjan", "T23", "1")]
+        for argv, modulo, task, esperado in casos:
             with self.subTest(comando=argv[0]):
-                codigo, _, erro = self.rodar(*argv)
-                self.assertEqual(codigo, FALTA_PECA)
-                self.assertIn(task, erro)
-
+                codigo, saida, erro = self.rodar(*argv)
+                if importlib.util.find_spec(modulo) is None:
+                    self.assertEqual(codigo, FALTA_PECA)
+                    self.assertIn(task, erro)
+                else:
+                    self.assertEqual(codigo, 0)
+                    if esperado is not None:
+                        self.assertEqual(saida.splitlines()[0], esperado)
 
 if __name__ == "__main__":
     unittest.main()
