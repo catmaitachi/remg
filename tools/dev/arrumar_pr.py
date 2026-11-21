@@ -59,7 +59,7 @@ def main():
         fluxo.reconfigure(encoding="utf-8")
     evento = json.loads(pathlib.Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
     pr = evento["pull_request"]
-    n_pr, repo = str(pr["number"]), os.environ["GITHUB_REPOSITORY"]
+    n_pr = str(pr["number"])
     issue = numero_da_branch(pr["head"]["ref"])
     if issue is None:
         print("🪄 branch fora do padrão tipo/N-descricao: o verificador vai apontar (V2).")
@@ -74,12 +74,6 @@ def main():
             ms = None
         if ms:
             _tentar(f"pôr a milestone {ms['title']}", "pr", "edit", n_pr, "--milestone", ms["title"])
-    try:
-        mensagens = _gh("api", f"repos/{repo}/pulls/{n_pr}/commits", "--paginate", "--jq", ".[].commit.message")
-    except RuntimeError:
-        mensagens = ""
-    if regras.tem_coautor_ia(mensagens) and regras.LABEL_IA not in {l["name"] for l in pr["labels"]}:
-        _tentar(f"pôr o label {regras.LABEL_IA}", "pr", "edit", n_pr, "--add-label", regras.LABEL_IA)
     if pedir_revisor_agora(evento.get("action")) and not pr.get("requested_reviewers"):
         equipe = EQUIPE.read_text(encoding="utf-8").split() if EQUIPE.exists() else []
         quem = revisor(pr["user"]["login"], equipe, pr["number"])

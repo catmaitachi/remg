@@ -66,10 +66,10 @@ class TestBusca(unittest.TestCase):
 
 class TestPodeTrocar(unittest.TestCase):
     def test_arvore_suja_nao_troca_de_task(self):
-        self.assertFalse(c.pode_trocar(" M core/x.cpp\n", "feat/9-x", "feat/12-y"))
+        self.assertFalse(c.pode_trocar(" M core/x.py\n", "feat/9-x", "feat/12-y"))
 
     def test_arvore_suja_pode_retomar_a_mesma_branch(self):
-        self.assertTrue(c.pode_trocar(" M core/x.cpp\n", "feat/12-y", "feat/12-y"))
+        self.assertTrue(c.pode_trocar(" M core/x.py\n", "feat/12-y", "feat/12-y"))
 
     def test_arvore_limpa_troca(self):
         self.assertTrue(c.pode_trocar("", "feat/9-x", None))

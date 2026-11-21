@@ -1,7 +1,7 @@
 """🛡️ Guarda do Claude Code: hook PreToolUse que impede o Claude de quebrar as regras do projeto.
 
 Ligado em .claude/settings.json. Recebe o pedido da ferramenta (JSON na entrada padrão) e responde
-"deny" (barra) ou "ask" (pede aprovação da pessoa). Regras: docs/spec/11-verificador.md (G1–G4).
+"deny" (barra) ou "ask" (pede aprovação da pessoa). Regras: docs/spec/11-verificador.md (G1, G3, G4, G5).
 """
 import json
 import os
@@ -9,14 +9,11 @@ import pathlib
 import re
 import subprocess
 import sys
-from collections import Counter
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import regras as r  # noqa: E402
 
 MARCA_README = r.MARCA_README
-MODELO_FICHA = r.MODELO_FICHA
-PASTA_ALGORITMOS = r.PASTA_FICHA
 FISCALIZACAO = (".githooks/", "tools/verificar/", ".claude/settings.json", ".github/workflows/")
 FERRAMENTAS_DE_ARQUIVO = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 
@@ -68,30 +65,6 @@ def _branch(raiz):
     return p.stdout.strip() if p.returncode == 0 else None
 
 
-def _texto_depois(atual, ferramenta, dados):
-    if ferramenta == "Write":
-        return dados.get("content", "")
-    texto = atual
-    for e in dados.get("edits") or [dados]:
-        velho, novo = e.get("old_string", ""), e.get("new_string", "")
-        texto = texto.replace(velho, novo) if e.get("replace_all") else texto.replace(velho, novo, 1)
-    return texto
-
-
-def _nucleo(caminho, ferramenta, dados):  # G2
-    if ferramenta == "NotebookEdit":
-        return None
-    atual = caminho.read_text(encoding="utf-8", errors="replace") if caminho.exists() else ""
-    preenchidas = lambda t: Counter(f.texto for f in r.fichas(t) if f.preenchida)
-    antes, depois = preenchidas(atual), preenchidas(_texto_depois(atual, ferramenta, dados))
-    if depois - antes:
-        return "deny", ("a ficha ✍️ de cada função em core/grafo/ é preenchida À MÃO por quem commita. "
-                        "Escreva o código e deixe o modelo com ___; depois explique o algoritmo para a pessoa preencher.")
-    if antes - depois:
-        return "ask", "esta mudança apaga a ficha ✍️ que alguém escreveu à mão; confirme que é intencional."
-    return None
-
-
 def decidir(entrada, raiz):
     ferramenta, dados = entrada.get("tool_name"), entrada.get("tool_input") or {}
     if ferramenta == "Bash":
@@ -107,8 +80,6 @@ def decidir(entrada, raiz):
         return "deny", ("você está na main: todo trabalho começa numa task. Rode "
                         "`python tools/dev/comecar.py --buscar \"<pedido>\"`, confirme a task com a pessoa "
                         "e depois `python tools/dev/comecar.py N`.")
-    if rel.startswith(PASTA_ALGORITMOS):
-        return _nucleo(alvo, ferramenta, dados)
     if rel == "README.md":
         return _readme(alvo, ferramenta, dados)
     if rel.startswith(FISCALIZACAO):

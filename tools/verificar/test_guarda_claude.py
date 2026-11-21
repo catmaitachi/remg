@@ -58,49 +58,9 @@ class TestBash(Base):  # G1
         self.assertIsNone(self.decidir("Bash", command='git commit -m "feat: dinic"'))
 
 
-FICHA_LAURA = ("/* ✍️ ENTENDIMENTO · por: Laura\n * O que faz: fluxo máximo\n * Como funciona: níveis + DFS\n"
-               " * Complexidade: O(V²E)\n * Exemplo: —\n * Limitação: —\n */\n")
-DINIC = FICHA_LAURA + "int fluxo() {\n  return 0;\n}\n"
-
-
-class TestNucleo(Base):  # G2: a IA escreve código, mas não preenche a ficha ✍️
-    def setUp(self):
-        super().setUp()
-        (self.raiz / "core" / "grafo").mkdir(parents=True)
-        (self.raiz / "core" / "grafo" / "dinic.cpp").write_text(DINIC, encoding="utf-8")
-
-    def test_ia_pode_escrever_codigo(self):
-        self.assertIsNone(self.decidir("Edit", file_path="core/grafo/dinic.cpp", old_string="return 0;", new_string="return 42;"))
-        self.assertIsNone(self.decidir("Write", file_path="core/grafo/bfs.cpp", content="int bfs() { return 1; }\n"))
-
-    def test_ia_pode_deixar_o_modelo_vazio(self):
-        conteudo = g.MODELO_FICHA + "\nint bfs() { return 1; }\n"
-        self.assertIsNone(self.decidir("Write", file_path="core/grafo/bfs.cpp", content=conteudo))
-
-    def test_ia_nao_pode_preencher_ficha_nova(self):
-        conteudo = FICHA_LAURA.replace("Laura", "Claude") + "int bfs() { return 1; }\n"
-        self.assertEqual(self.nivel("Write", file_path="core/grafo/bfs.cpp", content=conteudo), "deny")
-
-    def test_ia_nao_pode_mudar_ficha_existente(self):
-        self.assertEqual(self.nivel("Edit", file_path="core/grafo/dinic.cpp", old_string="níveis + DFS", new_string="melhor"), "deny")
-        edits = [{"old_string": "return 0;", "new_string": "return 1;"}, {"old_string": "O(V²E)", "new_string": "O(1)"}]
-        self.assertEqual(self.nivel("MultiEdit", file_path="core/grafo/dinic.cpp", edits=edits), "deny")
-
-    def test_apagar_ficha_de_alguem_pede_aprovacao(self):
-        self.assertEqual(self.nivel("Write", file_path="core/grafo/dinic.cpp", content="int fluxo() { return 0; }\n"), "ask")
-
-    def test_g2_py_ficha_preenchida_nega(self):
-        ficha = "".join(f"# {l}\n" for l in ["✍️ ENTENDIMENTO · por: Claude", "O que faz: x", "Como funciona: y",
-                                              "Complexidade: O(1)", "Exemplo: —", "Limitação: —"])
-        self.assertEqual(self.nivel("Write", file_path="core/grafo/bfs.py", content=ficha + "def bfs():\n    return 1\n"), "deny")
-
-    def test_g2_py_modelo_vazio_deixa(self):
-        conteudo = g.r.MODELO_FICHA_PY + "\ndef bfs():\n    return 1\n"
-        self.assertIsNone(self.decidir("Write", file_path="core/grafo/bfs.py", content=conteudo))
-
-    def test_outras_pastas_do_nucleo_passam(self):
-        self.assertIsNone(self.decidir("Edit", file_path="core/dominio/rede.cpp", old_string="a", new_string="b"))
-        self.assertIsNone(self.decidir("Write", file_path="tests/test_dinic.cpp", content="x"))
+class TestNucleo(Base):  # o núcleo é editável como qualquer código (D27)
+    def test_ia_pode_escrever_no_grafo(self):
+        self.assertIsNone(self.decidir("Write", file_path="core/grafo/bfs.py", content="def bfs():\n    return 1\n"))
 
 
 class TestReadme(Base):  # G3
@@ -138,7 +98,7 @@ class TestFiscalizacao(Base):  # G4
         self.assertEqual(self.nivel("Write", file_path=".github/workflows/verificar.yml", content="x"), "ask")
 
     def test_arquivo_fora_do_projeto_passa(self):
-        r = g.decidir({"tool_name": "Write", "tool_input": {"file_path": str(self.raiz.parent / "outro" / "core" / "grafo" / "x.cpp"), "content": "x"}}, self.raiz)
+        r = g.decidir({"tool_name": "Write", "tool_input": {"file_path": str(self.raiz.parent / "outro" / "core" / "grafo" / "x.py"), "content": "x"}}, self.raiz)
         self.assertIsNone(r)
 
 
@@ -171,8 +131,8 @@ class TestComoHook(Base):  # roda o script como o Claude Code roda: JSON na entr
         return p.returncode, p.stdout.decode("utf-8"), p.stderr.decode("utf-8", "replace")
 
     def test_bloqueio_com_acentos_vira_json_de_deny(self):
-        entrada = {"tool_name": "Write", "tool_input": {"file_path": str(self.raiz / "core/grafo/bfs.cpp"),
-                                                        "content": FICHA_LAURA + "int função() { return 1; } // 💥\n"}}
+        novo = README.replace("texto da Laura", "texto da IA, função 💥")
+        entrada = {"tool_name": "Write", "tool_input": {"file_path": str(self.raiz / "README.md"), "content": novo}}
         rc, saida, erro = self.rodar(entrada)
         self.assertEqual(rc, 0, erro)
         self.assertEqual(json.loads(saida)["hookSpecificOutput"]["permissionDecision"], "deny")

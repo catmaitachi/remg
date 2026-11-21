@@ -53,7 +53,7 @@ class TestPontaAPonta(unittest.TestCase):
 
     def test_mensagem_fora_do_formato_e_barrada(self):
         self.git("switch", "-q", "-c", "feat/1-grafo")
-        rc, saida = self.commit("arrumei o grafo", core__grafo__a_cpp="#include <vector>\n")
+        rc, saida = self.commit("arrumei o grafo", core__grafo__a_txt="#include <vector>\n")
         self.assertNotEqual(rc, 0)
         self.assertIn("V1", saida)
 
@@ -139,38 +139,6 @@ class TestPontaAPonta(unittest.TestCase):
                                        "README.md": "# teste\n## 💥 Falhas\n✍️ Escrito por: Laura\n"})
         rc, saida = self.pr("Closes #1", ["feature-principal"])
         self.assertEqual(rc, 0, saida)
-
-    FICHA = ("/* ✍️ ENTENDIMENTO · por: Laura\n * O que faz: soma\n * Como funciona: a + b\n"
-             " * Complexidade: O(1)\n * Exemplo: —\n * Limitação: —\n */\n")
-    IA = "\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
-
-    def test_funcao_do_grafo_sem_ficha_e_barrada(self):
-        self.git("switch", "-q", "-c", "feat/1-grafo")
-        rc, saida = self.commit("feat: soma", **{"core__grafo__s.cpp": "int soma() { return 1; }\n", "tests__t.cpp": "x\n"})
-        self.assertNotEqual(rc, 0)
-        self.assertIn("V14", saida)
-
-    def test_funcao_com_ficha_feita_a_mao_passa(self):
-        self.git("switch", "-q", "-c", "feat/1-grafo")
-        rc, saida = self.commit("feat: soma", **{"core__grafo__s.cpp": self.FICHA + "int soma() { return 1; }\n", "tests__t.cpp": "x\n"})
-        self.assertEqual(rc, 0, saida)
-
-    def test_commit_de_ia_que_preenche_ficha_e_barrado(self):
-        self.git("switch", "-q", "-c", "feat/1-grafo")
-        rc, saida = self.commit("feat: soma" + self.IA, **{"core__grafo__s.cpp": self.FICHA + "int soma() { return 1; }\n",
-                                                           "tests__t.cpp": "x\n", "docs__ia__registro.md": "x\n"})
-        self.assertNotEqual(rc, 0)
-        self.assertIn("V15", saida)
-
-    def test_relatorio_pega_ficha_mexida_por_ia_que_pulou_o_hook(self):
-        self.git("switch", "-q", "-c", "feat/1-grafo")
-        self.escrever("core/grafo/s.cpp", self.FICHA + "int soma() { return 1; }\n")
-        self.escrever("docs/ia/registro.md", "x\n")
-        self.git("add", ".")
-        self.git("commit", "-q", "--no-verify", "-m", "feat: soma" + self.IA)
-        rc, saida = self.relatorio_da_branch()
-        self.assertNotEqual(rc, 0)
-        self.assertIn("V15", saida)
 
     def test_post_merge_apaga_so_branch_ja_mergeada(self):
         remoto = tempfile.mkdtemp()

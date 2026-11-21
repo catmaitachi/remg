@@ -49,64 +49,6 @@ class TestCorpoPR(unittest.TestCase):  # V3
         self.assertEqual(ids(r.checar_corpo_pr(None)), [("V3", r.ERRO)])
 
 
-EXISTE = {"core/grafo/grafo.hpp", "core/dominio/rede.hpp", "core/portas/fonte.hpp",
-          "adapters/http/servidor.hpp"}.__contains__
-
-
-class TestCpp(unittest.TestCase):  # V4 e V5
-    def test_aceita_stl_permitida_e_include_da_mesma_camada(self):
-        texto = '#include <vector>\n#include <deque>\n#include "grafo.hpp"\n'
-        self.assertEqual(r.checar_cpp("core/grafo/dinic.cpp", texto, EXISTE), [])
-
-    def test_recusa_queue_e_cabecalho_de_terceiros(self):
-        texto = '#include <queue>\n#include "httplib.h"\n'
-        self.assertEqual(ids(r.checar_cpp("core/grafo/dinic.cpp", texto, EXISTE)),
-                         [("V4", r.ERRO), ("V4", r.ERRO)])
-
-    def test_recusa_heap_pronta(self):
-        texto = "#include <algorithm>\nvoid f(){ std::make_heap(a.begin(), a.end()); }\n"
-        self.assertEqual(ids(r.checar_cpp("core/grafo/h.cpp", texto, EXISTE)), [("V4", r.ERRO)])
-
-    def test_heap_citada_em_comentario_nao_conta(self):
-        texto = "// sem priority_queue aqui, a heap é nossa\n/* make_heap */\nint x;\n"
-        self.assertEqual(r.checar_cpp("core/grafo/h.cpp", texto, EXISTE), [])
-
-    def test_grafo_nao_pode_incluir_dominio(self):
-        texto = '#include "../dominio/rede.hpp"\n'
-        self.assertEqual(ids(r.checar_cpp("core/grafo/dinic.cpp", texto, EXISTE)), [("V5", r.ERRO)])
-
-    def test_dominio_pode_incluir_grafo_pela_raiz(self):
-        texto = '#include "core/grafo/grafo.hpp"\n'
-        self.assertEqual(r.checar_cpp("core/dominio/rede.cpp", texto, EXISTE), [])
-
-    def test_nucleo_nunca_inclui_adaptador(self):
-        texto = '#include "../../adapters/http/servidor.hpp"\n'
-        self.assertEqual(ids(r.checar_cpp("core/casos_de_uso/x.cpp", texto, EXISTE)), [("V5", r.ERRO)])
-
-    def test_fora_do_nucleo_nao_e_checado(self):
-        texto = '#include <queue>\n#include "httplib.h"\n'
-        self.assertEqual(r.checar_cpp("adapters/http/servidor.cpp", texto, EXISTE), [])
-
-
-class TestAdaptador(unittest.TestCase):  # V16
-    def test_adaptador_nao_pula_a_porta(self):
-        texto = '#include "core/dominio/rede.hpp"\n'
-        self.assertEqual(ids(r.checar_cpp("adapters/modulo_py/rotas.cpp", texto, EXISTE)), [("V16", r.ERRO)])
-
-    def test_caminho_relativo_para_dentro_do_nucleo_tambem_conta(self):
-        texto = '#include "../../core/grafo/grafo.hpp"\n'
-        self.assertEqual(ids(r.checar_cpp("adapters/dados/leitor.cpp", texto, EXISTE)), [("V16", r.ERRO)])
-
-    def test_adaptador_pode_incluir_a_porta_e_bibliotecas(self):
-        texto = '#include "core/portas/fonte.hpp"\n#include "httplib.h"\n#include <queue>\n'
-        self.assertEqual(r.checar_cpp("adapters/cli/comandos.cpp", texto, EXISTE), [])
-
-    def test_ponto_de_montagem_pode_criar_as_pecas(self):
-        texto = '#include "core/dominio/rede.hpp"\n#include "core/grafo/grafo.hpp"\n'
-        for montagem in sorted(r.MONTAGEM):
-            self.assertEqual(r.checar_cpp(montagem, texto, EXISTE), [], montagem)
-
-
 class TestPython(unittest.TestCase):  # V6
     def test_recusa_networkx_fora_do_benchmark(self):
         texto = "import os\nimport networkx as nx\n"
@@ -124,54 +66,7 @@ class TestPython(unittest.TestCase):  # V6
         self.assertEqual(r.checar_python("tools/x.py", "import networkx_helpers_fake_nome\n"), [])
 
 
-IA = "feat: dinic\n\nCo-Authored-By: Claude Opus <noreply@anthropic.com>"
-HUMANO = "feat: dinic"
-
-
-class TestIA(unittest.TestCase):  # V7 e V8a
-    def test_sem_ia_sem_achado(self):
-        self.assertEqual(r.checar_ia([("a1", HUMANO, ["core/grafo/dinic.cpp"])],
-                                     ["core/grafo/dinic.cpp"], labels=set()), [])
-
-    def test_ia_sem_registro_bloqueia(self):
-        achados = r.checar_ia([("a1", IA, ["core/x.cpp"])], ["core/x.cpp"], labels={"ia-assistida"})
-        self.assertEqual(ids(achados), [("V7", r.ERRO)])
-
-    def test_ia_sem_label_bloqueia_no_pr(self):
-        alterados = ["core/x.cpp", r.REGISTRO_IA]
-        achados = r.checar_ia([("a1", IA, alterados)], alterados, labels=set())
-        self.assertEqual(ids(achados), [("V7", r.ERRO)])
-
-    def test_ia_sem_saber_labels_so_avisa_do_label(self):
-        alterados = ["core/x.cpp", r.REGISTRO_IA]
-        achados = r.checar_ia([("a1", IA, alterados)], alterados, labels=None)
-        self.assertEqual(ids(achados), [("V7", r.AVISO)])
-
-    def test_label_sem_registro_bloqueia(self):
-        achados = r.checar_ia([("a1", HUMANO, ["x.py"])], ["x.py"], labels={"ia-assistida"})
-        self.assertEqual(ids(achados), [("V7", r.ERRO)])
-
-    def test_ia_completa_passa(self):
-        alterados = ["core/x.cpp", r.REGISTRO_IA]
-        self.assertEqual(r.checar_ia([("a1", IA, alterados)], alterados, labels={"ia-assistida"}), [])
-
-    def test_commit_de_ia_no_readme_nao_e_problema_do_checar_ia(self):
-        alterados = ["README.md", r.REGISTRO_IA]
-        self.assertEqual(r.checar_ia([("a1", IA, alterados)], alterados, labels={"ia-assistida"}), [])
-
-
-class TestReadmeIA(unittest.TestCase):  # V8: só a parte abaixo da marca ✍️ é proibida para a IA
-    def test_linhas_a_mao_sao_as_depois_da_marca(self):
-        texto = f"# luzes\ngeral\n{r.MARCA_README}\n## Falhas\ntexto\n"
-        self.assertEqual(r.linhas_a_mao_readme(texto), {4, 5})
-        self.assertEqual(r.linhas_a_mao_readme("# sem marca\n"), set())
-
-    def test_commit_de_ia_na_parte_a_mao_bloqueia(self):
-        self.assertEqual(ids(r.checar_readme_ia([("a1b2c3d", IA, True)])), [("V8", r.ERRO)])
-
-    def test_commit_de_ia_na_parte_geral_ou_humano_passa(self):
-        self.assertEqual(r.checar_readme_ia([("a1", IA, False), ("b2", "docs: falhas", True)]), [])
-
+class TestCoautorIA(unittest.TestCase):
     def test_reconhece_outras_ferramentas(self):
         msg = "fix: x\n\nco-authored-by: GitHub Copilot <copilot@github.com>"
         self.assertTrue(r.tem_coautor_ia(msg))
@@ -217,14 +112,14 @@ class TestCoerencia(unittest.TestCase):  # V9, V10, V11
         self.assertEqual(r.checar_coerencia([r.CONTRATO, "front/src/mocks/rede.json"], []), [])
 
     def test_nucleo_sem_teste_avisa(self):
-        self.assertEqual(ids(r.checar_coerencia(["core/grafo/dinic.cpp"], [])), [("V10", r.AVISO)])
+        self.assertEqual(ids(r.checar_coerencia(["core/grafo/dinic.py"], [])), [("V10", r.AVISO)])
 
     def test_nucleo_com_teste_passa(self):
-        self.assertEqual(r.checar_coerencia(["core/grafo/dinic.cpp", "tests/test_dinic.cpp"], []), [])
+        self.assertEqual(r.checar_coerencia(["core/grafo/dinic.py", "tests/test_dinic.py"], []), [])
 
     def test_arquivo_novo_no_nucleo_sem_uml_avisa(self):
-        alterados = ["core/grafo/tarjan.cpp", "tests/test_tarjan.cpp"]
-        self.assertEqual(ids(r.checar_coerencia(alterados, ["core/grafo/tarjan.cpp"])), [("V11", r.AVISO)])
+        alterados = ["core/grafo/tarjan.py", "tests/test_tarjan.py"]
+        self.assertEqual(ids(r.checar_coerencia(alterados, ["core/grafo/tarjan.py"])), [("V11", r.AVISO)])
 
 
 class TestPeso(unittest.TestCase):  # V12
@@ -235,7 +130,7 @@ class TestPeso(unittest.TestCase):  # V12
         self.assertEqual(ids(r.checar_peso([("data/raw/bh.osm.json", 10)])), [("V12", r.ERRO)])
 
     def test_normal_passa(self):
-        self.assertEqual(r.checar_peso([("core/grafo/dinic.cpp", 4000)]), [])
+        self.assertEqual(r.checar_peso([("core/grafo/dinic.py", 4000)]), [])
 
 
 class TestPythonNucleo(unittest.TestCase):  # V4, V5 e V16 em .py

@@ -15,16 +15,7 @@ MOCKS = "front/src/mocks/"
 UML = "docs/spec/03-modelagem.md"
 LIMITE_BYTES = 5 * 1024 * 1024
 
-# Cabeçalhos da STL liberados no núcleo. <queue> fica de fora por causa da priority_queue.
-STL_PERMITIDA = {
-    "algorithm", "array", "cassert", "chrono", "climits", "cmath", "cstddef", "cstdint",
-    "cstring", "deque", "functional", "initializer_list", "iterator", "limits", "map",
-    "memory", "numeric", "optional", "set", "stdexcept", "string", "string_view", "tuple",
-    "type_traits", "unordered_map", "unordered_set", "utility", "vector",
-}
-HEAP_PRONTA = r"\b(priority_queue|make_heap|push_heap|pop_heap|sort_heap)\b"
-
-# Quem cada camada do núcleo pode incluir (as setas só apontam para dentro).
+# Quem cada camada do núcleo pode importar (as setas só apontam para dentro).
 CAMADAS = {
     "grafo": {"grafo"},
     "dominio": {"grafo", "dominio"},
@@ -32,21 +23,18 @@ CAMADAS = {
     "casos_de_uso": {"grafo", "dominio", "portas", "casos_de_uso"},
 }
 
-# Os únicos adaptadores que podem incluir o núcleo além da porta: eles criam as peças (D22).
-MONTAGEM = {"adapters/cli/main.cpp", "adapters/modulo_py/modulo.cpp"}
-
 # Núcleo em Python (D26): só estes módulos da biblioteca padrão, além do próprio core.
 MODULOS_PERMITIDOS = {"collections", "dataclasses", "abc", "typing", "math", "enum", "itertools", "functools",
                       "__future__"}
 HEAP_PRONTA_PY = {"heapq", "queue"}
 BOM = "﻿"  # editores do Windows salvam UTF-8 com BOM; o Python roda, mas o ast.parse de str recusa
-MONTAGEM_PY = {"adapters/http/servidor.py", "adapters/cli/main.py"}
+# Os únicos adaptadores que podem importar o núcleo além da porta: eles criam as peças (D22).
+MONTAGEM_PY ={"adapters/http/servidor.py", "adapters/cli/main.py"}
 
 LIBS_GRAFO = r"networkx|igraph|graph_tool|osmnx|rustworkx|networkit|snap|scipy\.sparse\.csgraph"
 PASTA_LIBERADA_GRAFO = "tools/benchmark/"
 
 FERRAMENTAS_IA = r"claude|anthropic|copilot|chatgpt|openai|codex|gemini|cursor|codeium|tabnine"
-LABEL_IA = "ia-assistida"
 LABEL_FEATURE = "feature-principal"
 # ───────────────────────────────────────────────────────────────────────────────
 
@@ -79,59 +67,9 @@ def checar_corpo_pr(corpo):  # V3
                    "escreva `Closes #N` na descrição do PR")]
 
 
-def _sem_comentarios(texto):
-    texto = re.sub(r"/\*.*?\*/", " ", texto, flags=re.S)
-    return re.sub(r"//[^\n]*", "", texto)
-
-
 def _camada(caminho):
     partes = caminho.split("/")
     return partes[1] if len(partes) > 2 and partes[0] == "core" else None
-
-
-def _resolver(caminho, alvo, existe):
-    pasta = posixpath.dirname(caminho)
-    candidatos = [posixpath.normpath(posixpath.join(pasta, alvo)), posixpath.normpath(alvo),
-                  posixpath.normpath("core/" + alvo)]
-    return next((c for c in candidatos if existe(c)), None)
-
-
-def _checar_adaptador(caminho, texto, existe):  # V16
-    if caminho in MONTAGEM:
-        return []
-    achados = []
-    for alvo in re.findall(r'#\s*include\s*"([^"]+)"', _sem_comentarios(texto)):
-        resolvido = _resolver(caminho, alvo, existe)
-        if resolvido and resolvido.startswith("core/") and not resolvido.startswith("core/portas/"):
-            achados.append(Achado("V16", ERRO, f'{caminho}: o adaptador inclui "{resolvido}" sem passar pela porta',
-                                  "use só core/portas/ (D22); quem cria as peças é o ponto de montagem: "
-                                  + ", ".join(sorted(MONTAGEM))))
-    return achados
-
-
-def checar_cpp(caminho, texto, existe):  # V4, V5 e V16
-    camada = _camada(caminho)
-    if camada is None:
-        return _checar_adaptador(caminho, texto, existe) if caminho.startswith("adapters/") else []
-    achados = []
-    codigo = _sem_comentarios(texto)
-    for tipo, alvo in re.findall(r'#\s*include\s*([<"])([^>"]+)[>"]', codigo):
-        if tipo == "<":
-            if alvo not in STL_PERMITIDA:
-                achados.append(Achado("V4", ERRO, f"{caminho}: #include <{alvo}> não é permitido no núcleo",
-                                      "o núcleo só usa a STL básica; se precisa mesmo, discuta e edite STL_PERMITIDA"))
-            continue
-        resolvido = _resolver(caminho, alvo, existe)
-        if resolvido is None:
-            achados.append(Achado("V4", ERRO, f'{caminho}: #include "{alvo}" não é um arquivo do projeto',
-                                  "cabeçalho de terceiros não entra no núcleo (só nos adaptadores)"))
-        elif resolvido.startswith("adapters/") or _camada(resolvido) not in CAMADAS.get(camada, set()):
-            achados.append(Achado("V5", ERRO, f'{caminho}: a camada "{camada}" não pode incluir "{resolvido}"',
-                                  "as dependências só apontam para dentro: grafo ← dominio ← portas ← casos_de_uso"))
-    for nome in sorted(set(re.findall(HEAP_PRONTA, codigo))):
-        achados.append(Achado("V4", ERRO, f"{caminho}: usa `{nome}` (fila de prioridade pronta)",
-                              "use a HeapBinaria do projeto (T08)"))
-    return achados
 
 
 def checar_python(caminho, texto):  # V6
@@ -196,37 +134,7 @@ def checar_coautoria(msg):  # V17
                    "tire a linha Co-Authored-By; o uso de IA vai só em docs/ia/registro.md (D27)")]
 
 
-def checar_ia(commits, alterados, labels):  # V7 e V8 (commit de IA no README)
-    """commits: [(sha, mensagem, arquivos)] · labels: conjunto do PR, ou None se não dá para saber."""
-    achados = []
-    com_ia = [c for c in commits if tem_coautor_ia(c[1])]
-    tem_label = bool(labels) and LABEL_IA in labels
-    if (com_ia or tem_label) and REGISTRO_IA not in alterados:
-        motivo = f"{len(com_ia)} commit(s) com coautoria de IA" if com_ia else f'o PR tem o label "{LABEL_IA}"'
-        achados.append(Achado("V7", ERRO, f"{motivo} e nenhuma linha nova no registro",
-                              f"acrescente uma linha em {REGISTRO_IA}"))
-    if com_ia and labels is None:
-        achados.append(Achado("V7", AVISO, "houve coautoria de IA", f'no PR, coloque o label "{LABEL_IA}"'))
-    elif com_ia and not tem_label:
-        achados.append(Achado("V7", ERRO, "houve coautoria de IA e o PR está sem o label", f'adicione o label "{LABEL_IA}"'))
-    return achados
-
-
 MARCA_README = "<!-- ✍️ ESCRITO À MÃO: daqui para baixo a IA não edita -->"
-
-
-def linhas_a_mao_readme(texto):
-    """Números das linhas abaixo da marca ✍️ do README (a parte escrita à mão)."""
-    linhas = texto.splitlines()
-    marca = next((i for i, l in enumerate(linhas, 1) if MARCA_README in l), None)
-    return set(range(marca + 1, len(linhas) + 1)) if marca else set()
-
-
-def checar_readme_ia(commits):  # V8
-    """commits: [(sha, mensagem, mexeu_na_parte_a_mao)]"""
-    return [Achado("V8", ERRO, f"commit {sha[:7]} tem coautoria de IA e mexe na parte do README escrita à mão",
-                   "abaixo da marca ✍️ o README é escrito à mão: tire essa parte do commit e escreva você mesmo")
-            for sha, msg, mexeu in commits if mexeu and tem_coautor_ia(msg)]
 
 
 def checar_readme_feature(labels, linhas_readme):  # V8
@@ -264,192 +172,3 @@ def checar_peso(arquivos):  # V12
             achados.append(Achado("V12", AVISO, f"{caminho}: {tamanho / 1024 / 1024:.1f} MB",
                                   "arquivo grande; precisa mesmo estar no git?"))
     return achados
-
-
-# ── Ficha ✍️ de entendimento (V14, V15) ───────────────────────────────────────
-# A IA pode escrever o código de core/grafo, mas cada função tem uma ficha preenchida À MÃO
-# por quem commita, provando que entende o que o algoritmo faz.
-PASTA_FICHA = "core/grafo/"
-EXT_CPP_FICHA = (".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx")
-MARCA_FICHA = "✍️ ENTENDIMENTO"
-VAZIO = "___"
-CAMPOS_FICHA = ("O que faz", "Como funciona", "Complexidade", "Exemplo", "Limitação")
-ACEITAM_TRAVESSAO = {"Exemplo", "Limitação"}  # funções triviais: "—" = não se aplica
-MODELO_FICHA = (f"/* {MARCA_FICHA} · por: {VAZIO}\n"
-                + "".join(f" * {c}: {VAZIO}\n" for c in CAMPOS_FICHA) + " */")
-MODELO_FICHA_PY = f"# {MARCA_FICHA} · por: {VAZIO}\n" + "".join(f"# {c}: {VAZIO}\n" for c in CAMPOS_FICHA)
-Ficha = namedtuple("Ficha", "linhas autor campos preenchida texto")
-_CONTROLE = re.compile(r"^(if|for|while|switch|catch|do|else|try|return)\b")
-
-
-def _mascarar(texto):
-    """Troca comentários, strings e diretivas # por espaços, mantendo posições e quebras de linha."""
-    branco = lambda m: re.sub(r"[^\n]", " ", m.group(0))
-    padrao = r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'|(?m:^[ \t]*#[^\n]*)'
-    return re.sub(padrao, branco, texto, flags=re.S)
-
-
-def definicoes_de_funcao(texto):
-    """[(nome, posição onde começa o cabeçalho)] das funções DEFINIDAS (com corpo) fora de outras funções."""
-    m, pilha, inicio, achadas = _mascarar(texto), [], 0, []
-    for i, c in enumerate(m):
-        if c in ";}":
-            if c == "}" and pilha:
-                pilha.pop()
-            inicio = i + 1
-        elif c == ":" and m[i - 1:i + 1] != "::" and m[i:i + 2] != "::" and re.search(r"\b(public|private|protected)\s*$", m[inicio:i]):
-            inicio = i + 1  # "public:" não faz parte do cabeçalho da função seguinte
-        elif c == "{":
-            cab = m[inicio:i].strip()
-            dentro_de_funcao = any(t in ("func", "bloco") for t in pilha)
-            if re.search(r"\bnamespace\b", cab):
-                tipo = "ns"
-            elif re.search(r"\b(class|struct|union|enum)\b", cab) and "(" not in cab:
-                tipo = "classe"
-            elif not dentro_de_funcao and "(" in cab and not _CONTROLE.match(cab) and not re.search(r"=\s*\[", cab):
-                tipo = "func"
-                nome = re.search(r"([~\w:]+)\s*\(", cab)
-                achadas.append((nome.group(1) if nome else "?", inicio + len(m[inicio:i]) - len(m[inicio:i].lstrip())))
-            else:
-                tipo = "bloco"
-            pilha.append(tipo)
-            inicio = i + 1
-    return achadas
-
-
-def _ler_ficha(bloco, linha_inicial):
-    linhas = bloco.splitlines()
-    autor = re.search(r"por:\s*(.*?)\s*(\*/)?\s*$", linhas[0])
-    autor = autor.group(1).strip() if autor else ""
-    campos, atual = {}, None
-    for l in linhas[1:]:
-        l = re.sub(r"^\s*(?:\*+/?|#)\s?", "", l).removesuffix("*/").strip()
-        rotulo = re.match(rf"^({'|'.join(CAMPOS_FICHA)})\s*:\s*(.*)$", l)
-        if rotulo:
-            atual = rotulo.group(1)
-            campos[atual] = rotulo.group(2).strip()
-        elif atual and l:
-            campos[atual] = (campos[atual] + " " + l).strip()
-    preenchida = autor not in ("", VAZIO) or any(v not in ("", VAZIO) for v in campos.values())
-    return Ficha(range(linha_inicial, linha_inicial + len(linhas)), autor, campos, preenchida, bloco)
-
-
-def _e_comentario_py(linha):
-    return linha.lstrip().startswith("#")
-
-
-def fichas(texto):
-    texto, achadas = texto.removeprefix(BOM), []
-    for m in re.finditer(r"/\*.*?\*/", texto, flags=re.S):
-        if MARCA_FICHA in m.group(0).splitlines()[0]:
-            achadas.append(_ler_ficha(m.group(0), texto.count("\n", 0, m.start()) + 1))
-    linhas = texto.splitlines()  # ficha em Python: bloco de linhas "#" que começa na marca
-    i = 0
-    while i < len(linhas):
-        if _e_comentario_py(linhas[i]) and MARCA_FICHA in linhas[i]:
-            fim = i + 1
-            while fim < len(linhas) and _e_comentario_py(linhas[fim]) and MARCA_FICHA not in linhas[fim]:
-                fim += 1
-            achadas.append(_ler_ficha("\n".join(linhas[i:fim]), i + 1))
-            i = fim
-        else:
-            i += 1
-    return achadas
-
-
-def definicoes_py(texto):
-    """[(nome, linha do 1º decorador ou do def)] dos `def` do módulo e de classes (def dentro de def não conta)."""
-    achadas = []
-
-    def visitar(corpo):
-        for no in corpo:
-            if isinstance(no, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                achadas.append((no.name, min([no.lineno] + [d.lineno for d in no.decorator_list])))
-            elif isinstance(no, ast.ClassDef):
-                visitar(no.body)
-
-    visitar(ast.parse(texto).body)
-    return achadas
-
-
-def _ficha_acima_py(linhas, linha):
-    i = linha - 2  # índice da linha logo acima
-    while i >= 0 and not linhas[i].strip():
-        i -= 1
-    fim = i + 1
-    while i >= 0 and _e_comentario_py(linhas[i]):
-        if MARCA_FICHA in linhas[i]:
-            return _ler_ficha("\n".join(linhas[i:fim]), i + 1)
-        i -= 1
-    return None
-
-
-def linhas_de_ficha(texto):
-    return {n for f in fichas(texto) for n in f.linhas}
-
-
-def _problemas_da_ficha(f):
-    problemas = [] if f.autor not in ("", VAZIO) else ["sem autor em `por:`"]
-    for campo in CAMPOS_FICHA:
-        valor = f.campos.get(campo, "")
-        if valor in ("", VAZIO) or (valor == "—" and campo not in ACEITAM_TRAVESSAO):
-            problemas.append(f"campo `{campo}` vazio")
-    return problemas
-
-
-def _checar_fichas_py(caminho, texto):
-    texto = texto.removeprefix(BOM)
-    try:
-        definicoes = definicoes_py(texto)
-    except SyntaxError:
-        return []  # quem acusa o arquivo inválido é a V4 (checar_python_nucleo)
-    linhas, achados = texto.splitlines(), []
-    for nome, linha in definicoes:
-        f = _ficha_acima_py(linhas, linha)
-        problemas = ["não tem ficha ✍️ logo acima"] if f is None else _problemas_da_ficha(f)
-        if problemas:
-            achados.append(Achado("V14", ERRO, f"{caminho}:{linha} `{nome}`: {'; '.join(problemas)}",
-                                  "preencha À MÃO a ficha ✍️ acima da função (modelo em docs/spec/04-algoritmos.md)"))
-    return achados
-
-
-def checar_fichas(caminho, texto):  # V14
-    if caminho.startswith(PASTA_FICHA) and caminho.endswith(".py"):
-        return _checar_fichas_py(caminho, texto)
-    if not caminho.startswith(PASTA_FICHA) or not caminho.endswith(EXT_CPP_FICHA):
-        return []
-    achados = []
-    for nome, pos in definicoes_de_funcao(texto):
-        antes = texto[:pos].rstrip()
-        abre = antes.rfind("/*")
-        f = _ler_ficha(antes[abre:], 0) if antes.endswith("*/") and abre >= 0 and MARCA_FICHA in antes[abre:].splitlines()[0] else None
-        linha = texto.count("\n", 0, pos) + 1
-        problemas = ["não tem ficha ✍️ logo acima"] if f is None else _problemas_da_ficha(f)
-        if problemas:
-            achados.append(Achado("V14", ERRO, f"{caminho}:{linha} `{nome}`: {'; '.join(problemas)}",
-                                  "preencha À MÃO a ficha ✍️ acima da função (modelo em docs/spec/04-algoritmos.md)"))
-    return achados
-
-
-def linhas_tocadas(diff):
-    """Lê um `git diff -U0` → {arquivo: (linhas removidas no antigo, linhas adicionadas no novo)}."""
-    tocadas, atual = {}, None
-    for l in diff.splitlines():
-        if l.startswith("+++ "):
-            atual = None if l[4:] == "/dev/null" else l[4:].removeprefix("b/")
-        elif l.startswith("--- ") and l[4:] != "/dev/null":
-            atual = l[4:].removeprefix("a/")
-        elif l.startswith("@@") and atual:
-            h = re.match(r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", l)
-            a, na, b, nb = int(h[1]), int(h[2] or 1), int(h[3]), int(h[4] or 1)
-            rem, add = tocadas.setdefault(atual, (set(), set()))
-            rem.update(range(a, a + na))
-            add.update(range(b, b + nb))
-    return tocadas
-
-
-def checar_ficha_ia(commits):  # V15
-    """commits: [(sha, mensagem, mexeu_em_linha_de_ficha)]"""
-    return [Achado("V15", ERRO, f"commit {sha[:7]} tem coautoria de IA e mexe numa ficha ✍️",
-                   "a ficha é escrita à mão: tire a ficha desse commit e escreva você mesmo num commit sem IA")
-            for sha, msg, mexeu in commits if mexeu and tem_coautor_ia(msg)]
