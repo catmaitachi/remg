@@ -1,16 +1,15 @@
-"""💥 SimularFalha: quem ficou sem energia e o fluxo novo (spec 04, "Falhas", e a sequência do 03).
-
-Mesma rede e mesmo Dinic injetados da CalcularFluxo (ver o cabeçalho de calcular_fluxo.py).
-"""
+"""💥 SimularFalha: quem ficou sem energia e o fluxo novo (spec 04, "Falhas", e a sequência do 03)."""
 
 from collections.abc import Callable, Iterable
 
 from core.casos_de_uso.calcular_fluxo import CalcularFluxo, ResultadoAnalise
+from core.dominio.rede_eletrica import RedeEletrica
 from core.grafo.alcance import Alcance
+from core.grafo.dinic import Dinic
 
 
 class SimularFalha:
-    def __init__(self, rede, novo_dinic: Callable[[], object]) -> None:
+    def __init__(self, rede: RedeEletrica, novo_dinic: Callable[[], Dinic] = Dinic) -> None:
         self._rede = rede
         self._calcular = CalcularFluxo(rede, novo_dinic)
 

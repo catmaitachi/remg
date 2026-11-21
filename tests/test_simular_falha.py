@@ -1,4 +1,4 @@
-"""T14: SimularFalha, com a rede e o Dinic falsos de tests/pecas_falsas.py.
+"""T14: SimularFalha, com a RedeEletrica e o Dinic de verdade.
 
 Rede do teste (capacidades e demandas em kVA):
 
@@ -18,30 +18,34 @@ Feito no papel, sem falha: A entrega 10 + 20 + 20 = 50 e B entrega 30. Fluxo tot
 import unittest
 
 from core.casos_de_uso.simular_falha import SimularFalha
+from core.dominio.elementos import Chave, Ponto, Subestacao, Trecho
+from core.dominio.rede_eletrica import RedeEletrica
 from core.grafo.alcance import Alcance
-from tests.pecas_falsas import DinicDeTeste, GrafoDeTeste, RedeDeTeste
+from core.grafo.grafo import Grafo
 
 AREA_A = ["p:1", "p:2", "p:3", "p:4"]
 
 
 def rede():
-    return RedeDeTeste(
-        subestacoes={"s:A": (100, "p:1"), "s:B": (100, "p:5")},
-        pontos={"p:1": 0, "p:2": 10, "p:3": 20, "p:4": 20, "p:5": 0, "p:6": 30},
-        trechos=[("t:1", "p:1", "p:2", 80), ("t:2", "p:2", "p:3", 40),
-                 ("t:3", "p:2", "p:4", 40), ("t:4", "p:5", "p:6", 50)],
-        chaves=[("c:1", "p:4", "p:6", 100)],
+    demanda = {"p:1": 0, "p:2": 10, "p:3": 20, "p:4": 20, "p:5": 0, "p:6": 30}
+    return RedeEletrica(
+        subestacoes=[Subestacao("s:A", "A", 0, 0, 100, ponto_raiz="p:1"),
+                     Subestacao("s:B", "B", 0, 0, 100, ponto_raiz="p:5")],
+        pontos=[Ponto(p, 0, 0, d) for p, d in demanda.items()],
+        trechos=[Trecho("t:1", "p:1", "p:2", 80), Trecho("t:2", "p:2", "p:3", 40),
+                 Trecho("t:3", "p:2", "p:4", 40), Trecho("t:4", "p:5", "p:6", 50)],
+        chaves=[Chave("c:1", "p:4", "p:6", 100)],
     )
 
 
 def simular(**kw):
-    return SimularFalha(rede(), DinicDeTeste).executar(**kw)
+    return SimularFalha(rede()).executar(**kw)
 
 
 class TestAlcance(unittest.TestCase):
     def test_arco_sem_capacidade_corta_e_bloqueado_nao_passa(self):
         # 0 ─(5)─ 1 ─(0)─ 2 ;  0 ─(5)─ 3 ─(5)─ 4
-        g = GrafoDeTeste(5)
+        g = Grafo(5)
         for u, v, c in [(0, 1, 5), (1, 2, 0), (0, 3, 5), (3, 4, 5)]:
             g.add_aresta(u, v, c)
         self.assertEqual(Alcance.a_partir_de(g, [0]), [True, True, False, True, True])
