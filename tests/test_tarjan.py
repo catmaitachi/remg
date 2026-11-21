@@ -1,6 +1,5 @@
-"""T23: Tarjan iterativo e PontosCriticos. O Grafo da T07 ainda não está no remg, então o teste usa
-um forward-star igual. O gabarito dos grafos aleatórios é a força bruta: tirar cada aresta (ou
-vértice) e contar as componentes com BFS.
+"""T23: Tarjan iterativo e PontosCriticos. O gabarito dos grafos aleatórios é a força bruta: tirar
+cada aresta (ou vértice) e contar as componentes com BFS.
 """
 
 import unittest
@@ -8,29 +7,17 @@ from collections import deque
 from random import Random
 
 from core.casos_de_uso.pontos_criticos import PontosCriticos
+from core.dominio.elementos import Chave, Ponto, Subestacao, Trecho
+from core.dominio.rede_eletrica import RedeEletrica
+from core.grafo.grafo import Grafo
 from core.grafo.tarjan import Tarjan
 
 
-class GrafoDeTeste:
-    def __init__(self, V):
-        self.V = V
-        self.head = [-1] * V
-        self.prox, self.para, self.cap = [], [], []
-
-    def add_aresta(self, u, v, capacidade=1):
-        e = len(self.para)
-        for de, ate in ((u, v), (v, u)):
-            self.para.append(ate)
-            self.cap.append(capacidade)
-            self.prox.append(self.head[de])
-            self.head[de] = len(self.para) - 1
-        return e
-
-
 def grafo(V, arestas):
-    g = GrafoDeTeste(V)
-    for a in arestas:
-        g.add_aresta(*a)
+    """arestas: (u, v) com capacidade 1, ou (u, v, capacidade)."""
+    g = Grafo(V)
+    for u, v, *cap in arestas:
+        g.add_aresta(u, v, cap[0] if cap else 1)
     return g
 
 
@@ -118,45 +105,24 @@ class TestTarjan(unittest.TestCase):
                 self.assertEqual(Tarjan.articulacoes(g), artic)
 
 
-class RedeDeTeste:
-    """Imita o RedeEletrica da T11 só no que o PontosCriticos usa.
-
-        S ── s:A ──(transformação)── p:1 [demanda] ──t:1── p:2 ──t:2── p:3 [demanda] ── T
-                                                  └c:1┐       │t:3
-                                                      p:4 ────┘ [demanda] ── T
+def rede():
     """
-
-    class _Chave:
-        def __init__(self, id_):
-            self.id = id_
-
-    def __init__(self):
-        self._ids = ["s:A", "p:1", "p:2", "p:3", "p:4", "S", "T"]
-        i = {x: k for k, x in enumerate(self._ids)}
-        self._arestas = [("t:1", "p:1", "p:2"), ("t:2", "p:2", "p:3"), ("t:3", "p:3", "p:4"),
-                         ("c:1", "p:4", "p:2"), (None, "s:A", "p:1"), (None, "S", "s:A"),
-                         (None, "p:1", "T"), (None, "p:3", "T"), (None, "p:4", "T")]
-        self._i = i
-        self.chaves = [self._Chave("c:1")]
-        self.s, self.t = i["S"], i["T"]
-
-    def montar_grafo(self, falhas=(), chaves_fechadas=()):
-        g = GrafoDeTeste(len(self._ids))
-        for id_, u, v in self._arestas:
-            aberta = id_ is not None and id_.startswith("c:") and id_ not in chaves_fechadas
-            g.add_aresta(self._i[u], self._i[v], 0 if aberta or id_ in falhas else 1)
-        return g
-
-    def id_do_arco(self, e):
-        return self._arestas[e >> 1][0]
-
-    def id_externo(self, v):
-        return self._ids[v]
+        S ── s:A ──(transformação)── p:1 [demanda] ──t:1── p:2 ──t:2── p:3 [demanda] ── T
+                                                          └c:1┐       │t:3
+                                                              p:4 ────┘ [demanda] ── T
+    """
+    demanda = {"p:1": 5, "p:2": 0, "p:3": 5, "p:4": 5}
+    return RedeEletrica(
+        subestacoes=[Subestacao("s:A", "A", 0, 0, 100, ponto_raiz="p:1")],
+        pontos=[Ponto(p, 0, 0, d) for p, d in demanda.items()],
+        trechos=[Trecho("t:1", "p:1", "p:2", 50), Trecho("t:2", "p:2", "p:3", 50), Trecho("t:3", "p:3", "p:4", 50)],
+        chaves=[Chave("c:1", "p:4", "p:2", 50)],
+    )
 
 
 class TestPontosCriticos(unittest.TestCase):
     def test_chave_fechada_salva_o_ciclo_e_o_tronco_continua_critico(self):
-        r = PontosCriticos(RedeDeTeste()).executar()
+        r = PontosCriticos(rede()).executar()
         # p:1 e p:3 têm demanda: sem ignorar o T, p:1─T─p:3 fecharia um ciclo e t:1 sumiria da lista.
         self.assertEqual(r.pontes, ["t:1"])
         self.assertEqual(r.articulacoes, ["p:1", "p:2"])

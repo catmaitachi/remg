@@ -2,13 +2,11 @@
 
 Numa rede radial quase todo trecho é ponte. O dado útil é onde a chave de manobra não salva, por
 isso o Tarjan roda com todas as chaves fechadas. Resposta do GET /criticos (06), menos o tempoMs.
-
-A rede chega por parâmetro enquanto a T11 (RedeEletrica) não está no remg. Interface usada:
-montar_grafo(falhas, chaves_fechadas) · chaves (com .id) · s · t · id_do_arco(e) · id_externo(v)
 """
 
 from dataclasses import dataclass
 
+from core.dominio.rede_eletrica import RedeEletrica
 from core.grafo.tarjan import Tarjan
 
 
@@ -19,7 +17,7 @@ class ResultadoCriticos:
 
 
 class PontosCriticos:
-    def __init__(self, rede) -> None:
+    def __init__(self, rede: RedeEletrica) -> None:
         self._rede = rede
 
     def executar(self) -> ResultadoCriticos:
