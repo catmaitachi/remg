@@ -34,6 +34,8 @@ Junto, o REMG ganha o logo (selo da barra e favicon).
 
 ## 📏 O que a medição mostrou
 
+> ⚠️ Os zooms abaixo foram medidos em tiles de 256 px. No MapLibre (512 px) cada um é 1 a menos: o trecho de ~17 px fica no zoom 14, e é aí que o raio entra (`RAIO.ZOOM = 14`).
+
 Rede de BH (`rede.bh.json`): 53.230 trechos; o trecho mediano tem **75 m** (p10 18 m, p90 176 m). Em pixels: zoom 12 ≈ 2 px, zoom 13 ≈ 4 px, zoom 15 ≈ 17 px, zoom 16 ≈ 33 px. Por isso o raio por trecho só se lê a partir do zoom 15, e o "andar" na cidade inteira tem que atravessar vários trechos seguidos (ondas pela distância até a subestação).
 
 ## 🧭 Caminhos considerados
