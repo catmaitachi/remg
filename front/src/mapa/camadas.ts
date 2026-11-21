@@ -209,6 +209,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
       getColor: rgb(p.at), getWidth: 6, widthUnits: "pixels", jointRounded: true, capRounded: true,
+      // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai
+      pickable: clicavel,
     }),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,
@@ -234,7 +236,7 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new ScatterplotLayer<Marco>({
       id: "gargalos-alerta", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getFillColor: cor.gargalo, getLineColor: fundo, stroked: true,
-      getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
+      getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, pickable: clicavel,
     }),
     new TextLayer<Marco>({
       id: "gargalos-alerta-texto", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,

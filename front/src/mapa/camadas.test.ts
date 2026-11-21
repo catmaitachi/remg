@@ -268,3 +268,10 @@ test("fora do Derrubar nada é pickable", () => {
     for (const id of ["trechos", "subestacoes", "caidos"]) expect(!!c[id].props.pickable, `${id} ${derrubando}`).toBe(esperado);
   }
 });
+
+test("no Derrubar, linha AT e marcador de gargalo seguram o clique (não derrubam o trecho de baixo)", () => {
+  const c = camadasCom([], "claro", true);
+  expect(c["linhas-at"].props.pickable).toBe(true);
+  expect(c["gargalos-alerta"].props.pickable).toBe(true);
+  expect(!!camadasCom([], "claro", false)["linhas-at"].props.pickable).toBe(false);
+});

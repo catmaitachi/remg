@@ -53,6 +53,10 @@ export async function pedirAnalise(
   if (usarMock) {
     // import dinâmico: o gerador fica fora do bundle de quem usa o servidor
     const { gerarAnalise } = await import("../../scripts/analise_sintetica.mjs");
+    // o cálculo do mock prende a tela (~1 s em BH): deixa o navegador pintar o "Calculando…" e o tracejado antes
+    const quadro = globalThis.requestAnimationFrame ?? ((f: () => void) => setTimeout(f));
+    await new Promise<void>((pronto) => quadro(() => setTimeout(pronto)));
+    if (signal?.aborted) throw new DOMException("pedido cancelado", "AbortError"); // um clique novo já substituiu este
     const analise = gerarAnalise(rede, pedido);
     const erros = validarAnalise(analise);
     if (erros.length) throw new Error(`a análise do mock não segue o contrato (06-api): ${erros.slice(0, 3).join("; ")}`);

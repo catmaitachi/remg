@@ -78,3 +78,10 @@ test("pedirAnalise repassa o erro do servidor", async () => {
   await expect(pedirAnalise(pedidoT1, pequena as never, undefined, false, () => resposta(500, { erro: "núcleo caiu" })))
     .rejects.toThrow(/núcleo caiu/);
 });
+
+test("pedirAnalise com mock não calcula pedido já cancelado", async () => {
+  const controle = new AbortController();
+  const pedido = pedirAnalise(pedidoT1, pequena as never, controle.signal, true);
+  controle.abort();
+  await expect(pedido).rejects.toMatchObject({ name: "AbortError" });
+});
