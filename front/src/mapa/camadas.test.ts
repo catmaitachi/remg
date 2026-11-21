@@ -172,6 +172,16 @@ test("com animação, trecho com fluxo fica apagado para a onda aparecer", () =>
   const t2 = dados.trechos.find((t) => t.id === "t:2"), t4 = dados.trechos.find((t) => t.id === "t:4");
   expect(parado.getColor(t2)[3] ?? 255).toBe(255);
   expect(animado.getColor(t2)[3]).toBeLessThan(128);
-  expect(animado.getColor(t4)[3] ?? 255).toBe(255); // sem fluxo não anima: fica igual
+  // sem fluxo também apaga (50%), senão a rede parada chama mais atenção que a que conduz
+  expect(animado.getColor(t4)[3]).toBeGreaterThan(animado.getColor(t2)[3]);
+  expect(animado.getColor(t4)[3]).toBeLessThan(255);
   expect(animado.updateTriggers.getColor).not.toEqual(parado.updateTriggers.getColor);
+});
+
+test("com animação, o brilho parado fica só em alerta e gargalo", () => {
+  const animado = comQuadro().brilho.props.data;
+  expect(animado.length).toBeGreaterThan(0);
+  expect(animado.every((t: { faixa: string }) => t.faixa === "alerta" || t.faixa === "gargalo")).toBe(true);
+  expect(comQuadro().brilho.props.data).toBe(animado); // mesma referência: não remonta a cada quadro
+  expect(porId().brilho.props.data).toBe(dados.comFluxo);
 });

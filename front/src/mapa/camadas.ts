@@ -18,7 +18,7 @@ export type LonLat = [number, number];
 export interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido }
 interface Marco { id: string; posicao: LonLat }
 export interface Dados {
-  trechos: Caminho[]; comFluxo: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
+  trechos: Caminho[]; comFluxo: Caminho[]; destaques: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
   linhasAT: Caminho[]; chaves: Marco[]; subestacoes: Subestacao[];
 }
 
@@ -48,6 +48,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
   return {
     trechos, gargalos, chaves, subestacoes: rede.subestacoes,
     comFluxo: trechos.filter((t) => t.faixa !== null),
+    destaques: trechos.filter((t) => t.faixa === "alerta" || t.faixa === "gargalo"),
     alertas: gargalos.map((g) => ({ id: g.id, posicao: meio(g.path) })),
     linhasAT: Object.entries(rede.geometriaAT).map(([id, coords]) => ({
       id, path: coords.map(([lat, lon]) => [lon, lat] as LonLat), faixa: null,
@@ -107,7 +108,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
 
   const camadas = [
     new PathLayer<Caminho>({
-      id: "brilho", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      // com animação, a onda faz o brilho das normais: o brilho largo nos 35 mil trechos custava metade do FPS no arraste
+      id: "brilho", data: quadro ? d.destaques : d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], Math.round(BRILHO[c.faixa!].alfa[tema] * 255)],
       getWidth: (c) => BRILHO[c.faixa!].largura, updateTriggers: { getColor: tema },
       widthUnits: "pixels", capRounded: true, jointRounded: true,
@@ -118,8 +120,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     }),
     new PathLayer<Caminho>({
       id: "trechos", data: d.trechos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      // com animação, a linha com fluxo vira trilho apagado (30%) e a onda e o raio correm por cima, como na prévia
-      getColor: (c) => (quadro && c.faixa ? [...cor[c.faixa], 77] : cor[c.faixa ?? "semFluxo"]),
+      // com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e a onda e o raio correm por cima, como na prévia
+      getColor: (c) => (quadro ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"]),
       updateTriggers: { getColor: [tema, !!quadro] },
       getWidth: 2, widthUnits: "pixels", widthMinPixels: 1,
     }),
