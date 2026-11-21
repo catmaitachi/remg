@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Map, useControl } from "react-map-gl/maplibre";
+import { Map, MapProvider, useControl } from "react-map-gl/maplibre";
 import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./tela/tela.css";
@@ -54,17 +54,21 @@ export default function App() {
   const camadas = useMemo(() => (dados ? montarCamadas(dados, visiveis, tema) : []), [dados, visiveis, tema]);
   const temChaves = useMemo(() => !!redeOk?.arestas.some((a) => a[3] === "chave"), [redeOk]);
 
+  // MapProvider: os controles usam useMap() fora do <Map>. Dentro dele ficariam abaixo do canvas do deck.gl,
+  // que o MapLibre põe num contêiner de controle com z-index 2.
   return (
-    <>
+    <MapProvider>
       <Map
+        id="mapa"
         initialViewState={CENTRO_BH}
         mapStyle={estiloDoMapa(tema === "escuro")}
         attributionControl={{ compact: true, customAttribution: "© OpenStreetMap contributors" }}
         style={{ position: "fixed", inset: 0 }}
       >
         <CamadasDeck layers={camadas} />
-        <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema} />
       </Map>
+
+      <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema} />
 
       {redeOk && <Barra area={redeOk.area} analise={analiseOk} usandoMock={USANDO_MOCK} />}
       {redeOk && <Legenda tema={tema} />}
@@ -82,6 +86,6 @@ export default function App() {
           <span>{analise.erro}</span>
         </p>
       )}
-    </>
+    </MapProvider>
   );
 }
