@@ -95,3 +95,9 @@ test("aresta do ciclo fora da árvore não entra em fluxo", () => {
   expect(f["t:ca"].f).toBe(1);
   expect(f["t:bc"]).toBeUndefined();
 });
+
+test("analise.bh.json commitado segue o contrato e é o que o gerador produz", () => {
+  const analiseBh = JSON.parse(readFileSync(new URL("../src/mocks/analise.bh.json", import.meta.url), "utf-8"));
+  expect(validarAnalise(analiseBh)).toEqual([]);
+  expect({ ...analiseBh, tempoMs: 0 }).toEqual(gerarAnalise(bh, () => 0));
+});

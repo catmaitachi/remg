@@ -33,3 +33,7 @@ test("potência em kVA ou MVA e tempo em ms", () => {
   expect(formatarPotencia(35127)).toBe("35,1 MVA");
   expect(formatarTempo(104)).toBe("104 ms");
 });
+
+test("demanda total zero com pontos sem luz não inventa 99%", () => {
+  expect(resumoDaCidade(analise(3, 0, 0))).toEqual({ porcento: 100, frase: "3 pontos sem luz" });
+});

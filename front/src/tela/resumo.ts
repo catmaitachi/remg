@@ -6,7 +6,8 @@ export function resumoDaCidade(a: Analise): { porcento: number; frase: string } 
   const porcento = a.demandaTotal > 0 ? Math.floor(100 * (1 - a.semEnergia.demanda / a.demandaTotal)) : 100;
   // Fala em pontos, não em casas: não há conversão real de ponto para casa.
   const frase = n === 0 ? "Toda a cidade com luz" : `${n.toLocaleString("pt-BR")} ${n === 1 ? "ponto" : "pontos"} sem luz`;
-  return { porcento: n === 0 ? 100 : Math.min(porcento, 99), frase };
+  // Sem demanda não há % a calcular: mostrar 99% seria inventar número.
+  return { porcento: n === 0 || a.demandaTotal <= 0 ? 100 : Math.min(porcento, 99), frase };
 }
 
 export function formatarPotencia(kva: number): string {
