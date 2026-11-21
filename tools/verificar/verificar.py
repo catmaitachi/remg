@@ -80,7 +80,7 @@ def pre_commit():
 def mensagem(arquivo):
     msg = pathlib.Path(arquivo).read_text(encoding="utf-8", errors="replace")
     preparados = linhas("diff", "--cached", "--name-only")
-    achados = r.checar_mensagem(msg)
+    achados = r.checar_mensagem(msg) + r.checar_coautoria(msg)
     if r.tem_coautor_ia(msg):
         achados += checar_trechos_a_mao(lambda p: git("diff", "--cached", "-U0", "--", p), "", "HEAD", "preparado", msg)
     if r.tem_coautor_ia(msg) and r.REGISTRO_IA not in preparados:
@@ -106,7 +106,7 @@ def checar_intervalo(base, head, branch, labels=None, corpo=None):
             continue
         sha, msg = bloco.strip().split("\x1f", 1)
         commits.append((sha, msg, linhas("diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha)))
-        achados += [a._replace(msg=f"{sha[:7]}: {a.msg}") for a in r.checar_mensagem(msg)]
+        achados += [a._replace(msg=f"{sha[:7]}: {a.msg}") for a in r.checar_mensagem(msg) + r.checar_coautoria(msg)]
     alterados = linhas("diff", "--name-only", base, head)
     achados += checar_conteudo(linhas("diff", "--name-only", "--diff-filter=ACMR", base, head), head)
     achados += r.checar_ia(commits, alterados, labels)

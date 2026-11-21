@@ -189,6 +189,13 @@ def tem_coautor_ia(msg):
     return bool(re.search(rf"(?im)^co-authored-by:.*\b({FERRAMENTAS_IA})", msg))
 
 
+def checar_coautoria(msg):  # V17
+    if not tem_coautor_ia(msg):
+        return []
+    return [Achado("V17", ERRO, "o commit tem coautoria de IA (Co-Authored-By)",
+                   "tire a linha Co-Authored-By; o uso de IA vai só em docs/ia/registro.md (D27)")]
+
+
 def checar_ia(commits, alterados, labels):  # V7 e V8 (commit de IA no README)
     """commits: [(sha, mensagem, arquivos)] · labels: conjunto do PR, ou None se não dá para saber."""
     achados = []

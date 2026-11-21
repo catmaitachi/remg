@@ -178,6 +178,18 @@ class TestReadmeIA(unittest.TestCase):  # V8: só a parte abaixo da marca ✍️
         self.assertFalse(r.tem_coautor_ia("fix: x\n\nCo-Authored-By: Laura <laura@x.com>"))
 
 
+class TestCoautoria(unittest.TestCase):  # V17
+    def test_v17_barra_coautor_claude(self):
+        achados = r.checar_coautoria("feat: x\n\nCo-Authored-By: Claude <noreply@anthropic.com>")
+        self.assertEqual(ids(achados), [("V17", r.ERRO)])
+
+    def test_v17_aceita_coautor_humano(self):
+        self.assertEqual(r.checar_coautoria("feat: x\n\nCo-Authored-By: Laura Lara <l@x>"), [])
+
+    def test_v17_aceita_sem_trailer(self):
+        self.assertEqual(r.checar_coautoria("feat: x"), [])
+
+
 class TestReadmeFeature(unittest.TestCase):  # V8b
     def test_sem_label_nao_exige(self):
         self.assertEqual(r.checar_readme_feature(set(), []), [])

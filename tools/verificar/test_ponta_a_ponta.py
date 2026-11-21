@@ -57,9 +57,9 @@ class TestPontaAPonta(unittest.TestCase):
         self.assertNotEqual(rc, 0)
         self.assertIn("V1", saida)
 
-    def test_include_proibido_no_nucleo_e_barrado(self):
+    def test_import_proibido_no_nucleo_e_barrado(self):
         self.git("switch", "-q", "-c", "feat/1-grafo")
-        rc, saida = self.commit("feat: grafo", **{"core__grafo__a.cpp": "#include <queue>\n"})
+        rc, saida = self.commit("feat: grafo", **{"core__grafo__a.py": "import heapq\n"})
         self.assertNotEqual(rc, 0)
         self.assertIn("V4", saida)
 
@@ -70,23 +70,22 @@ class TestPontaAPonta(unittest.TestCase):
 
     def test_commit_certo_passa(self):
         self.git("switch", "-q", "-c", "feat/1-grafo")
-        rc, saida = self.commit("feat: grafo", **{"core__grafo__a.cpp": "#include <vector>\n",
-                                                  "tests__t.cpp": "int main(){}\n"})
+        rc, saida = self.commit("feat: grafo", **{"core__grafo__a.py": "import math\n",
+                                                  "tests__test_a.py": "x = 1\n"})
         self.assertEqual(rc, 0, saida)
 
-    MARCA = "<!-- ✍️ ESCRITO À MÃO: daqui para baixo a IA não edita -->"
+    IA = "\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
 
-    def test_ia_na_parte_a_mao_do_readme_e_barrada(self):
+    def test_commit_com_coautoria_de_ia_e_barrado(self):
         self.git("switch", "-q", "-c", "docs/1-readme")
-        rc, saida = self.commit("docs: falhas\n\nCo-Authored-By: Claude <noreply@anthropic.com>",
-                                **{"README.md": f"# teste\n{self.MARCA}\n## 💥 Falhas\n", "docs__ia__registro.md": "x\n"})
+        rc, saida = self.commit("docs: como rodar" + self.IA, **{"README.md": "# teste\n## Como rodar\n"})
         self.assertNotEqual(rc, 0)
-        self.assertIn("V8", saida)
+        self.assertIn("V17", saida)
 
-    def test_ia_na_parte_geral_do_readme_passa(self):
+    def test_coautor_humano_passa(self):
         self.git("switch", "-q", "-c", "docs/1-readme")
-        rc, saida = self.commit("docs: como rodar\n\nCo-Authored-By: Claude <noreply@anthropic.com>",
-                                **{"README.md": f"# teste\n## Como rodar\nnpm run dev\n{self.MARCA}\n", "docs__ia__registro.md": "x\n"})
+        rc, saida = self.commit("docs: como rodar\n\nCo-Authored-By: Laura <l@x.com>",
+                                **{"README.md": "# teste\n## Como rodar\n"})
         self.assertEqual(rc, 0, saida)
 
     def relatorio_da_branch(self):
@@ -96,18 +95,19 @@ class TestPontaAPonta(unittest.TestCase):
 
     def test_relatorio_da_branch_limpa(self):
         self.git("switch", "-q", "-c", "feat/1-grafo")
-        self.commit("feat: grafo", **{"core__grafo__a.cpp": "#include <vector>\n", "tests__t.cpp": "x\n"})
+        self.commit("feat: grafo", **{"core__grafo__a.py": "import math\n", "tests__test_a.py": "x = 1\n"})
         rc, saida = self.relatorio_da_branch()
         self.assertEqual(rc, 0, saida)
         self.assertIn("Resultado", saida)
 
-    def test_relatorio_pega_ia_sem_registro(self):
+    def test_relatorio_pega_coautoria_que_pulou_o_hook(self):
         self.git("switch", "-q", "-c", "feat/1-grafo")
-        self.commit("feat: grafo\n\nCo-Authored-By: Claude <noreply@anthropic.com>",
-                    **{"core__grafo__a.cpp": "#include <vector>\n", "tests__t.cpp": "x\n"})
+        self.escrever("core/grafo/a.py", "import math\n")
+        self.git("add", ".")
+        self.git("commit", "-q", "--no-verify", "-m", "feat: grafo" + self.IA)
         rc, saida = self.relatorio_da_branch()
         self.assertNotEqual(rc, 0)
-        self.assertIn("V7", saida)
+        self.assertIn("V17", saida)
 
 
     def rodar(self, *args, entrada="", env=None):
@@ -127,7 +127,7 @@ class TestPontaAPonta(unittest.TestCase):
 
     def test_pr_de_feature_sem_readme_e_sem_issue_e_barrado(self):
         self.git("switch", "-q", "-c", "feat/1-falhas")
-        self.commit("feat: falhas", **{"core__dominio__f.cpp": "int x;\n", "tests__t.cpp": "x\n"})
+        self.commit("feat: falhas", **{"core__dominio__f.py": "x = 1\n", "tests__test_f.py": "x = 1\n"})
         rc, saida = self.pr("implementa falhas", ["feature-principal"])
         self.assertNotEqual(rc, 0)
         self.assertIn("V3", saida)
@@ -135,7 +135,7 @@ class TestPontaAPonta(unittest.TestCase):
 
     def test_pr_de_feature_completo_passa(self):
         self.git("switch", "-q", "-c", "feat/1-falhas")
-        self.commit("feat: falhas", **{"core__dominio__f.cpp": "int x;\n", "tests__t.cpp": "x\n",
+        self.commit("feat: falhas", **{"core__dominio__f.py": "x = 1\n", "tests__test_f.py": "x = 1\n",
                                        "README.md": "# teste\n## 💥 Falhas\n✍️ Escrito por: Laura\n"})
         rc, saida = self.pr("Closes #1", ["feature-principal"])
         self.assertEqual(rc, 0, saida)
@@ -161,13 +161,6 @@ class TestPontaAPonta(unittest.TestCase):
                                                            "tests__t.cpp": "x\n", "docs__ia__registro.md": "x\n"})
         self.assertNotEqual(rc, 0)
         self.assertIn("V15", saida)
-
-    def test_ia_mexe_so_no_codigo_e_passa(self):
-        self.git("switch", "-q", "-c", "feat/1-grafo")
-        self.commit("docs: ficha da soma", **{"core__grafo__s.cpp": self.FICHA + "int soma() {\n  return 1;\n}\n", "tests__t.cpp": "x\n"})
-        rc, saida = self.commit("fix: soma" + self.IA, **{"core__grafo__s.cpp": self.FICHA + "int soma() {\n  return 2;\n}\n",
-                                                          "tests__t.cpp": "y\n", "docs__ia__registro.md": "x\n"})
-        self.assertEqual(rc, 0, saida)
 
     def test_relatorio_pega_ficha_mexida_por_ia_que_pulou_o_hook(self):
         self.git("switch", "-q", "-c", "feat/1-grafo")
