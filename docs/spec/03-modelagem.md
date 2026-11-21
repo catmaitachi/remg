@@ -97,6 +97,13 @@ classDiagram
         class BFS {
             +componentes(Grafo) list~int~
         }
+        class Kruskal {
+            +arvore_minima(num_vertices, candidatas, ja_conectados) ResultadoKruskal
+        }
+        class UnionFind {
+            +acha(v) int
+            +une(a, b) bool
+        }
     }
     namespace dominio {
         class RedeEletrica {
@@ -125,6 +132,7 @@ classDiagram
     Tarjan ..> Grafo
     Dijkstra ..> Grafo
     BFS ..> Grafo
+    Kruskal ..> UnionFind
     note for Dinic "um objeto novo por pedido (guarda estado entre fluxoMaximo e corteMinimo)"
 ```
 
