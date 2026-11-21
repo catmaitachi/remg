@@ -23,9 +23,9 @@ test("estilo do mapa segue o tema", () => {
   expect(estiloDoMapa(false)).toMatch(/\/positron$/);
 });
 
-test("sete camadas, com o halo por baixo dos trechos", () => {
+test("oito camadas, com brilho e halo por baixo dos trechos", () => {
   expect(montarCamadas(dados, VISIVEIS_INICIAL, "claro").map((c) => c.id)).toEqual([
-    "halo-gargalos", "trechos", "linhas-at", "chaves", "subestacoes", "gargalos-alerta", "gargalos-alerta-texto",
+    "brilho", "halo-gargalos", "trechos", "linhas-at", "chaves", "subestacoes", "gargalos-alerta", "gargalos-alerta-texto",
   ]);
   const c = porId();
   expect(c.trechos.props.data).toHaveLength(rede.arestas.filter((a) => a[3] !== "linha_at").length);
@@ -66,7 +66,7 @@ test("id da análise que não está na rede é ignorado", () => {
 test("desligar distribuição só esconde, sem remontar os dados", () => {
   const ligado = porId();
   const desligado = porId(dados, { ...VISIVEIS_INICIAL, distribuicao: false });
-  for (const id of ["trechos", "halo-gargalos", "gargalos-alerta", "gargalos-alerta-texto"]) {
+  for (const id of ["brilho", "trechos", "halo-gargalos", "gargalos-alerta", "gargalos-alerta-texto"]) {
     expect(desligado[id].props.visible, id).toBe(false);
     expect(desligado[id].props.data, id).toBe(ligado[id].props.data);
   }
@@ -106,4 +106,25 @@ test("acessores entregam [lon, lat] iguais aos do mock", () => {
   expect(c["linhas-at"].props.getPath(c["linhas-at"].props.data[0])).toEqual(at.map(([lat, lon]) => [lon, lat]));
   const s = rede.subestacoes[0];
   expect(c.subestacoes.props.getPosition(c.subestacoes.props.data[0])).toEqual([s[3], s[2]]);
+});
+
+test("brilho suave só nas linhas com fluxo, mais forte e largo conforme o uso", () => {
+  for (const tema of ["claro", "escuro"] as const) {
+    const c = porId(dados, VISIVEIS_INICIAL, tema);
+    const b = c.brilho.props;
+    expect(b.data.every((t: { faixa: string | null }) => t.faixa !== null)).toBe(true);
+    expect(b.data).toHaveLength(analise.fluxo.filter(([id]) => rede.arestas.some((a) => a[0] === id)).length);
+    const de = (id: string) => b.data.find((t: { id: string }) => t.id === id);
+    const [normal, alerta, gargalo] = ["t:2", "t:1", "t:3"].map(de);
+    // cor da faixa, com transparência; suave: nem o gargalo passa de 40% de opacidade
+    expect(b.getColor(gargalo).slice(0, 3)).toEqual(rgb(PALETA[tema].gargalo));
+    const alfa = [normal, alerta, gargalo].map((t) => b.getColor(t)[3]);
+    expect(alfa[0]).toBeLessThan(alfa[1]);
+    expect(alfa[1]).toBeLessThan(alfa[2]);
+    expect(alfa[2]).toBeLessThanOrEqual(0.4 * 255);
+    const largura = [normal, alerta, gargalo].map((t) => b.getWidth(t));
+    expect(largura[0]).toBeLessThan(largura[1]);
+    expect(largura[1]).toBeLessThan(largura[2]);
+    expect(b.updateTriggers.getColor).toBe(tema);
+  }
 });

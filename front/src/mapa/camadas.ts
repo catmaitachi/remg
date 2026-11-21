@@ -15,7 +15,7 @@ type LonLat = [number, number];
 interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null }
 interface Marco { id: string; posicao: LonLat }
 export interface Dados {
-  trechos: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
+  trechos: Caminho[]; comFluxo: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
   linhasAT: Caminho[]; chaves: Marco[]; subestacoes: Subestacao[];
 }
 
@@ -43,6 +43,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
 
   return {
     trechos, gargalos, chaves, subestacoes: rede.subestacoes,
+    comFluxo: trechos.filter((t) => t.faixa !== null),
     alertas: gargalos.map((g) => ({ id: g.id, posicao: meio(g.path) })),
     linhasAT: Object.entries(rede.geometriaAT).map(([id, coords]) => ({
       id, path: coords.map(([lat, lon]) => [lon, lat] as LonLat), faixa: null,
@@ -55,6 +56,14 @@ const iconeChave = (borda: string, fundo: string) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect x="3" y="3" width="18" height="18" fill="${fundo}" stroke="${borda}" stroke-width="3"/></svg>`,
   )}`;
 
+// Brilho parado do efeito elétrico (T18): versão suave do protótipo, que ali ia de 26% a 65%. A rede de BH é
+// densa, então o normal quase não brilha. Fios e faíscas em movimento ficam para a T19.
+const BRILHO: Record<Faixa, { largura: number; alfa: Record<Tema, number> }> = {
+  normal: { largura: 5, alfa: { claro: 0.08, escuro: 0.14 } },
+  alerta: { largura: 8, alfa: { claro: 0.16, escuro: 0.26 } },
+  gargalo: { largura: 12, alfa: { claro: 0.24, escuro: 0.36 } },
+};
+
 export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
@@ -62,6 +71,12 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
 
   return [
+    new PathLayer<Caminho>({
+      id: "brilho", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => [...cor[c.faixa!], Math.round(BRILHO[c.faixa!].alfa[tema] * 255)],
+      getWidth: (c) => BRILHO[c.faixa!].largura, updateTriggers: { getColor: tema },
+      widthUnits: "pixels", capRounded: true, jointRounded: true,
+    }),
     new PathLayer<Caminho>({
       id: "halo-gargalos", data: d.gargalos, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: fundo, getWidth: 8, widthUnits: "pixels", capRounded: true,

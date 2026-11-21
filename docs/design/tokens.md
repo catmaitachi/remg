@@ -33,7 +33,16 @@ O vidro usa `blur(22px) saturate(170%)` e cantos de 16 px. O grão é um ruído 
 Menor distinção entre usos: ΔE 28,0 no claro e 38,4 no escuro. Normal × botão: ΔE 35,3 e 31,6 (era 7,5 com o azul antigo). O gargalo também leva halo e um "!".
 
 - **Tela:** barra lateral à esquerda (marca, cartão da cidade em barra de progresso, 4 blocos); controles e o painel de **Camadas** à direita; legenda de uso no pé.
-- **FPS medido (T18):** 141,7 com BH inteira (851 quadros em 6.004 ms, contados por `requestAnimationFrame` durante arrastes, janela de 800×522, modo dev).
+- **Brilho (efeito elétrico parado, T18):** um traço largo e transparente na cor do uso, por baixo de cada linha com fluxo. É uma versão suave do protótipo, porque a rede de BH é densa:
+
+| Uso | Largura | ☀️ Opacidade | 🌙 Opacidade |
+|---|---|---|---|
+| Normal | 5 px | 8% | 14% |
+| Perto do limite | 8 px | 16% | 26% |
+| Gargalo | 12 px | 24% | 36% |
+
+  Fios tremendo e faíscas, que se movem, ficam para a T19 (animação).
+- **FPS medido (T18):** 133,8 com BH inteira e o brilho ligado (803 quadros em 6.002 ms, contados por `requestAnimationFrame` durante arrastes, janela de 800×522, modo dev). Sem o brilho tinha dado 141,7.
 
 > Fonte da verdade: [`prototipo/estilo.css`](prototipo/estilo.css). Os testes [`cores.test.cjs`](prototipo/cores.test.cjs) conferem contraste e daltonismo: `node --test docs/design/prototipo/`.
 > Tudo aqui é 🟡 **proposta** até o grupo aprovar o protótipo. Depois disso vira ✅ e entra na [07-frontend](../spec/07-frontend.md).
