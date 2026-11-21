@@ -62,4 +62,6 @@
 
 ## 🎨 Design
 
+✅ **Visual decidido na T18:** linguagem do Design System gov.br (sem a marca), barra lateral de vidro com grão e paleta de uso híbrida. Os valores ficam na seção [🏛️ gov.br](../design/tokens.md#️-govbr-t18--decidido) do tokens.md, que vale também para os diagramas.
+
 Na execução, a tela nova passa pelas skills `hallmark` + `ui-ux-pro-max` (fluxo do projeto) e o polimento pelo `impeccable`. Precisa funcionar com tema claro e escuro. Os contrastes de cor de uso precisam ser legíveis por quem tem daltonismo, por isso a cor nunca é a única pista: o gargalo também ganha espessura ou ícone.

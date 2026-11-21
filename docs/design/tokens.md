@@ -1,5 +1,49 @@
 # 🎨 Tokens e legenda da tela (T02)
 
+## 🏛️ gov.br (T18) ✅ decidido
+
+> ✅ Decidido pelo Lucas em 21/11/2026, etapa por etapa ([design da T18](../superpowers/specs/2026-11-21-t18-camadas-e-cores-design.md)). **Vale para a tela e para os diagramas** de [`docs/diagramas/`](../diagramas/) (refeitos na T31, issue #37). Substitui o que as seções abaixo, da T02, dizem sobre cor de UI, fonte e cartão; elas ficam como histórico.
+>
+> Fonte da verdade no código: [`front/src/estilo/tokens.css`](../../front/src/estilo/tokens.css) (UI) e [`front/src/mapa/cores.ts`](../../front/src/mapa/cores.ts) (mapa, com teste de contraste e daltonismo em `cores.test.ts`).
+
+- **Linguagem:** a do Design System gov.br (`@govbr-ds/core` 3.7.0: tokens copiados, não o pacote). Só a linguagem, **nunca a marca**: sem logo gov.br, cabeçalho de governo ou selo.
+- **Nome na tela:** REMG · Rede de Energia de Minas Gerais.
+- **Fonte:** Rawline, carregada do CDN do gov.br, com Raleway de reserva. A fonte não fica no repositório (não achamos a licença).
+- **Vidro com grão (acompanha o tema):**
+
+| | ☀️ Claro | 🌙 Escuro |
+|---|---|---|
+| Vidro | `rgb(255 255 255 / .66)` | `rgb(7 29 65 / .70)` (azul-marinho `#071D41`) |
+| Borda | `rgb(255 255 255 / .7)` | `rgb(255 255 255 / .12)` |
+| Texto | `#333333` | `#ffffff` |
+| Primário / texto nele | `#1351B4` / `#ffffff` | `#C5D4EB` / `#071D41` |
+| Grão (opacidade) | .35 | .45 |
+
+O vidro usa `blur(22px) saturate(170%)` e cantos de 16 px. O grão é um ruído fractal SVG em `mix-blend-mode: overlay`.
+
+- **Cores de uso (paleta híbrida):** ciano do gov.br no claro, Okabe no resto.
+
+| Uso | ☀️ Claro | 🌙 Escuro |
+|---|---|---|
+| Normal (< 60%) | `#0081a1` | `#3db2ff` |
+| Perto do limite (60 a 90%) | `#c26a00` | `#ffb000` |
+| Gargalo (≥ 90%) | `#c4004f` | `#ff4f8b` |
+| Sem fluxo | `#7f7f7f` | `#9ba7b5` |
+
+Menor distinção entre usos: ΔE 28,0 no claro e 38,4 no escuro. Normal × botão: ΔE 35,3 e 31,6 (era 7,5 com o azul antigo). O gargalo também leva halo e um "!".
+
+- **Tela:** barra lateral à esquerda (marca, cartão da cidade em barra de progresso, 4 blocos); controles e o painel de **Camadas** à direita; legenda de uso no pé.
+- **Brilho (efeito elétrico parado, T18):** um traço largo e transparente na cor do uso, por baixo de cada linha com fluxo. É uma versão suave do protótipo, porque a rede de BH é densa:
+
+| Uso | Largura | ☀️ Opacidade | 🌙 Opacidade |
+|---|---|---|---|
+| Normal | 5 px | 8% | 14% |
+| Perto do limite | 8 px | 16% | 26% |
+| Gargalo | 12 px | 24% | 36% |
+
+  Fios tremendo e faíscas, que se movem, ficam para a T19 (animação).
+- **FPS medido (T18):** 133,8 com BH inteira e o brilho ligado (803 quadros em 6.002 ms, contados por `requestAnimationFrame` durante arrastes, janela de 800×522, modo dev). Sem o brilho tinha dado 141,7.
+
 > Fonte da verdade: [`prototipo/estilo.css`](prototipo/estilo.css). Os testes [`cores.test.cjs`](prototipo/cores.test.cjs) conferem contraste e daltonismo: `node --test docs/design/prototipo/`.
 > Tudo aqui é 🟡 **proposta** até o grupo aprovar o protótipo. Depois disso vira ✅ e entra na [07-frontend](../spec/07-frontend.md).
 

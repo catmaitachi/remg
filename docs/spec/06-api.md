@@ -2,6 +2,8 @@
 
 > [!IMPORTANT]
 > ✅ **Contrato congelado em 10/11/2026** (T01, D25). O front começa com **arquivos de exemplo** (`front/src/mocks/*.json`) no formato daqui, e o back trabalha para devolver exatamente isso. Mudar o contrato = PR alterando este arquivo **e** os mocks juntos.
+>
+> `front/src/mocks/analise.bh.json`: resposta de `POST /analise` com pedido vazio para BH, sintética (fluxo coerente da T18), gerada por `npm --prefix front run mock:bh`.
 
 - Base: `http://localhost:8080/api`
 - Tudo em JSON, UTF-8. Ids são **strings estáveis** (`"p:123"` ponto, `"s:45"` subestação, `"sp:3"` ponto de suprimento, `"t:678"` trecho, `"c:90"` chave, `"at:12"` linha AT).
