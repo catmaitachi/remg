@@ -2,8 +2,8 @@
 
 Uso (da raiz do repo):
     python adapters/cli/main.py caminhos     grafo.txt 0 [3 ...]   Dijkstra com várias fontes
-    python adapters/cli/main.py fluxo        grafo.txt S T         Dinic (fluxo máximo)          ⏳ T09
-    python adapters/cli/main.py componentes  grafo.txt             BFS (componentes conexas)     ⏳ T07
+    python adapters/cli/main.py fluxo        grafo.txt S T         Dinic (fluxo máximo)
+    python adapters/cli/main.py componentes  grafo.txt             BFS (componentes conexas)
     python adapters/cli/main.py pontes       grafo.txt             Tarjan (pontes)               ⏳ T23
     python adapters/cli/main.py articulacoes grafo.txt             Tarjan (pontos de articulação) ⏳ T23
 Com --json, imprime {"resultado": ..., "tempoMs": ...} numa linha, para o benchmark (T22) ler.
@@ -27,41 +27,16 @@ from pathlib import Path
 # A raiz do repo entra no caminho para o `core` ser achado rodando de qualquer lugar.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from core.grafo.bfs import BFS  # noqa: E402
 from core.grafo.dijkstra import Dijkstra  # noqa: E402
+from core.grafo.dinic import Dinic  # noqa: E402
+from core.grafo.grafo import Grafo  # noqa: E402
 
 FALTA_PECA = 3
 
 
 class PecaFaltando(Exception):
     pass
-
-
-class _GrafoProvisorio:
-    """Forward-star igual ao Grafo da T07, só até ele chegar ao remg (aí apagar esta classe)."""
-
-    def __init__(self, V):
-        self.V = V
-        self.head = [-1] * V
-        self.prox, self.para, self.cap = [], [], []
-
-    def add_aresta(self, u, v, capacidade):
-        if not (0 <= u < self.V and 0 <= v < self.V):
-            raise IndexError("vértice fora do grafo")
-        e = len(self.para)
-        for de, ate in ((u, v), (v, u)):
-            self.para.append(ate)
-            self.cap.append(capacidade)
-            self.prox.append(self.head[de])
-            self.head[de] = len(self.para) - 1
-        return e
-
-
-def _classe_grafo():
-    try:
-        from core.grafo.grafo import Grafo
-        return Grafo
-    except ImportError:
-        return _GrafoProvisorio
 
 
 def ler_grafo(texto):
@@ -73,7 +48,7 @@ def ler_grafo(texto):
     n, campos = linhas[0]
     if len(campos) != 1 or not campos[0].isdigit():
         raise ValueError(f"linha {n}: esperava só o número de vértices")
-    g, peso = _classe_grafo()(int(campos[0])), []
+    g, peso = Grafo(int(campos[0])), []
     for n, campos in linhas[1:]:
         if len(campos) not in (3, 4):
             raise ValueError(f"linha {n}: esperava `u v capacidade [peso]`")
@@ -102,12 +77,11 @@ def cmd_caminhos(g, peso, args):
 
 
 def cmd_fluxo(g, peso, args):
-    Dinic = _importar("core.grafo.dinic", "Dinic", "T09")
     return Dinic().fluxo_maximo(g, args.s, args.t).total
 
 
 def cmd_componentes(g, peso, args):
-    return list(_importar("core.grafo.bfs", "BFS", "T07").componentes(g))
+    return BFS.componentes(g)
 
 
 def cmd_pontes(g, peso, args):

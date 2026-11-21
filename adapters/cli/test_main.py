@@ -69,12 +69,24 @@ class TestCli(unittest.TestCase):
         self.assertEqual(codigo, 1)
         self.assertIn("❌", erro)
 
-    def test_cada_subcomando_responde_ou_avisa_a_task_que_falta(self):
+    def test_fluxo(self):
+        # O corte é a aresta 1─3 (capacidade 5).
+        codigo, saida, _ = self.rodar("fluxo", "0", "3")
+        self.assertEqual((codigo, saida.splitlines()[0]), (0, "5"))
+
+    def test_componentes(self):
+        codigo, saida, _ = self.rodar("componentes")
+        self.assertEqual((codigo, saida.splitlines()[0]), (0, "0 0 0 0 1"))
+
+    def test_fluxo_com_vertice_fora_do_grafo(self):
+        codigo, _, erro = self.rodar("fluxo", "0", "9")
+        self.assertEqual(codigo, 1)
+        self.assertIn("❌", erro)
+
+    def test_tarjan_responde_ou_avisa_a_task_que_falta(self):
         # Enquanto a peça não está no remg, o subcomando sai com FALTA_PECA citando a task.
         # Quando ela chega, o mesmo teste passa a conferir a resposta feita no papel para GRAFO.
-        casos = [(("fluxo", "0", "3"), "core.grafo.dinic", "T09", "5"),
-                 (("componentes",), "core.grafo.bfs", "T07", None),
-                 (("pontes",), "core.grafo.tarjan", "T23", "3"),
+        casos = [(("pontes",), "core.grafo.tarjan", "T23", "3"),
                  (("articulacoes",), "core.grafo.tarjan", "T23", "1")]
         for argv, modulo, task, esperado in casos:
             with self.subTest(comando=argv[0]):
