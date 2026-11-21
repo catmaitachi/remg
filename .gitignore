@@ -1,0 +1,14 @@
+# Configuração pessoal do Claude Code (cada integrante tem a sua)
+.claude/settings.local.json
+
+# Dados brutos do OSM (grandes; o processado em data/bh/ vai para o git)
+data/raw/
+
+# Build
+build/
+node_modules/
+dist/
+__pycache__/
+
+# esboços do brainstorm (superpowers)
+.superpowers/

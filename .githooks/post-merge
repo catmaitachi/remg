@@ -1,0 +1,10 @@
+#!/bin/sh
+# Depois do git pull: apaga as branches locais cujo PR já entrou (o GitHub apagou a remota).
+# "git branch -d" recusa branch não mergeada, então trabalho em andamento nunca é apagado.
+git fetch --prune --quiet 2>/dev/null
+git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads | while read -r branch situacao; do
+  if [ "$situacao" = "[gone]" ] && git branch -d "$branch" >/dev/null 2>&1; then
+    echo "🧹 branch local $branch apagada (já entrou na main)"
+  fi
+done
+exit 0

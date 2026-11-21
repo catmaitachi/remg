@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="casos-de-uso-dark-title casos-de-uso-dark-desc" id="casos-de-uso-dark-root">
+<title id="casos-de-uso-dark-title">Casos de uso do Cintilante</title><desc id="casos-de-uso-dark-desc">O operador vê a rede e o fluxo animado, vê gargalos, simula falha, vê rota alternativa e vê pontos críticos. Simular falha inclui calcular quem ficou sem energia. Ver rota alternativa estende simular falha.</desc>
+<defs>
+      <style>#casos-de-uso-dark-root { font-family: 'Geist', system-ui, sans-serif; color: #f5f5f5; }
+      #casos-de-uso-dark-root .diagram-container { width: 100%; overflow-x: auto; }
+      @media print {
+#casos-de-uso-dark-root .diagram-container { overflow-x: visible; }
+}</style>
+<pattern id="casos-de-uso-dark-casos-de-uso-dark-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="#f5f5f5" fill-opacity="0.10"/></pattern>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bfc0c0"/></marker>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#739fdf"/></marker>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f08a59"/></marker>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#bfc0c0" stroke-width="1.2"/></marker>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-tri" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="1 1, 11 5, 1 9" fill="#2d3142" stroke="#f5f5f5" stroke-width="1"/></marker>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-dia" markerWidth="16" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="1 4, 8 1, 15 4, 8 7" fill="#f5f5f5"/></marker>
+<marker id="casos-de-uso-dark-casos-de-uso-dark-diah" markerWidth="16" markerHeight="8" refX="1" refY="4" orient="auto" markerUnits="userSpaceOnUse"><polygon points="1 4, 8 1, 15 4, 8 7" fill="#2d3142" stroke="#f5f5f5" stroke-width="1"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#2d3142"/><rect width="100%" height="100%" fill="url(#casos-de-uso-dark-casos-de-uso-dark-dots)" opacity="0.55"/>
+<rect x="260" y="48" width="660" height="476" rx="8" fill="#f5f5f5" stroke="#f5f5f5" stroke-width="0.8" fill-opacity="0.02" stroke-opacity="0.10"/>
+<rect x="268" y="52" width="102" height="12" rx="2" fill="#2d3142"/>
+<text x="319" y="61" fill="#949eb2" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">SISTEMA · CINTILANTE</text>
+<path d="M 152,248 H 192 Q 200,248 200,240 V 108 Q 200,100 208,100 H 290" fill="none" stroke="#bfc0c0" stroke-width="1.2"/>
+<path d="M 152,264 H 216 Q 224,264 224,256 V 198 Q 224,190 232,190 H 290" fill="none" stroke="#bfc0c0" stroke-width="1.2"/>
+<path d="M 152,280 H 290" fill="none" stroke="#bfc0c0" stroke-width="1.2"/>
+<path d="M 152,296 H 216 Q 224,296 224,304 V 382 Q 224,390 232,390 H 290" fill="none" stroke="#bfc0c0" stroke-width="1.2"/>
+<path d="M 152,312 H 192 Q 200,312 200,320 V 472 Q 200,480 208,480 H 290" fill="none" stroke="#bfc0c0" stroke-width="1.2"/>
+<path d="M 510,280 H 630" fill="none" stroke="#bfc0c0" stroke-width="1" marker-end="url(#casos-de-uso-dark-casos-de-uso-dark-open)" stroke-dasharray="4,3"/>
+<rect x="542.6" y="260" width="54.8" height="12" rx="2" fill="#2d3142"/>
+<text x="570" y="269" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">«INCLUI»</text>
+<path d="M 400,364 V 306" fill="none" stroke="#bfc0c0" stroke-width="1" marker-end="url(#casos-de-uso-dark-casos-de-uso-dark-open)" stroke-dasharray="4,3"/>
+<rect x="413.8" y="329" width="60.4" height="12" rx="2" fill="#2d3142"/>
+<text x="444" y="338" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">«ESTENDE»</text>
+<ellipse cx="400" cy="100" rx="110" ry="26" fill="#2d3142"/>
+<ellipse cx="400" cy="100" rx="110" ry="26" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+<text x="400" y="104" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Ver rede e fluxo animado</text>
+<ellipse cx="400" cy="190" rx="110" ry="26" fill="#2d3142"/>
+<ellipse cx="400" cy="190" rx="110" ry="26" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+<text x="400" y="194" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Ver gargalos</text>
+<ellipse cx="400" cy="280" rx="110" ry="26" fill="#2d3142"/>
+<ellipse cx="400" cy="280" rx="110" ry="26" fill="#f08a59" stroke="#f08a59" stroke-width="1" fill-opacity="0.10"/>
+<text x="400" y="284" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Simular falha</text>
+<ellipse cx="400" cy="390" rx="110" ry="26" fill="#2d3142"/>
+<ellipse cx="400" cy="390" rx="110" ry="26" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+<text x="400" y="394" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Ver rota alternativa</text>
+<ellipse cx="400" cy="480" rx="110" ry="26" fill="#2d3142"/>
+<ellipse cx="400" cy="480" rx="110" ry="26" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+<text x="400" y="484" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Ver pontos críticos</text>
+<ellipse cx="760" cy="280" rx="130" ry="26" fill="#2d3142"/>
+<ellipse cx="760" cy="280" rx="130" ry="26" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+<text x="760" y="284" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Calcular quem ficou sem energia</text>
+<circle cx="110" cy="252" r="10" fill="#2d3142" stroke="#f5f5f5" stroke-width="1.4"/>
+<path d="M 110,262 V 292 M 90,274 H 130 M 110,292 L 96,316 M 110,292 L 124,316" fill="none" stroke="#f5f5f5" stroke-width="1.4"/>
+<text x="110" y="338" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', system-ui, sans-serif" text-anchor="middle">Operador</text>
+<text x="110" y="353" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', ui-monospace, monospace" text-anchor="middle">ator</text>
+<line x1="40" y1="536" x2="920" y2="536" stroke="#f5f5f5" stroke-width="0.8" stroke-opacity="0.10"/>
+<text x="40" y="552" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', ui-monospace, monospace" letter-spacing="0.18em">LEGENDA</text>
+<line x1="40" y1="571" x2="68" y2="571" stroke="#bfc0c0" stroke-width="1.2"/>
+<text x="76" y="574" fill="#bfc0c0" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Associação</text>
+<path d="M 154,571 H 182" fill="none" stroke="#bfc0c0" stroke-width="1" marker-end="url(#casos-de-uso-dark-casos-de-uso-dark-open)" stroke-dasharray="4,3"/>
+<text x="192" y="574" fill="#bfc0c0" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Inclui / estende</text>
+<ellipse cx="309" cy="571" rx="9" ry="5" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
+<text x="324" y="574" fill="#bfc0c0" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Caso de uso</text>
+<ellipse cx="416" cy="571" rx="9" ry="5" fill="#f08a59" stroke="#f08a59" stroke-width="1" fill-opacity="0.10"/>
+<text x="431" y="574" fill="#bfc0c0" font-size="8.5" font-family="'Geist', system-ui, sans-serif">Caso de uso em foco</text>
+</svg>
