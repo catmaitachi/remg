@@ -26,7 +26,11 @@
 | 🔻 Transformação da subestação | aresta subestação → ponto raiz do alimentador | cap. = capacidade da subestação (é ela que limita a subestação no fluxo) |
 
 - ✅ **Unidade única de capacidade:** kVA.
-- 🟡 **Ligação da alta tensão:** as pontas de linha AT que caem a menos de 200 m de uma subestação se ligam a ela. As linhas que cruzam a divisa de BH viram **pontos de suprimento** ligados a S. ⚠️ Se a topologia do OSM vier quebrada, o plano B é ligar S direto em cada subestação, e aí falha de linha AT deixa de ter efeito.
+- 🟡 **Ligação da alta tensão:** as pontas de linha AT que caem a menos de 200 m de uma subestação se ligam a ela. As linhas que cruzam a divisa de BH viram **pontos de suprimento** ligados a S.
+- ✅ **Plano B, por subestação (#50):** a subestação que **não alcança nenhum ponto de suprimento** andando pelas linhas AT liga **direto em S**.
+  - 🤔 **Por que existe:** o OSM não tem a alta tensão completa. Em BH, 5 das 18 subestações de distribuição (Centro, Carlos Prates, Serrano, Barro Preto e Calafate) não têm nenhuma linha AT a menos de 200 m. Sem o plano B, as áreas delas (8.569 pontos, 60.140 kVA) ficavam **apagadas sem falha nenhuma**, e derrubar uma delas não mudava nada no fluxo. Isso é falha do dado, não da rede real: na vida real toda subestação recebe alta tensão.
+  - 🧩 **Pega dois casos:** a subestação sem linha AT nenhuma e a "ilha" de subestações ligadas entre si, mas sem nenhuma linha que venha de fora. Sem suprimento nenhum na cidade, todas ligam em S (era o plano B original, para a cidade toda).
+  - ⚠️ **Limitação:** nessas subestações, derrubar linha AT não tem efeito, porque a energia delas vem direto de S. Nas outras, a linha AT continua sendo a única entrada, e derrubá-la apaga a área. As que usam o plano B ficam em `RedeEletrica.subestacoes_sem_alta_tensao`, para a tela e o relatório poderem mostrar.
 - 🟡 **Chave aberta ou trecho em falha** = capacidade 0 nos cálculos. O trecho continua no grafo, mas não passa nada por ele.
 
 ### 🧱 Representação na memória (núcleo)

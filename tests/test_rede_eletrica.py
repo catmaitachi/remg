@@ -4,6 +4,7 @@ import unittest
 from core.dominio.elementos import Chave, LinhaAT, Ponto, Subestacao, Trecho
 from core.dominio.rede_eletrica import (INFINITO, RedeEletrica, distancia_m, kva_para_va,
                                         va_para_kva)
+from core.grafo.dinic import Dinic
 
 # 0,0005° de latitude ≈ 56 m: perto o bastante para ligar a linha AT na subestação.
 PERTO = 0.0005
@@ -154,6 +155,42 @@ class TestLigacaoDaAltaTensao(unittest.TestCase):
         rede = rede_pequena(linhas_at=[])
         fontes = [(u, v, c) for u, v, c in arestas(rede, rede.montar_grafo()) if u == "S"]
         self.assertEqual(fontes, [("S", "s:1", INFINITO), ("S", "s:2", INFINITO)])
+
+
+class TestPlanoBPorSubestacao(unittest.TestCase):
+    """#50: em BH, 5 das 18 subestações não têm linha AT no OSM e ficavam apagadas sem falha nenhuma."""
+
+    def fontes(self, rede):
+        return [(u, v) for u, v, _ in arestas(rede, rede.montar_grafo()) if u == "S"]
+
+    def fluxo(self, rede, **cenario):
+        return Dinic().fluxo_maximo(rede.montar_grafo(**cenario), rede.s, rede.t).total
+
+    def test_subestacao_sem_linha_at_recebe_direto_de_s(self):
+        # Só a at:2 (suprimento → s:1): a s:2 não tem linha AT nenhuma.
+        rede = rede_pequena(linhas_at=[rede_pequena().linhas_at[1]])
+        self.assertEqual([s.id for s in rede.subestacoes_sem_alta_tensao], ["s:2"])
+        self.assertEqual(self.fontes(rede), [("S", "sp:1"), ("S", "s:2")])
+        self.assertEqual(self.fluxo(rede), kva_para_va(12.5 + 20))
+
+    def test_ilha_de_alta_tensao_sem_suprimento_recebe_direto_de_s(self):
+        # s:1 ══at:1══ s:2 só entre si; o suprimento de fora chega na s:3, que fica longe das duas.
+        s3 = Subestacao("s:3", "Barreiro", -20.00, -44.00, 50, ponto_raiz="p:5")
+        rede = rede_pequena(
+            subestacoes=rede_pequena().subestacoes + [s3],
+            pontos=rede_pequena().pontos + [Ponto("p:5", -20.001, -44.001)],
+            linhas_at=[rede_pequena().linhas_at[0],
+                       LinhaAT("at:3", 138000, 500, [(-20.10, -44.10), (-20.00, -44.00 + PERTO)])])
+        self.assertEqual([s.id for s in rede.subestacoes_sem_alta_tensao], ["s:1", "s:2"])
+        self.assertEqual(self.fontes(rede), [("S", "sp:1"), ("S", "s:1"), ("S", "s:2")])
+
+    def test_subestacao_com_alta_tensao_continua_dependendo_dela(self):
+        rede = rede_pequena()
+        self.assertEqual(rede.subestacoes_sem_alta_tensao, [])
+        self.assertEqual(self.fontes(rede), [("S", "sp:1")])
+        # A at:2 é a única entrada: com ela caída, nada chega, e o plano B não "salva" a rede.
+        self.assertEqual(self.fluxo(rede), kva_para_va(12.5 + 20))
+        self.assertEqual(self.fluxo(rede, falhas=["at:2"]), 0)
 
 
 class TestEntradaErrada(unittest.TestCase):
