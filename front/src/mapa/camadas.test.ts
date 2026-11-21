@@ -128,3 +128,8 @@ test("brilho suave só nas linhas com fluxo, mais forte e largo conforme o uso",
     expect(b.updateTriggers.getColor).toBe(tema);
   }
 });
+
+test("comFluxo carrega o sentido", () => {
+  expect(dados.comFluxo.every((t) => t.sentido !== undefined)).toBe(true);
+  expect(dados.comFluxo.find((t) => t.id === "t:3")!.sentido!.positivo).toBe(false);
+});

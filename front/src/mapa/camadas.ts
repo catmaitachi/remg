@@ -1,6 +1,7 @@
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import type { Analise, Rede, Subestacao } from "../api/tipos";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
+import { sentidoDoFluxo, type Sentido } from "./sentido";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
 
@@ -12,7 +13,7 @@ export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolea
 export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true };
 
 type LonLat = [number, number];
-interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null }
+export interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido }
 interface Marco { id: string; posicao: LonLat }
 export interface Dados {
   trechos: Caminho[]; comFluxo: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
@@ -28,6 +29,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
   for (const [id, lat, lon] of rede.pontos) lonLat.set(id, [lon, lat]);
   for (const [id, , lat, lon] of rede.subestacoes) lonLat.set(id, [lon, lat]);
   const uso = new Map(analise?.fluxo.map(([id, , u]) => [id, u]));
+  const sentidos = analise ? sentidoDoFluxo(rede, analise) : new Map<string, Sentido>();
 
   const trechos: Caminho[] = [];
   const chaves: Marco[] = [];
@@ -35,7 +37,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
     const a = lonLat.get(de), b = lonLat.get(para);
     if (tipo === "linha_at" || !a || !b) continue;
     const u = uso.get(id);
-    trechos.push({ id, path: [a, b], faixa: u === undefined ? null : faixaDoUso(u) });
+    trechos.push({ id, path: [a, b], faixa: u === undefined ? null : faixaDoUso(u), sentido: sentidos.get(id) });
     if (tipo === "chave") chaves.push({ id, posicao: meio([a, b]) });
   }
   const porId = new Map(trechos.map((t) => [t.id, t]));
