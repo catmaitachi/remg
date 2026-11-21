@@ -2,6 +2,7 @@ import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/laye
 import type { Analise, Rede, Subestacao } from "../api/tipos";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
+import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
 
@@ -12,7 +13,7 @@ export function estiloDoMapa(escuro: boolean): string {
 export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean };
 export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true };
 
-type LonLat = [number, number];
+export type LonLat = [number, number];
 export interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido }
 interface Marco { id: string; posicao: LonLat }
 export interface Dados {
@@ -66,13 +67,35 @@ const BRILHO: Record<Faixa, { largura: number; alfa: Record<Tema, number> }> = {
   gargalo: { largura: 12, alfa: { claro: 0.24, escuro: 0.36 } },
 };
 
-export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
+/** O que muda a cada quadro da animação. `limites` = [oeste, sul, leste, norte]. */
+export interface Quadro { tempo: number; zoom: number; limites: [number, number, number, number] }
+
+const EXTENSAO_ONDA = new ExtensaoOnda();
+const SOMA_LUZ = {
+  blend: true, blendColorSrcFactor: "one", blendColorDstFactor: "one", blendAlphaSrcFactor: "one", blendAlphaDstFactor: "one",
+} as const;
+
+/** Camadas que só existem com a animação ligada; entram logo acima dos trechos. */
+function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>) {
+  return [
+    new PathLayer<Caminho, OndaProps<Caminho>>({
+      id: "ondas", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => cor[c.faixa!], updateTriggers: { getColor: tema },
+      getWidth: 2, widthUnits: "pixels", widthMinPixels: 1,
+      extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro",
+      getOnda: (c) => [c.sentido!.tempoInicio, c.sentido!.comprimento, c.sentido!.positivo ? 1 : -1, INDICE_DA_FAIXA[c.faixa!]],
+      parameters: tema === "escuro" ? SOMA_LUZ : {},
+    }),
+  ];
+}
+
+export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null) {
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
   const fundo = rgb(p.fundo);
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
 
-  return [
+  const camadas = [
     new PathLayer<Caminho>({
       id: "brilho", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], Math.round(BRILHO[c.faixa!].alfa[tema] * 255)],
@@ -112,4 +135,6 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
+  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, tema, quadro, cor));
+  return camadas;
 }

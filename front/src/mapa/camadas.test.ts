@@ -3,7 +3,7 @@ import analiseMock from "../mocks/analise.json";
 import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede } from "../api/tipos";
 import { PALETA, rgb } from "./cores";
-import { VISIVEIS_INICIAL, estiloDoMapa, montarCamadas, prepararDados, type Visiveis } from "./camadas";
+import { VISIVEIS_INICIAL, estiloDoMapa, montarCamadas, prepararDados, type Quadro, type Visiveis } from "./camadas";
 
 const rede = pequena as unknown as Rede;
 // Cópia local: o mock não tem nenhum trecho na faixa de alerta.
@@ -132,4 +132,30 @@ test("brilho suave só nas linhas com fluxo, mais forte e largo conforme o uso",
 test("comFluxo carrega o sentido", () => {
   expect(dados.comFluxo.every((t) => t.sentido !== undefined)).toBe(true);
   expect(dados.comFluxo.find((t) => t.id === "t:3")!.sentido!.positivo).toBe(false);
+});
+
+const Q: Quadro = { tempo: 12.5, zoom: 12, limites: [-44.1, -20.1, -43.8, -19.7] };
+const comQuadro = (tema: "claro" | "escuro" = "claro", d = dados): Record<string, any> =>
+  Object.fromEntries(montarCamadas(d, VISIVEIS_INICIAL, tema, Q).map((c) => [c.id, c]));
+
+test("com quadro, ondas logo acima dos trechos", () => {
+  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "claro", Q).map((c) => c.id);
+  expect(ids[ids.indexOf("trechos") + 1]).toBe("ondas");
+  const o = comQuadro().ondas.props;
+  expect(o.data).toBe(dados.comFluxo);
+  expect(o.tempo).toBe(Q.tempo);
+  expect(o.getOnda(dados.comFluxo.find((t) => t.id === "t:3"))[2]).toBe(-1);
+});
+
+test("ondas: mistura aditiva só no escuro", () => {
+  const escuro = comQuadro("escuro").ondas.props, claro = comQuadro("claro").ondas.props;
+  expect(escuro.parameters.blendColorDstFactor).toBe("one");
+  expect(escuro.aditivo).toBe(true);
+  expect(claro.parameters?.blendColorDstFactor).toBeUndefined();
+  expect(claro.aditivo).toBe(false);
+  expect(escuro.updateTriggers.getColor).not.toEqual(claro.updateTriggers.getColor);
+});
+
+test("sem análise não há ondas", () => {
+  expect(comQuadro("claro", prepararDados(rede, null)).ondas.props.data).toHaveLength(0);
 });
