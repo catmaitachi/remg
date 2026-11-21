@@ -22,6 +22,7 @@
   background: var(--primario); color: var(--primario-texto);
   font-size: 13px; font-weight: 800;
 }
+.selo svg { width: 24px; height: 24px; }
 .marca-nome { display: block; font-size: 18px; font-weight: 800; line-height: 1.2; }
 .marca-sub { display: block; font-size: 13px; color: var(--texto-apoio); }
 

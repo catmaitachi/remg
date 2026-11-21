@@ -1,5 +1,6 @@
 import type { Analise } from "../api/tipos";
 import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
+import { Logo } from "./Logo";
 
 interface Props { area: string; analise: Analise | null; usandoMock: boolean }
 
@@ -15,7 +16,7 @@ export function Barra({ area, analise, usandoMock }: Props) {
   return (
     <aside className="vidro barra" aria-label="Resumo da rede">
       <header className="marca">
-        <span className="selo" aria-hidden="true">RE</span>
+        <span className="selo" aria-hidden="true"><Logo /></span>
         <span>
           <strong className="marca-nome">REMG</strong>
           <span className="marca-sub">Rede de Energia de Minas Gerais</span>
