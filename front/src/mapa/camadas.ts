@@ -103,6 +103,12 @@ export function aplicarFalhas(d: Dados, falhas: Alvo[]): { dados: Dados; caidos:
   };
 }
 
+// ✕ desenhado (não glifo de fonte), com contorno do fundo para se ler sobre a malha
+const iconeCaido = (cor: string, fundo: string) =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" stroke="${fundo}" stroke-width="7"/><path d="M6 6l12 12M18 6 6 18" stroke="${cor}" stroke-width="3.5"/></svg>`,
+  )}`;
+
 const iconeChave = (borda: string, fundo: string) =>
   `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect x="3" y="3" width="18" height="18" fill="${fundo}" stroke="${borda}" stroke-width="3"/></svg>`,
@@ -175,6 +181,7 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
   const destaque = { pickable: clicavel, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
   const fundo = rgb(p.fundo);
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
+  const iconeX = { url: iconeCaido(p.caido, p.fundo), width: 24, height: 24, id: `caido-${tema}` };
 
   const camadas = [
     new PathLayer<Caminho>({
@@ -219,10 +226,9 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
         id: "caidos", data: caidos.tracos, getPath: (c) => c.path, getColor: () => caido, updateTriggers: { getColor: tema },
         getWidth: 3, widthUnits: "pixels", capRounded: true, ...destaque,
       }),
-      new TextLayer<Marco>({
-        id: "caidos-x", data: caidos.marcas, getPosition: (m) => m.posicao, getText: () => "✕",
-        getColor: () => caido, updateTriggers: { getColor: tema }, getSize: 14, sizeUnits: "pixels",
-        fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["✕"],
+      new IconLayer<Marco>({
+        id: "caidos-x", data: caidos.marcas, getPosition: (m) => m.posicao,
+        getIcon: () => iconeX, updateTriggers: { getIcon: tema }, getSize: 16, sizeUnits: "pixels",
       }),
     ] : []),
     new ScatterplotLayer<Marco>({
