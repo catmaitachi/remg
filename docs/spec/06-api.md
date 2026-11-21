@@ -50,14 +50,14 @@ Fluxo, gargalos e falhas num pedido só.
 {
   "fluxoTotal": 812345,
   "demandaTotal": 900000,
-  "fluxo": [["t:678", 0, 0.0], ["t:679", 640, 0.8]],
+  "fluxo": [["t:678", 640, 0.8], ["t:679", -120, 0.15]],
   "gargalos": ["t:700", "t:701"],
   "semEnergia": { "pontos": ["p:123", "p:124"], "demanda": 25.0 },
   "tempoMs": 104
 }
 ```
 
-- `fluxo`: `[id, fluxo kVA, uso de 0 a 1]`, **só com as arestas de fluxo maior que zero**, para economizar.
+- `fluxo`: `[id, fluxo kVA, uso de 0 a 1]`, **só com as arestas de fluxo diferente de zero**, para economizar. **Positivo = sentido `de → para` da aresta; negativo = `para → de`.** `uso = |fluxo| / capacidade`.
 - Pedido vazio (`{}`) = rede sem falhas.
 
 ## 🔀 `POST /rota-alternativa`

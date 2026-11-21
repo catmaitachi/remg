@@ -1,6 +1,10 @@
 import { IconLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import type { Analise, Rede, Subestacao } from "../api/tipos";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
+import { sentidoDoFluxo, type Sentido } from "./sentido";
+import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
+import { escolherRaio, montarRaio } from "./raio";
+import { agruparGargalos } from "./alertas";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
 
@@ -11,11 +15,11 @@ export function estiloDoMapa(escuro: boolean): string {
 export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean };
 export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true };
 
-type LonLat = [number, number];
-interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null }
-interface Marco { id: string; posicao: LonLat }
+export type LonLat = [number, number];
+export interface Caminho { id: string; path: LonLat[]; faixa: Faixa | null; sentido?: Sentido }
+export interface Marco { id: string; posicao: LonLat }
 export interface Dados {
-  trechos: Caminho[]; comFluxo: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
+  trechos: Caminho[]; comFluxo: Caminho[]; destaques: Caminho[]; gargalos: Caminho[]; alertas: Marco[];
   linhasAT: Caminho[]; chaves: Marco[]; subestacoes: Subestacao[];
 }
 
@@ -28,6 +32,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
   for (const [id, lat, lon] of rede.pontos) lonLat.set(id, [lon, lat]);
   for (const [id, , lat, lon] of rede.subestacoes) lonLat.set(id, [lon, lat]);
   const uso = new Map(analise?.fluxo.map(([id, , u]) => [id, u]));
+  const sentidos = analise ? sentidoDoFluxo(rede, analise) : new Map<string, Sentido>();
 
   const trechos: Caminho[] = [];
   const chaves: Marco[] = [];
@@ -35,7 +40,7 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
     const a = lonLat.get(de), b = lonLat.get(para);
     if (tipo === "linha_at" || !a || !b) continue;
     const u = uso.get(id);
-    trechos.push({ id, path: [a, b], faixa: u === undefined ? null : faixaDoUso(u) });
+    trechos.push({ id, path: [a, b], faixa: u === undefined ? null : faixaDoUso(u), sentido: sentidos.get(id) });
     if (tipo === "chave") chaves.push({ id, posicao: meio([a, b]) });
   }
   const porId = new Map(trechos.map((t) => [t.id, t]));
@@ -44,7 +49,8 @@ export function prepararDados(rede: Rede, analise: Analise | null): Dados {
   return {
     trechos, gargalos, chaves, subestacoes: rede.subestacoes,
     comFluxo: trechos.filter((t) => t.faixa !== null),
-    alertas: gargalos.map((g) => ({ id: g.id, posicao: meio(g.path) })),
+    destaques: trechos.filter((t) => t.faixa === "alerta" || t.faixa === "gargalo"),
+    alertas: agruparGargalos(gargalos),
     linhasAT: Object.entries(rede.geometriaAT).map(([id, coords]) => ({
       id, path: coords.map(([lat, lon]) => [lon, lat] as LonLat), faixa: null,
     })),
@@ -64,15 +70,62 @@ const BRILHO: Record<Faixa, { largura: number; alfa: Record<Tema, number> }> = {
   gargalo: { largura: 12, alfa: { claro: 0.24, escuro: 0.36 } },
 };
 
-export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
+/** O que muda a cada quadro da animação. `limites` = [oeste, sul, leste, norte]. */
+export interface Quadro { tempo: number; zoom: number; limites: [number, number, number, number] }
+
+/** Intensidade dos efeitos, escolhida no painel de camadas. A suave é a da prévia aprovada. */
+export type Intensidade = "suave" | "media" | "forte";
+export const INTENSIDADE: Record<Intensidade, { ganho: number; largura: number; alfaRaio: number }> = {
+  suave: { ganho: 1, largura: 2, alfaRaio: 153 },
+  media: { ganho: 1.8, largura: 3, alfaRaio: 204 },
+  forte: { ganho: 2.6, largura: 4, alfaRaio: 255 },
+};
+export interface Opcoes {
+  intensidade?: Intensidade;
+  /** marcadores de gargalo já espalhados para o zoom atual; sem isso, todos os de `Dados.alertas` */
+  alertas?: Marco[];
+}
+
+const EXTENSAO_ONDA = new ExtensaoOnda();
+const SOMA_LUZ = {
+  blend: true, blendColorSrcFactor: "one", blendColorDstFactor: "one", blendAlphaSrcFactor: "one", blendAlphaDstFactor: "one",
+} as const;
+
+/** Camadas que só existem com a animação ligada; entram logo acima dos trechos. */
+function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>, intensidade: Intensidade) {
+  const forca = INTENSIDADE[intensidade];
+  const { fios, faiscas } = montarRaio(escolherRaio(d.comFluxo, quadro), quadro);
+  return [
+    new PathLayer<Caminho, OndaProps<Caminho>>({
+      id: "ondas", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => cor[c.faixa!], updateTriggers: { getColor: tema },
+      getWidth: forca.largura, widthUnits: "pixels", widthMinPixels: 1,
+      extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro", ganho: forca.ganho,
+      getOnda: (c) => [c.sentido!.tempoInicio, c.sentido!.comprimento, c.sentido!.positivo ? 1 : -1, INDICE_DA_FAIXA[c.faixa!]],
+      parameters: tema === "escuro" ? SOMA_LUZ : {},
+    }),
+    new PathLayer<Caminho>({
+      id: "raio", data: fios, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => [...cor[c.faixa!], forca.alfaRaio], updateTriggers: { getColor: intensidade }, getWidth: 1, widthUnits: "pixels", jointRounded: true,
+    }),
+    new PathLayer<Caminho>({
+      id: "faiscas", data: faiscas, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      getColor: (c) => [...cor[c.faixa!], 230], getWidth: 1, widthUnits: "pixels", capRounded: true,
+    }),
+  ];
+}
+
+export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null, opcoes: Opcoes = {}) {
+  const intensidade = opcoes.intensidade ?? "media", alertas = opcoes.alertas ?? d.alertas;
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
   const fundo = rgb(p.fundo);
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
 
-  return [
+  const camadas = [
     new PathLayer<Caminho>({
-      id: "brilho", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
+      // com animação, a onda faz o brilho das normais: o brilho largo nos 35 mil trechos custava metade do FPS no arraste
+      id: "brilho", data: quadro ? d.destaques : d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], Math.round(BRILHO[c.faixa!].alfa[tema] * 255)],
       getWidth: (c) => BRILHO[c.faixa!].largura, updateTriggers: { getColor: tema },
       widthUnits: "pixels", capRounded: true, jointRounded: true,
@@ -83,7 +136,9 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
     }),
     new PathLayer<Caminho>({
       id: "trechos", data: d.trechos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: (c) => cor[c.faixa ?? "semFluxo"], updateTriggers: { getColor: tema },
+      // com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e a onda e o raio correm por cima, como na prévia
+      getColor: (c) => (quadro ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"]),
+      updateTriggers: { getColor: [tema, !!quadro] },
       getWidth: 2, widthUnits: "pixels", widthMinPixels: 1,
     }),
     new PathLayer<Caminho>({
@@ -100,14 +155,16 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema) {
       getRadius: 7, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
     }),
     new ScatterplotLayer<Marco>({
-      id: "gargalos-alerta", data: d.alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
+      id: "gargalos-alerta", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getFillColor: cor.gargalo, getLineColor: fundo, stroked: true,
       getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2,
     }),
     new TextLayer<Marco>({
-      id: "gargalos-alerta-texto", data: d.alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
+      id: "gargalos-alerta-texto", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getText: () => "!", getColor: [255, 255, 255], getSize: 13, sizeUnits: "pixels",
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
+  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, tema, quadro, cor, intensidade));
+  return camadas;
 }

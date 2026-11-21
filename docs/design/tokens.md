@@ -44,6 +44,40 @@ Menor distinção entre usos: ΔE 28,0 no claro e 38,4 no escuro. Normal × bot�
   Fios tremendo e faíscas, que se movem, ficam para a T19 (animação).
 - **FPS medido (T18):** 133,8 com BH inteira e o brilho ligado (803 quadros em 6.002 ms, contados por `requestAnimationFrame` durante arrastes, janela de 800×522, modo dev). Sem o brilho tinha dado 141,7.
 
+## ⚡ Animação do fluxo (T19) ✅ decidido
+
+Escolhida pelo Lucas vendo a prévia com os dados reais (jeito C, com botão para desligar). Design: [`specs/2026-11-21-t19-animacao-do-fluxo-design.md`](../superpowers/specs/2026-11-21-t19-animacao-do-fluxo-design.md).
+
+- **Ondas (shader, cidade toda):** pulsos saem da origem e correm no sentido do fluxo. A fase é o tempo de chegada (`Σ comprimento / velocidade`), então a onda não se parte na troca de faixa. Cada lugar pulsa a cada 3 s, aceso 10% do tempo.
+
+| Uso | Velocidade | Força |
+|---|---|---|
+| Normal | 450 m/s | 0,35 |
+| Perto do limite | 750 m/s | 0,7 |
+| Gargalo | 1100 m/s | 1 |
+
+  No escuro a onda soma luz (`one, one`, cor pré-multiplicada); no claro é mistura normal por alfa.
+- **Trilho:** com a animação ligada, a linha com fluxo fica a 30% e a sem fluxo a 50%, como na prévia; o brilho parado fica só em alerta e gargalo (no normal, quem brilha é a onda).
+- **Raio (de perto, zoom ≥ 14 no MapLibre):** até 500 trechos visíveis, gargalo primeiro; ponto a cada 6 px (até 60), pontas presas.
+
+| Uso | Fios | Amplitude | Faísca por quadro |
+|---|---|---|---|
+| Normal | 1 | 2,5 px | 0 |
+| Perto do limite | 2 | 3,5 px | 4% |
+| Gargalo | 3 | 5 px | 18% |
+
+- **Efeito elétrico no painel de Camadas:** switch "Animação do fluxo" (começa desligado com `prefers-reduced-motion`) e intensidade em 3 níveis segmentados. A Suave é a da prévia; o padrão é a Média, a pedido do Lucas ("a intensidade está baixa").
+
+| Nível | Ganho da onda (limitado a 1) | Largura da onda | Opacidade do raio |
+|---|---|---|---|
+| Suave | ×1 | 2 px | 60% |
+| Média (padrão) | ×1,8 | 3 px | 80% |
+| Forte | ×2,6 | 4 px | 100% |
+
+- **Bússola:** a agulha gira com o mapa e o clique volta o norte para cima (e tira a inclinação). Substituiu o "voltar para BH".
+- **Marcadores de gargalo:** gargalos encostados viram um marcador só (no trecho mais perto do centro do grupo), e no zoom atual some o marcador a menos de 28 px de outro.
+- **FPS medido (T19):** arrastando BH inteira com a animação ligada, **86,4 · 80,1 · 85,9** (3 medições de 4 s, arraste por eventos de mouse no próprio navegador, contando `requestAnimationFrame`, janela de 800×522, modo dev). Pelo mesmo método: animação desligada 99,4 · 99,2 · 97,6; de perto, com o raio, 126,6 · 127,8 · 125,8. Antes de tirar o brilho largo das linhas normais dava 41,2 · 40,7 · 41,7: o `MapboxOverlay` redesenha a cada quadro do arraste e a animação pede outro desenho.
+
 > Fonte da verdade: [`prototipo/estilo.css`](prototipo/estilo.css). Os testes [`cores.test.cjs`](prototipo/cores.test.cjs) conferem contraste e daltonismo: `node --test docs/design/prototipo/`.
 > Tudo aqui é 🟡 **proposta** até o grupo aprovar o protótipo. Depois disso vira ✅ e entra na [07-frontend](../spec/07-frontend.md).
 

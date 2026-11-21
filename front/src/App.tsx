@@ -1,21 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Map, MapProvider, useControl } from "react-map-gl/maplibre";
-import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
+import { Map, MapProvider } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./tela/tela.css";
 import { carregarAnalise, carregarRede } from "./api/carregar";
 import type { Analise, Rede } from "./api/tipos";
-import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, montarCamadas, prepararDados, type Visiveis } from "./mapa/camadas";
+import { animacaoInicial } from "./mapa/animacao";
+import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, type Intensidade, type Visiveis } from "./mapa/camadas";
+import { CamadasDeck } from "./mapa/CamadasDeck";
 import type { Tema } from "./mapa/cores";
 import { Barra } from "./tela/Barra";
 import { Controles } from "./tela/Controles";
 import { Legenda } from "./tela/Legenda";
-
-function CamadasDeck(props: MapboxOverlayProps) {
-  const overlay = useControl(() => new MapboxOverlay(props));
-  overlay.setProps(props);
-  return null;
-}
 
 const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
 const temaDoSistema = (): Tema => (temaEscuro.matches ? "escuro" : "claro");
@@ -32,12 +27,27 @@ function useTema(): [Tema, () => void] {
   return [tema, () => setTema((t) => (t === "escuro" ? "claro" : "escuro"))];
 }
 
+const movimentoReduzido = matchMedia("(prefers-reduced-motion: reduce)");
+
+/** Animação ligada, a não ser que o sistema peça menos movimento; segue a mudança da preferência. */
+function useAnimacao(): [boolean, () => void] {
+  const [ligada, setLigada] = useState(() => animacaoInicial(movimentoReduzido.matches));
+  useEffect(() => {
+    const mudar = () => setLigada(animacaoInicial(movimentoReduzido.matches));
+    movimentoReduzido.addEventListener("change", mudar);
+    return () => movimentoReduzido.removeEventListener("change", mudar);
+  }, []);
+  return [ligada, () => setLigada((l) => !l)];
+}
+
 const USANDO_MOCK = import.meta.env.VITE_USAR_MOCK === "true";
 
 type Carga<T> = { ok: T } | { erro: string } | null;
 
 export default function App() {
   const [tema, trocarTema] = useTema();
+  const [animando, alternarAnimacao] = useAnimacao();
+  const [intensidade, setIntensidade] = useState<Intensidade>("media");
   const [rede, setRede] = useState<Carga<Rede>>(null);
   // A análise é opcional: sem ela o mapa fica em cinza e a barra mostra "—".
   const [analise, setAnalise] = useState<Carga<Analise>>(null);
@@ -51,7 +61,6 @@ export default function App() {
   const redeOk = rede && "ok" in rede ? rede.ok : null;
   const analiseOk = analise && "ok" in analise ? analise.ok : null;
   const dados = useMemo(() => (redeOk ? prepararDados(redeOk, analiseOk) : null), [redeOk, analiseOk]);
-  const camadas = useMemo(() => (dados ? montarCamadas(dados, visiveis, tema) : []), [dados, visiveis, tema]);
   const temChaves = useMemo(() => !!redeOk?.arestas.some((a) => a[3] === "chave"), [redeOk]);
 
   // MapProvider: os controles usam useMap() fora do <Map>. Dentro dele ficariam abaixo do canvas do deck.gl,
@@ -65,10 +74,11 @@ export default function App() {
         attributionControl={{ compact: true, customAttribution: "© OpenStreetMap contributors" }}
         style={{ position: "fixed", inset: 0 }}
       >
-        <CamadasDeck layers={camadas} />
+        <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} intensidade={intensidade} />
       </Map>
 
-      <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema} />
+      <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
+        animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
 
       {redeOk && <Barra area={redeOk.area} analise={analiseOk} usandoMock={USANDO_MOCK} />}
       {redeOk && <Legenda tema={tema} />}

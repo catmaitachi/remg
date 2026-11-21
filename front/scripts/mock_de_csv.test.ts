@@ -52,7 +52,7 @@ test("rede.bh.json é fiel aos CSV", () => {
 const sub = ["s:1", "Sub", 0, 0, 1000];
 const p = (id: string, lat: number, lon: number) => [id, lat, lon, 1];
 const t = (id: string, de: string, para: string, cap = 1000) => [id, de, para, "trecho", cap];
-// t:bc escrito de c para b: os trechos não têm direção.
+// t:bc escrito de c para b: o sinal do fluxo diz o sentido.
 const cadeia = {
   area: "teste", geometriaAT: {}, subestacoes: [sub],
   pontos: [p("p:a", 0, 0.001), p("p:b", 0, 0.002), p("p:c", 0, 0.003), p("p:x", 5, 5)],
@@ -67,8 +67,14 @@ const fluxoDe = (a: { fluxo: [string, number, number][] }) => Object.fromEntries
 
 test("fluxo soma a demanda a jusante da subestação", () => {
   const f = fluxoDe(gerarAnalise(cadeia, () => 0));
-  expect(f["t:ab"].f).toBe(2);
-  expect(f["t:bc"].f).toBe(1);
+  expect(Math.abs(f["t:ab"].f)).toBe(2);
+  expect(Math.abs(f["t:bc"].f)).toBe(1);
+});
+
+test("o sinal do fluxo segue o sentido da BFS", () => {
+  const f = fluxoDe(gerarAnalise(cadeia, () => 0));
+  expect(f["t:ab"].f).toBe(2); // escrito a → b, energia vai de a para b
+  expect(f["t:bc"].f).toBe(-1); // escrito c → b, energia vai de b para c
 });
 
 test("uso é fluxo/capacidade limitado a 1 e gargalo é uso ≥ 0,9", () => {
@@ -92,7 +98,7 @@ test("totais e contrato", () => {
 test("aresta do ciclo fora da árvore não entra em fluxo", () => {
   const f = fluxoDe(gerarAnalise(triangulo, () => 0));
   expect(f["t:ab"].f).toBe(1);
-  expect(f["t:ca"].f).toBe(1);
+  expect(f["t:ca"].f).toBe(-1); // escrito c → a, energia vai de a para c
   expect(f["t:bc"]).toBeUndefined();
 });
 

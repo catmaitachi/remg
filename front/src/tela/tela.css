@@ -22,6 +22,7 @@
   background: var(--primario); color: var(--primario-texto);
   font-size: 13px; font-weight: 800;
 }
+.selo svg { width: 24px; height: 24px; }
 .marca-nome { display: block; font-size: 18px; font-weight: 800; line-height: 1.2; }
 .marca-sub { display: block; font-size: 13px; color: var(--texto-apoio); }
 
@@ -73,6 +74,22 @@
 .painel-lista li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: var(--espaco-3); }
 .painel-nome { font-size: var(--texto-rotulo); }
 .painel-nome small { display: block; font-size: 12px; color: var(--texto-apoio); }
+.painel-secao { margin-top: var(--espaco-4); padding-top: var(--espaco-4); border-top: 1px solid var(--separador); }
+.painel-rotulo { margin: var(--espaco-4) 0 var(--espaco-2); font-size: 12px; color: var(--texto-apoio); }
+
+/* intensidade: botões segmentados (aria-pressed), no trilho do switch */
+.segmentos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: var(--raio-pilula); background: var(--bloco); }
+.segmentos button {
+  min-height: 32px; padding: 0 var(--espaco-2);
+  border: 0; border-radius: var(--raio-pilula);
+  background: transparent; font-size: var(--texto-rotulo);
+  cursor: pointer;
+  transition: background-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.segmentos button:hover:not(:disabled) { background: var(--vidro-forte); }
+.segmentos button[aria-pressed="true"] { background: var(--primario); color: var(--primario-texto); font-weight: 700; }
+.segmentos button:disabled { cursor: not-allowed; color: var(--texto-apoio); }
+.segmentos button[aria-pressed="true"]:disabled { background: var(--switch-desligado); color: var(--branco); }
 
 /* switch do gov.br */
 .switch {
@@ -109,4 +126,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .switch::after { transition: none; }
+  .segmentos button { transition: none; }
 }
