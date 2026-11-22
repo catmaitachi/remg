@@ -9,8 +9,3 @@ test("o cartão do item traz a ação de derrubar (ou restaurar)", () => {
   expect(html).toMatch(/<button[^>]*>Derrubar<\/button>/);
   expect(renderToStaticMarkup(<Selecionado detalhe={detalhe} aoFechar={() => {}} />)).not.toContain("Derrubar");
 });
-
-test("o selo de crítico aparece com a explicação do que acontece se o item cair", () => {
-  const html = renderToStaticMarkup(<Selecionado detalhe={{ ...detalhe, selos: ["ponte"] }} aoFechar={() => {}} />);
-  expect(html).toMatch(/<span class="selo-critico"[^>]*title="[^"]*isola[^"]*"[^>]*>Ponte<\/span>/);
-});

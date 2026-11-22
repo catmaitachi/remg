@@ -67,7 +67,7 @@ export default function App() {
   useEffect(() => {
     carregarRede().then((ok) => setRede({ ok }), (e: Error) => setRede({ erro: e.message }));
     carregarAnalise().then((ok) => { setAnalise({ ok }); despachar({ tipo: "inicial", analise: ok }); }, (e: Error) => setAnalise({ erro: e.message }));
-    // os selos de crítico são um extra do cartão: se o /criticos falhar, o cartão só fica sem eles
+    // a linha "Crítico" é um extra do cartão: se o /criticos falhar, o cartão só fica sem ela
     carregarCriticos().then((c) => c && setCriticos({ pontes: new Set(c.pontes), articulacoes: new Set(c.articulacoes) }), () => {});
   }, []);
 

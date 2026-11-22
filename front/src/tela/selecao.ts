@@ -24,22 +24,22 @@ const numero = (id: string) => id.replace(/^[a-z]+:/, "");
 /** O que o cartão mostra como ícone ao lado do título. */
 export type TipoItem = "subestacao" | TipoAresta;
 /** Ponte: aresta cuja queda isola parte da rede. Articulação: vértice cuja queda parte a rede (Tarjan, GET /criticos). */
-export type Selo = "ponte" | "articulacao";
 export interface CriticosDaRede { pontes: Set<string>; articulacoes: Set<string> }
 
 export function detalheDe(
   sel: Selecao, rede: Rede, analise: Analise | null, falhas: Alvo[], chavesFechadas: string[], criticos: CriticosDaRede | null = null,
-): { tipo: TipoItem; titulo: string; linhas: [string, string][]; selos: Selo[] } {
+): { tipo: TipoItem; titulo: string; linhas: [string, string][] } {
   const caiu = falhas.some((f) => f.id === sel.id);
-  const selos: Selo[] = sel.tipo === "subestacao"
-    ? (criticos?.articulacoes.has(sel.id) ? ["articulacao"] : [])
-    : (criticos?.pontes.has(sel.id) ? ["ponte"] : []);
+  // crítico é mais uma linha do cartão, só quando o item é ponte ou articulação
+  const critico: [string, string][] = sel.tipo === "subestacao"
+    ? (criticos?.articulacoes.has(sel.id) ? [["Crítico", "articulação"]] : [])
+    : (criticos?.pontes.has(sel.id) ? [["Crítico", "ponte"]] : []);
   if (sel.tipo === "subestacao") {
     const s = rede.subestacoes.find((x) => x[0] === sel.id);
-    return { tipo: "subestacao", selos, titulo: s?.[1] ?? sel.id, linhas: [["Capacidade", s ? formatarPotencia(s[4]) : "—"], ["Estado", caiu ? "caída" : "ligada"]] };
+    return { tipo: "subestacao", titulo: s?.[1] ?? sel.id, linhas: [["Capacidade", s ? formatarPotencia(s[4]) : "—"], ["Estado", caiu ? "caída" : "ligada"], ...critico] };
   }
   const a = rede.arestas.find((x) => x[0] === sel.id);
-  if (!a) return { tipo: "trecho", selos, titulo: sel.id, linhas: [] };
+  if (!a) return { tipo: "trecho", titulo: sel.id, linhas: [] };
   const [id, de, para, tipo, capacidade] = a;
   const f = analise?.fluxo.find((x) => x[0] === id);
   const semLuz = new Set(analise?.semEnergia.pontos);
@@ -47,12 +47,13 @@ export function detalheDe(
     : tipo === "chave" ? (chavesFechadas.includes(id) ? "fechada pelo religamento" : "aberta")
     : semLuz.has(de) && semLuz.has(para) ? "sem luz" : "ligado";
   return {
-    tipo, selos, titulo: `${TITULO[tipo]} ${numero(id)}`,
+    tipo, titulo: `${TITULO[tipo]} ${numero(id)}`,
     linhas: [
       ["Capacidade", formatarPotencia(capacidade)],
       ["Fluxo", f ? formatarPotencia(Math.abs(f[1])) : "sem fluxo"],
       ["Uso", f ? `${Math.round(f[2] * 100)}% · ${NOME_DA_FAIXA[faixaDoUso(f[2])]}` : "—"],
       ["Estado", estado],
+      ...critico,
     ],
   };
 }

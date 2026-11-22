@@ -213,12 +213,6 @@
 .selecionado { display: grid; gap: var(--espaco-2); }
 .selecionado-titulo { display: flex; align-items: center; gap: var(--espaco-2); min-width: 0; }
 .selecionado-icone { flex: none; }
-/* selo de crítico (ponte ou articulação): tom de erro claro, porque a queda isola ou parte a rede */
-.selos { display: flex; flex-wrap: wrap; gap: var(--espaco-1); margin: 0; }
-.selo-critico {
-  padding: 2px var(--espaco-2); border: 1px solid var(--erro); border-radius: var(--raio-pilula);
-  color: var(--erro); font-size: 12px; font-weight: 700; cursor: help;
-}
 .selecionado-linhas { display: grid; gap: 2px; margin: 0; }
 .selecionado-linhas div {
   /* border-box + center: o texto fica no meio da linha (com content-box e baseline ele subia para o topo) */
