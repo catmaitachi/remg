@@ -11,7 +11,7 @@ interface Props { tema: Tema; semLuz: boolean; caidos: boolean; religou: boolean
 export function Legenda({ tema, semLuz, caidos, religou }: Props) {
   const p = PALETA[tema];
   return (
-    <section className="vidro legenda" aria-label="Legenda do uso das linhas">
+    <section className="superficie legenda" aria-label="Legenda do uso das linhas">
       {ITENS.map(([faixa, texto]) => (
         <span className="legenda-item" key={faixa}>
           <svg width="28" height="12" viewBox="0 0 28 12" aria-hidden="true">

@@ -32,7 +32,7 @@ export function Barra({ area, analise, usandoMock, faltando, religamento, modo, 
   ];
 
   return (
-    <aside className="vidro barra" aria-label="Resumo da rede">
+    <aside className="superficie barra" aria-label="Resumo da rede">
       <header className="marca">
         <span className="selo" aria-hidden="true"><Logo /></span>
         <span>

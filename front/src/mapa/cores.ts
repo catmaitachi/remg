@@ -1,5 +1,5 @@
 // Cores do mapa (design da T18). Paleta de uso híbrida: ciano do gov.br no claro, Okabe no resto.
-// O teste confere contraste e distinção com daltonismo; a cor de UI (vidro, texto) fica nos tokens CSS.
+// O teste confere contraste e distinção com daltonismo; a cor de UI (superfície, texto) fica nos tokens CSS.
 
 export type Tema = "claro" | "escuro";
 export type Faixa = "normal" | "alerta" | "gargalo";

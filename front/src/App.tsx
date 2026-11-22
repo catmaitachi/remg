@@ -131,22 +131,22 @@ export default function App() {
       {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0}
         religou={estado.chavesFechadas.length > 0} />}
 
-      {!rede && <p className="vidro aviso" role="status">Carregando a rede de Belo Horizonte…</p>}
+      {!rede && <p className="superficie aviso" role="status">Carregando a rede de Belo Horizonte…</p>}
       {rede && "erro" in rede && (
-        <p className="vidro aviso aviso-erro" role="alert">
+        <p className="superficie aviso aviso-erro" role="alert">
           <strong>Não deu para carregar a rede.</strong>
           <span>{rede.erro}</span>
         </p>
       )}
       {estado.erro && (
-        <p className="vidro aviso aviso-erro" role="alert">
+        <p className="superficie aviso aviso-erro" role="alert">
           <strong>{estado.rota?.fase !== "erro" ? "Não deu para calcular a falha."
             : estado.rota.resultado ? "Não deu para religar." : "Não deu para achar a rota."}</strong>
           <span>{estado.erro}</span>
         </p>
       )}
       {redeOk && analise && "erro" in analise && (
-        <p className="vidro aviso aviso-erro" role="alert">
+        <p className="superficie aviso aviso-erro" role="alert">
           <strong>Não deu para carregar a análise.</strong>
           <span>{analise.erro}</span>
         </p>

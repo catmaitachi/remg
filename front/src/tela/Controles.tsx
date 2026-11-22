@@ -60,7 +60,7 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
 
   return (
     <div ref={raiz}>
-      <div className="vidro controles" role="toolbar" aria-label="Controles do mapa" aria-orientation="vertical">
+      <div className="superficie controles" role="toolbar" aria-label="Controles do mapa" aria-orientation="vertical">
         <button type="button" className="controle" aria-label="Aproximar" onClick={() => mapa?.zoomIn()}><Icone d={MAIS} /></button>
         <button type="button" className="controle" aria-label="Afastar" onClick={() => mapa?.zoomOut()}><Icone d={MENOS} /></button>
         <button type="button" className="controle" aria-label="Apontar para o norte" onClick={() => mapa?.resetNorthPitch()}>
@@ -79,7 +79,7 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
         </button>
       </div>
 
-      <section id={idPainel} className="vidro painel" aria-label="Camadas" hidden={!aberto}>
+      <section id={idPainel} className="superficie painel" aria-label="Camadas" hidden={!aberto}>
         <h2 className="painel-titulo">Camadas</h2>
         <ul className="painel-lista">
           {linhas.map(({ chave, nome, apoio, amostra }) => (
