@@ -41,7 +41,7 @@ test("linha AT e trecho caído", () => {
 
 test("subestação caída", () => {
   const d = detalheDe({ tipo: "subestacao", id: "s:1" }, rede, analise, [{ tipo: "subestacao", id: "s:1" }], []);
-  expect(d).toEqual({ tipo: "subestacao", titulo: "Subestação Centro (exemplo)", linhas: [["Capacidade", "50 MVA"], ["Estado", "caída"]] });
+  expect(d).toEqual({ tipo: "subestacao", selos: [], titulo: "Subestação Centro (exemplo)", linhas: [["Capacidade", "50 MVA"], ["Estado", "caída"]] });
 });
 
 test("derruba trecho, linha AT e subestação; chave não (quem fecha chave é o religamento)", () => {
@@ -64,4 +64,12 @@ test("o detalhe diz o tipo do item, para o cartão mostrar o ícone certo", () =
   expect(detalheDe({ tipo: "aresta", id: "t:1" }, rede, analise, [], []).tipo).toBe("trecho");
   const comChave = { ...rede, arestas: [...rede.arestas, ["c:9", "p:1", "p:2", "chave", 100]] } as Rede;
   expect(detalheDe({ tipo: "aresta", id: "c:9" }, comChave, analise, [], []).tipo).toBe("chave");
+});
+
+test("selos de crítico: ponte na aresta, articulação na subestação; sem críticos carregados, nenhum", () => {
+  const criticos = { pontes: new Set(["t:1"]), articulacoes: new Set(["s:1"]) };
+  expect(detalheDe({ tipo: "aresta", id: "t:1" }, rede, analise, [], [], criticos).selos).toEqual(["ponte"]);
+  expect(detalheDe({ tipo: "aresta", id: "t:2" }, rede, analise, [], [], criticos).selos).toEqual([]);
+  expect(detalheDe({ tipo: "subestacao", id: "s:1" }, rede, analise, [], [], criticos).selos).toEqual(["articulacao"]);
+  expect(detalheDe({ tipo: "aresta", id: "t:1" }, rede, analise, [], []).selos).toEqual([]);
 });

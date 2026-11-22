@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Map, MapProvider, type MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./tela/tela.css";
-import { carregarAnalise, carregarRede, pedirAnalise, pedirRota } from "./api/carregar";
+import { carregarAnalise, carregarCriticos, carregarRede, pedirAnalise, pedirRota } from "./api/carregar";
 import type { Analise, Rede } from "./api/tipos";
 import { animacaoInicial } from "./mapa/animacao";
 import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, iconeDoTipo, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
@@ -16,7 +16,7 @@ import { Legenda } from "./tela/Legenda";
 import { ESTADO_INICIAL, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
 import { AcharRota, Religamento } from "./tela/Religamento";
 import { Selecionado } from "./tela/Selecionado";
-import { detalheDe, podeDerrubar, posicaoDoAlvo, type Selecao } from "./tela/selecao";
+import { detalheDe, podeDerrubar, posicaoDoAlvo, type CriticosDaRede, type Selecao } from "./tela/selecao";
 
 const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
 const temaDoSistema = (): Tema => (temaEscuro.matches ? "escuro" : "claro");
@@ -59,6 +59,7 @@ export default function App() {
   const [analise, setAnalise] = useState<Carga<Analise>>(null);
   const [visiveis, setVisiveis] = useState<Visiveis>(VISIVEIS_INICIAL);
   const mapaRef = useRef<MapRef>(null);
+  const [criticos, setCriticos] = useState<CriticosDaRede | null>(null);
   const [selecao, setSelecao] = useState<Selecao | null>(null);
   // falhas, análise atual e "calculando": só vale a resposta da versão atual da lista (reducer testado em falhas.ts)
   const [estado, despachar] = useReducer(reduzirFalhas, ESTADO_INICIAL);
@@ -66,6 +67,8 @@ export default function App() {
   useEffect(() => {
     carregarRede().then((ok) => setRede({ ok }), (e: Error) => setRede({ erro: e.message }));
     carregarAnalise().then((ok) => { setAnalise({ ok }); despachar({ tipo: "inicial", analise: ok }); }, (e: Error) => setAnalise({ erro: e.message }));
+    // os selos de crítico são um extra do cartão: se o /criticos falhar, o cartão só fica sem eles
+    carregarCriticos().then((c) => c && setCriticos({ pontes: new Set(c.pontes), articulacoes: new Set(c.articulacoes) }), () => {});
   }, []);
 
   const redeOk = rede && "ok" in rede ? rede.ok : null;
@@ -77,7 +80,7 @@ export default function App() {
   const listaDeFalhas = useMemo(
     () => (redeOk ? estado.falhas.map((alvo) => ({ alvo, rotulo: rotuloDoAlvo(alvo, redeOk) })) : []), [redeOk, estado.falhas],
   );
-  const detalhe = selecao && redeOk ? detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas) : null;
+  const detalhe = selecao && redeOk ? detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas, criticos) : null;
   const dicaReligar = dicaDoReligar({
     usandoMock: USANDO_MOCK, temFalhas: estado.falhas.length > 0, temSemLuz: !!estado.atual?.semEnergia.pontos.length,
     calculando: estado.calculando, temResultado: estado.rota?.fase === "pronta",

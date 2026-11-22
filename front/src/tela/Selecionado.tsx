@@ -1,7 +1,13 @@
 import { FECHAR, Icone } from "./Icone";
+import type { Selo } from "./selecao";
+
+const SELOS: Record<Selo, [string, string]> = {
+  ponte: ["Ponte", "Crítico: se este trecho cair, uma parte da rede fica isolada"],
+  articulacao: ["Articulação", "Crítico: se esta subestação cair, a rede se parte em pedaços"],
+};
 
 interface Props {
-  detalhe: { titulo: string; linhas: [string, string][] }; aoFechar: () => void;
+  detalhe: { titulo: string; linhas: [string, string][]; selos?: Selo[] }; aoFechar: () => void;
   /** ícone do tipo do item (subestação, trecho, chave, linha AT), em data URL */
   icone?: string;
   /** Derrubar ou Restaurar: sem seletor de modo, a falha nasce aqui */
@@ -21,6 +27,11 @@ export function Selecionado({ detalhe, aoFechar, acao, icone }: Props) {
           <Icone d={FECHAR} />
         </button>
       </div>
+      {!!detalhe.selos?.length && (
+        <p className="selos">
+          {detalhe.selos.map((s) => <span key={s} className="selo-critico" title={SELOS[s][1]}>{SELOS[s][0]}</span>)}
+        </p>
+      )}
       <dl className="selecionado-linhas">
         {detalhe.linhas.map(([rotulo, valor]) => (
           <div key={rotulo}>
