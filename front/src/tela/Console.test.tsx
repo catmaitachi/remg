@@ -10,7 +10,8 @@ test("sem nome da cidade nem indicador: os números ficam em destaque, e a frase
   expect(html).not.toContain("Belo Horizonte");
   expect(html).not.toContain('role="progressbar"');
   expect(html).toContain("Sem dados da análise");
-  for (const rotulo of ["Entregue", "Demanda", "Gargalos", "Cálculo"]) expect(html).toContain(`<dt>${rotulo}</dt>`);
+  for (const rotulo of ["Entregue", "Gargalos", "Cálculo"]) expect(html).toContain(`<dt>${rotulo}</dt>`);
+  expect(html).not.toContain("<dt>Demanda</dt>"); // a demanda vive junto da entrega: "x de y"
 });
 
 test("sem seletor de modo: o console é só leitura e ferramentas", () => {

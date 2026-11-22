@@ -20,14 +20,15 @@
 .logo { display: inline-flex; align-items: baseline; color: var(--texto); font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }
 .logo-m { width: auto; height: 0.72em; margin: 0 0.04em; overflow: visible; color: var(--primario); }
 
-/* a frase da cidade (com o calculando) ocupa o meio; os números vêm antes, em destaque */
-.cidade { display: flex; flex: 1 1 auto; align-items: center; gap: var(--espaco-3); min-width: 0; }
-.cidade-frase { min-width: 0; font-size: 13px; color: var(--texto-apoio); }
+/* a frase da cidade vira selo à direita (com o calculando ao lado); os números vêm antes, em linha */
+.cidade { display: flex; flex: 1 1 auto; justify-content: flex-end; align-items: center; gap: var(--espaco-2); min-width: 0; }
+.cidade-frase { min-width: 0; padding: 3px var(--espaco-3); border-radius: var(--raio-pilula); background: var(--bloco); font-size: 13px; color: var(--texto); }
 
-.numeros { display: flex; flex-wrap: wrap; gap: var(--espaco-1) var(--espaco-6); margin: 0; }
-.numeros div { display: flex; flex-direction: column-reverse; }
-.numeros dt { font-size: 12px; color: var(--texto-apoio); }
-.numeros dd { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.numeros { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--espaco-1) var(--espaco-3); margin: 0; }
+.numeros div { display: flex; align-items: baseline; gap: 6px; }
+.numeros div + div::before { content: "·"; margin-right: var(--espaco-1); color: var(--texto-apoio); }
+.numeros dt { font-size: 13px; color: var(--texto-apoio); }
+.numeros dd { margin: 0; font-size: var(--texto-rotulo); font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* cartão de contexto (o item clicado) e, abaixo dele, o bloco de falhas; encolhem e rolam antes de empurrar a legenda */
 .contexto, .bloco-falhas {
@@ -240,9 +241,10 @@
   .logo-letra { display: none; }
   /* primeira linha: o M e as ferramentas; depois os números lado a lado e a frase da cidade */
   .console { gap: var(--espaco-2) var(--espaco-3); padding: var(--espaco-2) var(--espaco-3); }
-  .numeros { order: 1; flex-basis: 100%; justify-content: space-between; gap: var(--espaco-1) var(--espaco-3); }
-  .numeros dd { font-size: 16px; }
-  .cidade { order: 2; flex-basis: 100%; flex-wrap: wrap; row-gap: var(--espaco-1); }
+  /* no celular os números quebram a linha: sem o ponto separador, que sobraria no começo dela */
+  .numeros { order: 1; flex-basis: 100%; column-gap: var(--espaco-4); }
+  .numeros div + div::before { content: none; }
+  .cidade { order: 2; flex-basis: 100%; justify-content: flex-start; flex-wrap: wrap; row-gap: var(--espaco-1); }
   /* os cartões descem ao pé, logo acima da legenda; cartões e legenda param antes da coluna do zoom */
   .console { margin-bottom: auto; }
   .legenda { margin-top: 0; }

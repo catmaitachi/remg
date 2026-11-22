@@ -21,6 +21,13 @@ export function formatarPotencia(kva: number): string {
     : `${(kva / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MVA`;
 }
 
+/** "233,5 de 243,6 MVA": entregue e demanda num número só; a unidade aparece uma vez quando é a mesma. */
+export function formatarEntregue(entregueKva: number, demandaKva: number): string {
+  const a = formatarPotencia(entregueKva), b = formatarPotencia(demandaKva);
+  const unidade = (t: string) => t.slice(t.lastIndexOf(" ") + 1);
+  return unidade(a) === unidade(b) ? `${a.slice(0, a.lastIndexOf(" "))} de ${b}` : `${a} de ${b}`;
+}
+
 export function formatarTempo(ms: number): string {
   return `${Math.round(ms).toLocaleString("pt-BR")} ms`;
 }

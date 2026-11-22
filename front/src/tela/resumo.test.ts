@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import type { Analise } from "../api/tipos";
-import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
+import { formatarEntregue, formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
 
 const analise = (pontos: number, demanda: number, demandaTotal: number): Analise => ({
   fluxoTotal: 0, demandaTotal, fluxo: [], gargalos: [], tempoMs: 0,
@@ -48,4 +48,10 @@ test("sem faltante, nada muda", () => {
 
 test("parcial com pontos ainda sem luz não conta duas vezes", () => {
   expect(resumoDaCidade(analise(3, 4000, 243553), 10037)).toEqual({ porcento: 95, frase: "3 pontos sem luz" });
+});
+
+test("entregue x de y: a unidade aparece uma vez quando é a mesma", () => {
+  expect(formatarEntregue(233_512, 243_600)).toBe("233,5 de 243,6 MVA");
+  expect(formatarEntregue(800, 243_600)).toBe("800 kVA de 243,6 MVA");
+  expect(formatarEntregue(0, 0)).toBe("0 de 0 kVA");
 });

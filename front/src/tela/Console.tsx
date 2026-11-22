@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Analise } from "../api/tipos";
 import type { Alvo } from "./falhas";
-import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
+import { formatarEntregue, formatarTempo, resumoDaCidade } from "./resumo";
 import { Logo } from "./Logo";
 import { FECHAR, Icone, RESTAURAR } from "./Icone";
 
@@ -13,12 +13,11 @@ interface Props {
   ferramentas?: ReactNode;
 }
 
-/** Console no topo (T21): uma linha com a logo, os números em destaque, a frase da cidade e as ferramentas. */
+/** Console no topo (T21): linha compacta com a logo, os números (rótulo e valor), o selo da cidade e as ferramentas. */
 export function Console({ analise, faltando, calculando, ferramentas }: Props) {
   const resumo = analise ? resumoDaCidade(analise, faltando) : null;
   const numeros: [string, string][] = [
-    ["Entregue", analise ? formatarPotencia(analise.fluxoTotal) : "—"],
-    ["Demanda", analise ? formatarPotencia(analise.demandaTotal) : "—"],
+    ["Entregue", analise ? formatarEntregue(analise.fluxoTotal, analise.demandaTotal) : "—"],
     ["Gargalos", analise ? analise.gargalos.length.toLocaleString("pt-BR") : "—"],
     ["Cálculo", analise ? formatarTempo(analise.tempoMs) : "—"],
   ];
