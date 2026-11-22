@@ -221,8 +221,9 @@
 }
 .selecionado-linhas { display: grid; gap: 2px; margin: 0; }
 .selecionado-linhas div {
-  display: flex; align-items: baseline; justify-content: space-between; gap: var(--espaco-3);
-  min-height: 32px; padding: 6px 0; border-bottom: 1px solid var(--separador);
+  /* border-box + center: o texto fica no meio da linha (com content-box e baseline ele subia para o topo) */
+  box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: var(--espaco-3);
+  min-height: 40px; padding: 6px 0; border-bottom: 1px solid var(--separador);
   font-size: var(--texto-rotulo);
 }
 .selecionado-linhas dt { color: var(--texto-apoio); }

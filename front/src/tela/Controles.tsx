@@ -74,7 +74,7 @@ export function Ferramentas({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, 
       amostra: <image href={iconeChave(p.at, p.contorno)} x="6" y="0" width="14" height="14" />,
     },
     {
-      chave: "predios3d", nome: "Prédios 3D", apoio: "de perto, inclina o mapa",
+      chave: "predios3d", nome: "Prédios 3D",
       amostra: <path d="M8 12V5l5-3 5 3v7M8 5l5 3 5-3M13 8v5" fill="none" stroke={p.at} strokeWidth="1.5" strokeLinejoin="round" />,
     },
   ];
