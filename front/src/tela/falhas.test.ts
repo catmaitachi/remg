@@ -147,7 +147,8 @@ test("mudar a lista zera o religamento", () => {
   const parcial = comRota({ parcial: true, religado: { pontos: 1463, demanda: 2.739 } });
   const fim = responderAnalise(responderRota(reduzirFalhas(derrubado(), { tipo: "acharRota" }), parcial), semLuz(0, []));
   expect(fim.faltando).toBeGreaterThan(0);
-  expect(passos(fim, t2)).toMatchObject({ rota: null, chavesFechadas: [], faltando: 0 });
+  // o faltante só sai com a análise nova (ver "lista nova depois de religar em parte…")
+  expect(passos(fim, t2)).toMatchObject({ rota: null, chavesFechadas: [] });
   expect(reduzirFalhas(fim, { tipo: "restaurarTudo" })).toMatchObject({ rota: null, chavesFechadas: [], faltando: 0 });
 });
 
@@ -182,4 +183,21 @@ test("acharRota sem falhas ou calculando não faz nada", () => {
   expect(reduzirFalhas(pronto, { tipo: "acharRota" })).toEqual(pronto);
   const calculando = passos(pronto, t1);
   expect(reduzirFalhas(calculando, { tipo: "acharRota" })).toEqual(calculando);
+});
+
+test("lista nova depois de religar em parte não mostra 100% enquanto calcula", () => {
+  const parcial = comRota({ parcial: true, religado: { pontos: 1463, demanda: 3 } });
+  const fim = responderAnalise(responderRota(reduzirFalhas(derrubado(), { tipo: "acharRota" }), parcial), semLuz(0, []));
+  const outra = passos(fim, t2);
+  expect(outra).toMatchObject({ faltando: 10037, chavesFechadas: [], rota: null, calculando: true });
+  expect(responderAnalise(outra, semLuz(500)).faltando).toBe(0);
+  expect(reduzirFalhas(outra, { tipo: "resposta", versao: outra.versao, resultado: { erro: "x" } }).faltando).toBe(10037);
+});
+
+test("segunda busca não soma o que já está no faltante", () => {
+  const parcial = comRota({ parcial: true, religado: { pontos: 10, demanda: 30 } });
+  // 100 sem luz; a rota devolve 30 e 40 seguem sem caminho → faltam 70, e os 40 já estão dentro dos 70
+  const fim = responderAnalise(responderRota(reduzirFalhas(derrubado(semLuz(100)), { tipo: "acharRota" }), parcial), semLuz(40));
+  expect(fim.faltando).toBe(70);
+  expect(reduzirFalhas(fim, { tipo: "acharRota" }).rota?.semLuzAntes).toBe(70);
 });

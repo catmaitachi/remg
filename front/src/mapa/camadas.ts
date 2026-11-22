@@ -232,7 +232,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     }),
     ...(rota ? [new PathLayer<Caminho>({
       id: "rota", data: rota.caminho, getPath: (c) => c.path, getColor: primario,
-      getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, pickable: true,
+      // no Derrubar não segura o clique: o trecho de baixo é que cai
+      getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, pickable: !clicavel,
     })] : []),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,

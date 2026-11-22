@@ -67,8 +67,9 @@ export type Acao =
 
 function comLista(e: EstadoFalhas, falhas: Alvo[]): EstadoFalhas {
   const versao = e.versao + 1;
-  // lista nova = religamento novo: as chaves reabrem e a rota velha não vale mais
-  const limpo = { ...e, falhas, versao, chavesFechadas: [], rota: null, faltando: 0 };
+  // lista nova = religamento novo: as chaves reabrem e a rota velha não vale mais. O faltante fica até a análise nova
+  // chegar: a que está na tela ainda é a do religamento parcial, e sem ele a barra diria 100%.
+  const limpo = { ...e, falhas, versao, chavesFechadas: [], rota: null, faltando: falhas.length ? e.faltando : 0 };
   // sem falhas não há o que pedir: volta para a análise inicial guardada
   return falhas.length ? { ...limpo, calculando: true } : { ...limpo, atual: e.inicial, calculando: false, erro: null };
 }
@@ -88,14 +89,15 @@ export function reduzirFalhas(e: EstadoFalhas, a: Acao): EstadoFalhas {
         const voltar = rota ? { chavesFechadas: rota.chavesAntes, rota: { ...rota, fase: "erro" as const } } : {};
         return { ...e, ...voltar, erro: a.resultado.erro, calculando: false };
       }
-      const pronto = rota && { rota: { ...rota, fase: "pronta" as const }, faltando: faltandoDe(rota) };
-      return { ...e, ...pronto, atual: a.resultado.ok, erro: null, calculando: false };
+      const faltando = rota ? faltandoDe(rota) : 0; // análise sem religamento: não falta nada além do que ela mesma diz
+      return { ...e, ...(rota && { rota: { ...rota, fase: "pronta" as const } }), faltando, atual: a.resultado.ok, erro: null, calculando: false };
     }
     case "acharRota":
       if (!e.falhas.length || e.calculando) return e;
       return {
         ...e, versao: e.versao + 1, calculando: true, erro: null,
-        rota: { fase: "buscando", resultado: null, semLuzAntes: (e.atual?.semEnergia.demanda ?? 0) + e.faltando, chavesAntes: e.chavesFechadas },
+        rota: { fase: "buscando", resultado: null, semLuzAntes: Math.max(e.atual?.semEnergia.demanda ?? 0, e.faltando), // o faltante já inclui quem segue sem caminho
+        chavesAntes: e.chavesFechadas },
       };
     case "rota": {
       if (a.versao !== e.versao || e.rota?.fase !== "buscando") return e;

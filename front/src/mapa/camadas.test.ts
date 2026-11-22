@@ -316,3 +316,10 @@ test("anel pisca só com quadro e piscando", () => {
 test("críticos ficam guardados e desligados", () => {
   expect(VISIVEIS_INICIAL.criticos).toBe(false);
 });
+
+test("no Derrubar a rota não segura o clique (o trecho de baixo é que cai)", () => {
+  const com = (derrubando: boolean) => Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", null,
+    { derrubando, rota: prepararRota(dados, CAMINHO, ["c:1"], false)! }).map((c) => [c.id, c])) as Record<string, any>;
+  expect(!!com(true).rota.props.pickable).toBe(false);
+  expect(!!com(false).rota.props.pickable).toBe(true);
+});
