@@ -4,7 +4,7 @@ import rotaMock from "../mocks/rota-alternativa.json";
 import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede, RotaAlternativa } from "../api/tipos";
 import {
-  ESTADO_INICIAL, alternarFalha, pedidoDe, pedidoPendente, reduzirFalhas, rotuloDoAlvo, type Alvo, type EstadoFalhas,
+  ESTADO_INICIAL, alternarFalha, analiseFalhou, pedidoDe, pedidoPendente, reduzirFalhas, rotuloDoAlvo, type Alvo, type EstadoFalhas,
 } from "./falhas";
 
 const t1: Alvo = { tipo: "aresta", id: "t:1" };
@@ -57,6 +57,15 @@ test("erro mantém a lista e a última análise boa", () => {
   expect(passos(erro, t2).calculando).toBe(true);
   const ok = reduzirFalhas(passos(erro, t2), { tipo: "resposta", versao: erro.versao + 1, resultado: { ok: comFalha } });
   expect(ok.erro).toBeNull();
+});
+
+test("sem a análise da lista atual não se busca rota: a base do faltante seria a da lista anterior", () => {
+  const um = reduzirFalhas(passos(pronto, t1), { tipo: "resposta", versao: 1, resultado: { ok: comFalha } });
+  const dois = passos(um, t2);
+  const erro = reduzirFalhas(dois, { tipo: "resposta", versao: dois.versao, resultado: { erro: "núcleo caiu" } });
+  expect(analiseFalhou(erro)).toBe(true);
+  expect(reduzirFalhas(erro, { tipo: "acharRota" })).toBe(erro);
+  expect(analiseFalhou(um)).toBe(false);
 });
 
 test("restaurar tudo limpa erro e calculando", () => {

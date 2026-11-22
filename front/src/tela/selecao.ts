@@ -58,9 +58,11 @@ export function detalheDe(
   };
 }
 
-/** Chave não se derruba no cartão: quem mexe em chave é o religamento. */
+/** Chave não se derruba no cartão: quem mexe em chave é o religamento. Linha AT só de desenho (fora das arestas) também não. */
 export function podeDerrubar(sel: Selecao, rede: Rede): boolean {
-  return sel.tipo === "subestacao" || rede.arestas.find((a) => a[0] === sel.id)?.[3] !== "chave";
+  if (sel.tipo === "subestacao") return true;
+  const aresta = rede.arestas.find((a) => a[0] === sel.id);
+  return !!aresta && aresta[3] !== "chave";
 }
 
 /** Para onde o mapa voa ao clicar numa falha: a subestação ou o meio da aresta, em [lon, lat]. */

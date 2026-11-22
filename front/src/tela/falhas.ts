@@ -83,7 +83,7 @@ export function reduzirFalhas(e: EstadoFalhas, a: Acao): EstadoFalhas {
       return { ...e, ...(rota && { rota: { ...rota, fase: "pronta" as const } }), faltando, atual: a.resultado.ok, erro: null, calculando: false };
     }
     case "acharRota":
-      if (!e.falhas.length || e.calculando) return e;
+      if (!e.falhas.length || e.calculando || analiseFalhou(e)) return e;
       return {
         ...e, versao: e.versao + 1, calculando: true, erro: null,
         rota: { fase: "buscando", resultado: null, semLuzAntes: Math.max(e.atual?.semEnergia.demanda ?? 0, e.faltando), // o faltante já inclui quem segue sem caminho
@@ -100,6 +100,11 @@ export function reduzirFalhas(e: EstadoFalhas, a: Acao): EstadoFalhas {
   }
 }
 
+/** A análise da lista atual falhou: `atual` ainda é a da lista anterior. Erro com rota é do religamento, e aí a base vale. */
+export function analiseFalhou(e: EstadoFalhas): boolean {
+  return e.erro !== null && e.rota === null;
+}
+
 function faltandoDe(rota: EstadoRota): number {
   return rota.resultado?.parcial ? Math.max(0, rota.semLuzAntes - rota.resultado.religado.demanda) : 0;
 }
@@ -110,12 +115,15 @@ export function pedidoPendente(e: EstadoFalhas): { tipo: "rota" | "analise"; ped
   return { tipo: e.rota?.fase === "buscando" ? "rota" : "analise", pedido: pedidoDe(e.falhas, e.chavesFechadas) };
 }
 
-interface SituacaoDoReligar { usandoMock: boolean; temFalhas: boolean; temSemLuz: boolean; calculando: boolean; temResultado: boolean }
+interface SituacaoDoReligar {
+  usandoMock: boolean; temFalhas: boolean; temSemLuz: boolean; calculando: boolean; temResultado: boolean; analiseFalhou: boolean;
+}
 
 /** Por que "Achar rota" está desligado; `null` quando dá para pedir. `""` desliga sem texto (o resultado já explica). */
-export function dicaDoReligar({ usandoMock, temFalhas, temSemLuz, calculando, temResultado }: SituacaoDoReligar): string | null {
+export function dicaDoReligar({ usandoMock, temFalhas, temSemLuz, calculando, temResultado, analiseFalhou }: SituacaoDoReligar): string | null {
   if (usandoMock) return "O Religar precisa do servidor.";
   if (!temFalhas) return "Derrube um item pelo cartão dele primeiro.";
+  if (analiseFalhou && !calculando) return "A análise desta lista falhou: mude a lista para calcular de novo.";
   // sem ponto sem luz a rota não tem o que religar: o pedido levaria ~8 s em BH para responder "nada"
   if (!temSemLuz && !calculando) return temResultado ? "" : "Nenhum ponto sem luz para religar.";
   return null;

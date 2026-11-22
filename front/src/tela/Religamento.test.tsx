@@ -8,11 +8,12 @@ import { AcharRota, Religamento } from "./Religamento";
 const status = (html: string) => html.match(/<div[^>]*role="status"[^>]*>(.*?)<\/div><\/section>/)?.[1];
 
 test("a dica segue a ordem mock → sem falhas → sem ponto sem luz", () => {
-  const base = { usandoMock: false, temFalhas: true, temSemLuz: true, calculando: false, temResultado: false };
+  const base = { usandoMock: false, temFalhas: true, temSemLuz: true, calculando: false, temResultado: false, analiseFalhou: false };
   expect(dicaDoReligar({ ...base, usandoMock: true, temFalhas: false })).toBe("O Religar precisa do servidor.");
   expect(dicaDoReligar({ ...base, temFalhas: false })).toBe("Derrube um item pelo cartão dele primeiro.");
   expect(dicaDoReligar({ ...base, temSemLuz: false })).toBe("Nenhum ponto sem luz para religar.");
   expect(dicaDoReligar({ ...base, temSemLuz: false, temResultado: true })).toBe("");
+  expect(dicaDoReligar({ ...base, analiseFalhou: true })).toBe("A análise desta lista falhou: mude a lista para calcular de novo.");
   expect(dicaDoReligar(base)).toBeNull();
   expect(dicaDoReligar({ ...base, temSemLuz: false, calculando: true })).toBeNull();
 });

@@ -13,7 +13,7 @@ import { Console, Falhas } from "./tela/Console";
 import { Contexto } from "./tela/Contexto";
 import { Controles, Ferramentas } from "./tela/Controles";
 import { Legenda } from "./tela/Legenda";
-import { ESTADO_INICIAL, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
+import { ESTADO_INICIAL, analiseFalhou, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
 import { AcharRota, Religamento } from "./tela/Religamento";
 import { Selecionado } from "./tela/Selecionado";
 import { detalheDe, podeDerrubar, posicaoDoAlvo, type CriticosDaRede, type Selecao } from "./tela/selecao";
@@ -83,7 +83,7 @@ export default function App() {
   const detalhe = selecao && redeOk ? detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas, criticos) : null;
   const dicaReligar = dicaDoReligar({
     usandoMock: USANDO_MOCK, temFalhas: estado.falhas.length > 0, temSemLuz: !!estado.atual?.semEnergia.pontos.length,
-    calculando: estado.calculando, temResultado: estado.rota?.fase === "pronta",
+    calculando: estado.calculando, temResultado: estado.rota?.fase === "pronta", analiseFalhou: analiseFalhou(estado),
   });
 
   // Cada versão nova pede uma coisa (pedidoPendente, testado em falhas.ts): a rota ou a análise da lista inteira com as

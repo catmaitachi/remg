@@ -51,6 +51,10 @@ test("derruba trecho, linha AT e subestação; chave não (quem fecha chave é o
   expect(podeDerrubar({ tipo: "aresta", id: "c:9" }, comChave)).toBe(false);
 });
 
+test("linha AT só de desenho (fora do grafo) não se derruba: o servidor responderia id desconhecido", () => {
+  expect(podeDerrubar({ tipo: "aresta", id: "at:223991930" }, rede)).toBe(false);
+});
+
 test("posição da falha: meio da aresta ou a subestação, em [lon, lat]", () => {
   expect(posicaoDoAlvo({ tipo: "subestacao", id: "s:1" }, rede)).toEqual([-43.947, -19.921]);
   const [lon, lat] = posicaoDoAlvo({ tipo: "aresta", id: "t:1" }, rede)!;
