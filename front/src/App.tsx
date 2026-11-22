@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { Map, MapProvider } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./tela/tela.css";
-import { carregarAnalise, carregarRede, pedirAnalise } from "./api/carregar";
+import { carregarAnalise, carregarRede, pedirAnalise, pedirRota } from "./api/carregar";
 import type { Analise, Rede } from "./api/tipos";
 import { animacaoInicial } from "./mapa/animacao";
 import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
@@ -11,7 +11,8 @@ import type { Tema } from "./mapa/cores";
 import { Barra, type Modo } from "./tela/Barra";
 import { Controles } from "./tela/Controles";
 import { Legenda } from "./tela/Legenda";
-import { ESTADO_INICIAL, pedidoDe, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
+import { ESTADO_INICIAL, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
+import { Religamento } from "./tela/Religamento";
 import { Selecionado } from "./tela/Selecionado";
 import { detalheDe, type Selecao } from "./tela/selecao";
 
@@ -75,16 +76,22 @@ export default function App() {
     () => (redeOk ? estado.falhas.map((alvo) => ({ alvo, rotulo: rotuloDoAlvo(alvo, redeOk) })) : []), [redeOk, estado.falhas],
   );
 
-  // Cada mudança na lista pede a análise da lista inteira (a API não tem estado). O abort cobre clique novo e saída.
+  // Cada versão nova pede uma coisa (pedidoPendente, testado em falhas.ts): a rota ou a análise da lista inteira com as
+  // chaves (a API não tem estado). O abort cobre clique novo e saída. Só a versão entra nas dependências: ela sobe a cada
+  // pedido novo, e o estado inteiro faria pedir de novo a cada render.
   useEffect(() => {
-    if (!redeOk || !estado.falhas.length) return;
+    const pendente = redeOk ? pedidoPendente(estado) : null;
+    if (!redeOk || !pendente) return;
     const controle = new AbortController(), versao = estado.versao;
-    pedirAnalise(pedidoDe(estado.falhas), redeOk, controle.signal).then(
-      (ok) => despachar({ tipo: "resposta", versao, resultado: { ok } }),
-      (e: Error) => { if (!controle.signal.aborted) despachar({ tipo: "resposta", versao, resultado: { erro: e.message } }); },
-    );
+    const tipo = pendente.tipo === "rota" ? "rota" : "resposta";
+    const falhou = (e: Error) => { if (!controle.signal.aborted) despachar({ tipo, versao, resultado: { erro: e.message } }); };
+    if (pendente.tipo === "rota") {
+      pedirRota(pendente.pedido, controle.signal).then((ok) => despachar({ tipo: "rota", versao, resultado: { ok } }), falhou);
+    } else {
+      pedirAnalise(pendente.pedido, redeOk, controle.signal).then((ok) => despachar({ tipo: "resposta", versao, resultado: { ok } }), falhou);
+    }
     return () => controle.abort();
-  }, [redeOk, estado.versao, estado.falhas]);
+  }, [redeOk, estado.versao]); // eslint-disable-line react-hooks/exhaustive-deps
   const temChaves = useMemo(() => !!redeOk?.arestas.some((a) => a[3] === "chave"), [redeOk]);
 
   // MapProvider: os controles usam useMap() fora do <Map>. Dentro dele ficariam abaixo do canvas do deck.gl,
@@ -107,7 +114,12 @@ export default function App() {
         animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
 
       {redeOk && (
-        <Barra area={redeOk.area} analise={estado.atual} usandoMock={USANDO_MOCK} modo={modo}
+        <Barra area={redeOk.area} analise={estado.atual} usandoMock={USANDO_MOCK} faltando={estado.faltando} modo={modo}
+          religamento={modo === "religar" && (
+            <Religamento rota={estado.rota} faltando={estado.faltando} temFalhas={estado.falhas.length > 0}
+              temSemLuz={!!estado.atual?.semEnergia.pontos.length} usandoMock={USANDO_MOCK}
+              calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
+          )}
           aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
           falhas={listaDeFalhas} calculando={estado.calculando}
           aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })} aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })}>
@@ -128,7 +140,8 @@ export default function App() {
       )}
       {estado.erro && (
         <p className="vidro aviso aviso-erro" role="alert">
-          <strong>Não deu para calcular a falha.</strong>
+          <strong>{estado.rota?.fase !== "erro" ? "Não deu para calcular a falha."
+            : estado.rota.resultado ? "Não deu para religar." : "Não deu para achar a rota."}</strong>
           <span>{estado.erro}</span>
         </p>
       )}

@@ -5,10 +5,14 @@ import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
 import { Logo } from "./Logo";
 import { FECHAR, Icone, RESTAURAR } from "./Icone";
 
-export type Modo = "observar" | "derrubar";
+export type Modo = "observar" | "derrubar" | "religar";
 
 interface Props {
   area: string; analise: Analise | null; usandoMock: boolean;
+  /** kVA que o religamento parcial não devolveu: a linha da cidade não pode dizer 100% */
+  faltando: number;
+  /** seção do modo Religar, logo abaixo da linha da cidade */
+  religamento?: ReactNode;
   modo: Modo; aoMudarModo: (m: Modo) => void;
   falhas: { alvo: Alvo; rotulo: string }[]; calculando: boolean;
   aoRestaurar: (alvo: Alvo) => void; aoRestaurarTudo: () => void;
@@ -16,10 +20,10 @@ interface Props {
   children?: ReactNode;
 }
 
-const MODOS: [Modo, string][] = [["observar", "Observar"], ["derrubar", "Derrubar"]];
+const MODOS: [Modo, string][] = [["observar", "Observar"], ["derrubar", "Derrubar"], ["religar", "Religar"]];
 
-export function Barra({ area, analise, usandoMock, modo, aoMudarModo, falhas, calculando, aoRestaurar, aoRestaurarTudo, children }: Props) {
-  const resumo = analise ? resumoDaCidade(analise) : null;
+export function Barra({ area, analise, usandoMock, faltando, religamento, modo, aoMudarModo, falhas, calculando, aoRestaurar, aoRestaurarTudo, children }: Props) {
+  const resumo = analise ? resumoDaCidade(analise, faltando) : null;
   const blocos: [string, string][] = [
     ["Energia entregue", analise ? formatarPotencia(analise.fluxoTotal) : "—"],
     ["Demanda", analise ? formatarPotencia(analise.demandaTotal) : "—"],
@@ -38,7 +42,7 @@ export function Barra({ area, analise, usandoMock, modo, aoMudarModo, falhas, ca
       </header>
 
       <div className="modo">
-        <div className="segmentos segmentos-2" role="group" aria-label="Modo">
+        <div className="segmentos" role="group" aria-label="Modo">
           {MODOS.map(([m, nome]) => (
             <button key={m} type="button" aria-pressed={modo === m} onClick={() => aoMudarModo(m)}>{nome}</button>
           ))}
@@ -63,6 +67,8 @@ export function Barra({ area, analise, usandoMock, modo, aoMudarModo, falhas, ca
           {calculando && <><span className="calculando-ponto" aria-hidden="true" />Calculando…</>}
         </p>
       </section>
+
+      {religamento}
 
       {falhas.length > 0 && (
         <section className="falhas" aria-label="Falhas">

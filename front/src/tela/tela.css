@@ -179,3 +179,16 @@
 }
 .selecionado-linhas dt { color: var(--texto-apoio); }
 .selecionado-linhas dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.religamento { display: grid; gap: var(--espaco-2); }
+.botao-primario {
+  min-height: 40px; padding: 0 var(--espaco-6);
+  border: 0; border-radius: var(--raio-pilula); background: var(--primario); color: var(--primario-texto);
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.botao-primario:hover:not(:disabled) { filter: brightness(1.1); }
+.botao-primario:disabled { cursor: not-allowed; background: var(--switch-desligado); color: var(--branco); }
+.religamento p { margin: 0; }
+.religamento-resultado { display: grid; gap: var(--espaco-1); padding: var(--espaco-3); border-radius: var(--raio-md); background: var(--bloco); }
+.religamento-total { font-size: var(--texto-rotulo); font-weight: 700; font-variant-numeric: tabular-nums; }
+.religamento-parcial { font-size: var(--texto-rotulo); font-weight: 700; color: var(--erro); }
+.religamento-completo, .religamento-nada { font-size: var(--texto-rotulo); color: var(--texto-apoio); }
