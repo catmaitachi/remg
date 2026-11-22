@@ -37,3 +37,15 @@ test("potência em kVA ou MVA e tempo em ms", () => {
 test("demanda total zero com pontos sem luz não inventa 99%", () => {
   expect(resumoDaCidade(analise(3, 0, 0))).toEqual({ porcento: 100, frase: "3 pontos sem luz" });
 });
+
+test("religamento parcial não diz cidade toda com luz", () => {
+  expect(resumoDaCidade(analise(0, 0, 243553), 10037)).toEqual({ porcento: 95, frase: "Religado em parte: faltam 10 MVA" });
+});
+
+test("sem faltante, nada muda", () => {
+  expect(resumoDaCidade(analise(702, 702, 35829), 0)).toEqual(resumoDaCidade(analise(702, 702, 35829)));
+});
+
+test("parcial com pontos ainda sem luz não conta duas vezes", () => {
+  expect(resumoDaCidade(analise(3, 4000, 243553), 10037)).toEqual({ porcento: 95, frase: "3 pontos sem luz" });
+});

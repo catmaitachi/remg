@@ -1,7 +1,7 @@
 import urlBh from "../mocks/rede.bh.json?url"; // ?url: o JSON de 4 MB fica fora do bundle e é lido por fetch
 import urlAnaliseBh from "../mocks/analise.bh.json?url";
-import type { Analise, Pedido, Rede } from "./tipos";
-import { validarAnalise, validarRede } from "./validar";
+import type { Analise, Pedido, Rede, RotaAlternativa } from "./tipos";
+import { validarAnalise, validarRede, validarRota } from "./validar";
 
 export const SERVIDOR = "http://localhost:8080/api";
 
@@ -64,4 +64,10 @@ export async function pedirAnalise(
   }
   const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pedido), signal };
   return buscarValidado(urlDaAnalise(false), init, false, buscar, validarAnalise, "a análise");
+}
+
+/** Rota alternativa (T21). Sem caminho de mock: o mock de BH não tem chaves, e o Religar fica desligado nele. */
+export function pedirRota(pedido: Pedido, signal?: AbortSignal, buscar: typeof fetch = fetch): Promise<RotaAlternativa> {
+  const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pedido), signal };
+  return buscarValidado(`${SERVIDOR}/rota-alternativa`, init, false, buscar, validarRota, "a rota");
 }
