@@ -186,7 +186,8 @@
   font: inherit; font-weight: 700; cursor: pointer;
 }
 .botao-primario:hover:not(:disabled) { filter: brightness(1.1); }
-.botao-primario:disabled { cursor: not-allowed; background: var(--switch-desligado); color: var(--branco); }
+/* desligado fica quieto: depois do resultado ele não pode competir com o cartão */
+.botao-primario:disabled { cursor: not-allowed; background: var(--bloco); color: var(--texto-apoio); }
 .religamento p { margin: 0; }
 .religamento-resultado { display: grid; gap: var(--espaco-1); padding: var(--espaco-3); border-radius: var(--raio-md); background: var(--bloco); }
 .religamento-total { font-size: var(--texto-rotulo); font-weight: 700; font-variant-numeric: tabular-nums; }
