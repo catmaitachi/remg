@@ -12,4 +12,4 @@ Relatório de **12 a 15 páginas** no template da SBC.
 - [ ] `.tex` e PDF em `docs/relatorio/`
 - [ ] todos revisaram
 
-📚 [10 · Entregas](../spec/10-entregas.md)
+📚 [09 · Entregas](../spec/09-entregas.md)

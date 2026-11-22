@@ -1,7 +1,7 @@
 """🛡️ Guarda do Claude Code: hook PreToolUse que impede o Claude de quebrar as regras do projeto.
 
 Ligado em .claude/settings.json. Recebe o pedido da ferramenta (JSON na entrada padrão) e responde
-"deny" (barra) ou "ask" (pede aprovação da pessoa). Regras: docs/spec/11-verificador.md (G1, G3, G4, G5).
+"deny" (barra) ou "ask" (pede aprovação da pessoa). Regras: docs/spec/10-verificador.md (G1, G3, G4, G5).
 """
 import json
 import os

@@ -1,4 +1,4 @@
-# 13 · ⚙️ Automação do fluxo (DevOps)
+# 12 · ⚙️ Automação do fluxo (DevOps)
 
 ✅ **D20.** O grupo não vai lembrar de passos de processo. Regra: **o que dá para fazer por script roda no GitHub Actions**, que é garantido. **O resto fica com o agente** (Claude ou outra IA, pelo [`AGENTS.md`](../../AGENTS.md)). ✅ **Sem token extra**: só o token automático do Actions.
 
@@ -34,7 +34,7 @@
 
 - **Ação feita pelo token do Actions não dispara outro workflow.** Por isso: (a) arrumar o PR roda **dentro** do workflow do verificador, antes do check, e o verificador relê descrição e labels **atualizados**; (b) a Action que fecha a milestone já **cria a release ali mesmo**, em vez de esperar o evento "milestone fechada".
 - **O revisor sorteado precisa ter aceitado o convite.** Enquanto não aceitar, o pedido de revisão falha em silêncio e o PR segue sem revisor (o check não depende disso).
-- **Milestone com desejável parada** (v0.9): ela só fecha quando *todas* as issues dela fecharem. Desejável que não sair até o dia 18 precisa **mudar de milestone** (regra de corte do [12](12-releases.md)).
+- **Milestone com desejável parada** (v0.9): ela só fecha quando *todas* as issues dela fecharem. Desejável que não sair até o dia 18 precisa **mudar de milestone** (regra de corte do [11](11-releases.md)).
 - **O build no check** usa comandos padrão (`python -m unittest discover -s tests -t .`, `npm ci && npm run build`). O `-t .` exige `tests/__init__.py`. Quem mudar o jeito de rodar os testes ou o front ajusta o workflow junto.
 
 ## 🙅 Fora (de propósito)

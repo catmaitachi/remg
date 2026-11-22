@@ -52,20 +52,20 @@ Toda issue só vai para ✅ **Pronto** com:
 
 ## 🌿 Git
 
-- 🙋 Começar uma task: `python tools/dev/comecar.py --buscar "o que você vai fazer"` e depois `python tools/dev/comecar.py N`. Ele confere dependências, atribui a issue e cria (ou retoma) a branch ([13](13-automacao.md)).
+- 🙋 Começar uma task: `python tools/dev/comecar.py --buscar "o que você vai fazer"` e depois `python tools/dev/comecar.py N`. Ele confere dependências, atribui a issue e cria (ou retoma) a branch ([12](12-automacao.md)).
 - 🌱 Branch por issue: `feat/7-dinic`, `fix/12-chave-aberta`, `docs/3-uml`.
 - 💬 Commits pequenos, em português, no formato `tipo: o que mudou` (`feat`, `fix`, `test`, `docs`, `refactor`).
 - 🔗 PR com `Closes #7` na descrição.
 - 🔀 🟡 **P6:** merge commit, **sem squash**. O professor avalia commits individuais, e o squash junta tudo num commit só.
 - 👤 Cada integrante commita com a **própria conta** (confira o `git config user.email`).
 - 🚫 Nada de commit direto na `main`.
-- 🛡️ O [verificador](11-verificador.md) confere tudo isso sozinho: hooks no commit e no push (ligados automaticamente) e check obrigatório no PR.
+- 🛡️ O [verificador](10-verificador.md) confere tudo isso sozinho: hooks no commit e no push (ligados automaticamente) e check obrigatório no PR.
 
 ## 📥 Backlog (sem responsável)
 
 ✅ Cada task tem um arquivo em [`docs/tasks/`](../tasks/) com uma descrição amigável: **🎯 o que é · 🤔 por que importa · 🧭 como começar · ✅ pronto quando · 📚 leia antes**. O script `python tools/kanban/criar_issues.py --criar` transforma esses arquivos em issues (sem `--criar`, ele só mostra o que faria).
 
-🏷️ Cada fase é uma **versão** com data-alvo: v0.1 Base · v0.2 Núcleo · v0.3 Análises · v0.4 Tela · v0.9 Congelamento · v1.0 Entrega ([12-releases](12-releases.md)).
+🏷️ Cada fase é uma **versão** com data-alvo: v0.1 Base · v0.2 Núcleo · v0.3 Análises · v0.4 Tela · v0.9 Congelamento · v1.0 Entrega ([11-releases](11-releases.md)).
 
 ✅ **As revisões vêm primeiro (D12):** arquitetura e direção visual são decididas antes de alguém escrever código que dependa delas.
 

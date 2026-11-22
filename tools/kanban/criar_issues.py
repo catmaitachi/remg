@@ -7,7 +7,7 @@ import argparse, json, pathlib, subprocess, sys
 
 TASKS = pathlib.Path(__file__).resolve().parents[2] / "docs" / "tasks"
 
-# Previsão de releases: docs/spec/12-releases.md (mudou lá? mude aqui também)
+# Previsão de releases: docs/spec/11-releases.md (mudou lá? mude aqui também)
 RELEASES = {
     "v0.1": ("🧱 Base", "2026-11-11"),
     "v0.2": ("🧮 Núcleo", "2026-11-14"),

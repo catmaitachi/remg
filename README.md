@@ -1,52 +1,57 @@
-# ⚡ Cintilante
+<div align="center">
 
-A rede de distribuição de energia de **Belo Horizonte** desenhada como grafo sobre o mapa real, com o fluxo animado, os gargalos, as falhas e as rotas alternativas.
-Trabalho Prático de Grafos, tema 4. 📚 Spec completa em [`docs/spec/`](docs/spec/README.md).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.gif">
+  <img src="docs/banner.gif" width="100%" alt="REMG: a câmera gira em volta da Praça Raul Soares, no centro de Belo Horizonte, com os prédios em 3D e os trechos da rede de distribuição sobre as ruas, em azul abaixo de 60% de uso e em laranja perto do limite">
+</picture>
+
+<p>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white">
+  <img alt="MapLibre" src="https://img.shields.io/badge/MapLibre_GL-6-396CB2?logo=maplibre&logoColor=white">
+</p>
+
+A rede de distribuição de energia de **Belo Horizonte** simulada em um grafo, com **fluxo de energia**, **gargalos** e **pontos críticos**.
 
 ## 🚀 Como rodar
 
 ### 🐍 Núcleo e servidor
 
-**Precisa ter:** Python 3.12 ou mais novo e git. Não tem nada para compilar nem instalar: o núcleo só usa a biblioteca padrão.
+> 📦 Dependências: Python 3.12 ou mais novo.
 
-1. **Testes:** `python -m unittest discover -s tests -t .` (núcleo) e `python -m unittest discover -s adapters/http` (servidor).
-2. **Servidor:** `python adapters/http/servidor.py` e abra <http://localhost:8080/api/saude>. A resposta é `{"ok": true}`.
-
-- 🔌 `não deu para abrir a porta 8080` → outro programa está usando a porta. Feche-o e rode de novo.
+```sh
+python -m unittest discover -s tests -t .
+python adapters/http/servidor.py
+```
 
 ### 🗺️ Front
 
-**Precisa ter:** Node 22 e npm, e o servidor ligado (acima). Sem o servidor, dá para usar os dados de exemplo.
+> 📦 Dependências: Node 22, npm 10 ou mais novo.
 
-1. **Instalar:** `cd front && npm install`. Isso também liga os hooks do verificador.
-2. **Escolher de onde vêm os dados:** copie `front/.env.example` para `front/.env.local`.
-   - `VITE_USAR_MOCK=false` (o padrão) → busca o servidor em `http://localhost:8080/api`, com os números do núcleo.
-   - `VITE_USAR_MOCK=true` → usa a rede de BH de exemplo (`front/src/mocks/rede.bh.json`), sem servidor.
-3. **Rodar:** `npm run dev` e abra <http://localhost:5173>.
-4. **Testes:** `npm test`.
+```sh
+cd front
+npm install
+npm run dev
+```
 
-- 🗺️ No exemplo, a geometria é real (ruas e linhas de BH, da T06), mas capacidade e demanda são **valores fixos de mentira** (1000 kVA e 1 kVA), porque quem calcula os valores de verdade é o núcleo.
-- 🔁 Os CSV de `data/bh/` mudaram? Rode `npm run mock:bh` para gerar o mock de novo.
-- 🔌 `Não deu para carregar a rede` → o servidor não está ligado. Ligue o servidor ou use `VITE_USAR_MOCK=true`.
-
-## 🛡️ Regras do repositório
-
-- Os hooks do verificador ligam sozinhos (Claude Code ou `npm install`). Para ligar à mão: `git config core.hooksPath .githooks`
-- Todo PR passa pelo check **verificar** e precisa de 1 aprovação. Ninguém commita direto na `main`.
-- Commit `tipo: descrição`, curto e **sem coautoria de IA** (D27): o hook barra o `Co-Authored-By` de IA. O uso de IA vai só em [`docs/ia/registro.md`](docs/ia/registro.md).
-- Detalhes: [`docs/spec/11-verificador.md`](docs/spec/11-verificador.md) · regras para IA: [`AGENTS.md`](AGENTS.md)
-
-## 🏛️ Arquitetura
+## 🏛️ Arquitetura hexagonal
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagramas/hexagono-dark.svg">
-  <img src="docs/diagramas/hexagono.svg" alt="Arquitetura hexagonal do Cintilante: front e benchmark entram pelos adaptadores, passam pela porta ServicoDeAnalise e chegam ao núcleo Python (casos de uso, domínio e grafo); os dados entram pela porta FonteDeRede, implementada pelo leitor de CSV">
+  <img src="docs/diagramas/hexagono.svg" alt="Arquitetura hexagonal do REMG: front e benchmark entram pelos adaptadores, passam pela porta ServicoDeAnalise e chegam ao núcleo Python (casos de uso, domínio e grafo); os dados entram pela porta FonteDeRede, implementada pelo leitor de CSV">
 </picture>
 
-Núcleo Python feito à mão (D26), com servidor, CLI e leitura de dados como adaptadores. Detalhes em [`docs/spec/05-arquitetura.md`](docs/spec/05-arquitetura.md).
+## 🎯 Casos de uso
 
-## ✍️ Como o sistema funciona
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagramas/casos-de-uso-dark.svg">
+  <img src="docs/diagramas/casos-de-uso.svg" alt="Casos de uso: o operador vê a rede e o fluxo, vê gargalos, simula falha (que inclui calcular quem ficou sem energia), vê rota alternativa (que estende simular falha) e vê pontos críticos">
+</picture>
 
-> Cada seção abaixo é **escrita à mão por quem fez a feature** (regra D9), depois que ela funciona, e termina com `✍️ Escrito por: <nome>`. A IA não edita esta parte: a guarda do Claude barra.
+---
 
-<!-- ✍️ ESCRITO À MÃO: daqui para baixo a IA não edita -->
+Mais detalhes em [docs/spec/README.md](docs/spec/README.md).
+
+</div>

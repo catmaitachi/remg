@@ -48,8 +48,8 @@ Detalhes em [05 · Arquitetura](05-arquitetura.md).
 
 - algum integrante **não souber explicar** como a própria feature funciona (por isso existe o README escrito à mão, ver [08-processo](08-processo.md));
 - o grafo ou os algoritmos usarem **biblioteca pronta** (o PDF zera a nota);
-- o uso de IA aparecer **escondido** (ver [09-uso-de-ia](09-uso-de-ia.md));
-- faltar **qualquer** item da entrega, porque a falta de um item zera a nota (ver [10-entregas](10-entregas.md)).
+- o uso de IA aparecer **escondido**;
+- faltar **qualquer** item da entrega, porque a falta de um item zera a nota (ver [09-entregas](09-entregas.md)).
 
 ## 📜 Regras do PDF que guiam tudo
 
@@ -61,4 +61,4 @@ Detalhes em [05 · Arquitetura](05-arquitetura.md).
 | UML é avaliado | [03](03-modelagem.md) |
 | Commits individuais são avaliados | [08](08-processo.md) |
 | Demonstrar corretude, complexidade e limitações | [04](04-algoritmos.md) |
-| Relatório SBC em LaTeX, 12 a 15 páginas · slides · apresentação de 10 min · vídeo de 12 a 18 min | [10](10-entregas.md) |
+| Relatório SBC em LaTeX, 12 a 15 páginas · slides · apresentação de 10 min · vídeo de 12 a 18 min | [09](09-entregas.md) |

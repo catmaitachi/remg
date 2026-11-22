@@ -1,7 +1,7 @@
 name: 🏷️ release
 
 # Fechou a última issue de uma milestone → fecha a milestone e cria a tag vX.Y.0.
-# Milestone fechada à mão → cria a tag. Ver docs/spec/12-releases.md e 13-automacao.md
+# Milestone fechada à mão → cria a tag. Ver docs/spec/11-releases.md e 12-automacao.md
 on:
   issues:
     types: [closed]

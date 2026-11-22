@@ -1,6 +1,6 @@
 """🪄 Arruma o PR antes do verificador (GitHub Actions): Closes #N, milestone, label de IA e revisor.
 
-Cada ajuste é independente: se um falhar, avisa e segue. Regras: docs/spec/13-automacao.md
+Cada ajuste é independente: se um falhar, avisa e segue. Regras: docs/spec/12-automacao.md
 """
 import json
 import os

@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
 
 jobs:
-  # Completa o PR sozinho (Closes #N, milestone, label de IA, revisor). Ver docs/spec/13-automacao.md
+  # Completa o PR sozinho (Closes #N, milestone, label de IA, revisor). Ver docs/spec/12-automacao.md
   arrumar:
     runs-on: ubuntu-latest
     continue-on-error: true

@@ -1,4 +1,4 @@
-# 11 · 🛡️ Verificador de commit e PR
+# 10 · 🛡️ Verificador de commit e PR
 
 > 💡 **Ideia:** um script que faz uma **pré-análise** do commit ou do PR e diz, em linguagem simples, se as regras do projeto foram seguidas. Ele **não substitui** a revisão de um colega: tira do caminho o que dá para checar automaticamente, para a revisão humana focar no que importa.
 
@@ -66,7 +66,7 @@ Além dos hooks de git, um hook `PreToolUse` em [`.claude/settings.json`](../../
 | V13 | Nada direto na `main` | ❌ | commit com a `main` ativa, ou push para a `main` | [08](08-processo.md) |
 | ~~V14~~ · ~~V15~~ | ~~ficha ✍️~~ | — | saíram com a ficha (D27) | — |
 | V16 | **Adaptador só pela porta** | ❌ | `import` em `adapters/` que entra em `core` fora de `core.portas` · exceção: os pontos de montagem `adapters/http/servidor.py` e `adapters/cli/main.py` | D22, [05](05-arquitetura.md) |
-| V17 | **Sem coautoria de IA** | ❌ | commit com `Co-Authored-By:` de ferramenta de IA (lista `FERRAMENTAS_IA`), no `commit-msg` e em cada commit do push e do PR | D27, [09](09-uso-de-ia.md) |
+| V17 | **Sem coautoria de IA** | ❌ | commit com `Co-Authored-By:` de ferramenta de IA (lista `FERRAMENTAS_IA`), no `commit-msg` e em cada commit do push e do PR | D27 |
 
 ## 🖨️ Como fica a saída
 

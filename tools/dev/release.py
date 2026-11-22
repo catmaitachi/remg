@@ -3,7 +3,7 @@
 - issue fechada e a milestone dela ficou sem issue aberta → fecha a milestone e cria a release;
 - milestone fechada à mão → cria a release.
 Tudo numa execução só: ação feita pelo token do Actions não dispara outro workflow.
-Regras: docs/spec/12-releases.md e 13-automacao.md
+Regras: docs/spec/11-releases.md e 12-automacao.md
 """
 import json
 import os

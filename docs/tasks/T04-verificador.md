@@ -12,6 +12,6 @@ Ligar no GitHub a proteção da `main` e deixar os hooks do verificador ativos e
 - [x] labels das tasks criados
 - [x] `git config core.hooksPath` responde `.githooks` (Claude Code e `npm install` ligam sozinhos)
 
-📚 [11 · Verificador](../spec/11-verificador.md) · [08 · Processo](../spec/08-processo.md)
+📚 [10 · Verificador](../spec/10-verificador.md) · [08 · Processo](../spec/08-processo.md)
 
 > ✅ Feita em 14/11 (#33).

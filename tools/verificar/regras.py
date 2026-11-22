@@ -1,4 +1,4 @@
-"""Regras do verificador (docs/spec/11-verificador.md). Funções puras: recebem dados, devolvem achados."""
+"""Regras do verificador (docs/spec/10-verificador.md). Funções puras: recebem dados, devolvem achados."""
 import ast
 import posixpath
 import re
