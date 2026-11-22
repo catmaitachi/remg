@@ -12,6 +12,8 @@ import { Barra, type Modo } from "./tela/Barra";
 import { Controles } from "./tela/Controles";
 import { Legenda } from "./tela/Legenda";
 import { ESTADO_INICIAL, pedidoDe, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
+import { Selecionado } from "./tela/Selecionado";
+import { detalheDe, type Selecao } from "./tela/selecao";
 
 const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
 const temaDoSistema = (): Tema => (temaEscuro.matches ? "escuro" : "claro");
@@ -54,6 +56,7 @@ export default function App() {
   const [analise, setAnalise] = useState<Carga<Analise>>(null);
   const [visiveis, setVisiveis] = useState<Visiveis>(VISIVEIS_INICIAL);
   const [modo, setModo] = useState<Modo>("observar");
+  const [selecao, setSelecao] = useState<Selecao | null>(null);
   // falhas, análise atual e "calculando": só vale a resposta da versão atual da lista (reducer testado em falhas.ts)
   const [estado, despachar] = useReducer(reduzirFalhas, ESTADO_INICIAL);
 
@@ -92,16 +95,22 @@ export default function App() {
         style={{ position: "fixed", inset: 0 }}
       >
         <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} intensidade={intensidade}
-          falhas={estado.falhas} derrubando={modo === "derrubar"} aoClicar={(alvo) => despachar({ tipo: "alternar", alvo })} />
+          falhas={estado.falhas} derrubando={modo === "derrubar"} aoClicar={(alvo) => despachar({ tipo: "alternar", alvo })}
+          aoSelecionar={setSelecao} />
       </Map>
 
       <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
         animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
 
       {redeOk && (
-        <Barra area={redeOk.area} analise={estado.atual} usandoMock={USANDO_MOCK} modo={modo} aoMudarModo={setModo}
+        <Barra area={redeOk.area} analise={estado.atual} usandoMock={USANDO_MOCK} modo={modo}
+          aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
           falhas={listaDeFalhas} calculando={estado.calculando}
-          aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })} aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })} />
+          aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })} aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })}>
+          {selecao && modo !== "derrubar" && (
+            <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)} />
+          )}
+        </Barra>
       )}
       {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0} />}
 

@@ -262,10 +262,14 @@ test("caído muda de cor com o tema", () => {
   expect(cor("claro")).toEqual(rgb("#7f7f7f"));
 });
 
-test("fora do Derrubar nada é pickable", () => {
-  for (const [derrubando, esperado] of [[false, false], [true, true]] as const) {
+test("fora do Derrubar, trechos, AT e subestações são clicáveis sem destaque", () => {
+  // T21: o Observar e o Religar abrem o Selecionado no clique; o destaque do mouse é só do Derrubar
+  for (const derrubando of [false, true]) {
     const c = camadasCom([t1], "claro", derrubando);
-    for (const id of ["trechos", "subestacoes", "caidos"]) expect(!!c[id].props.pickable, `${id} ${derrubando}`).toBe(esperado);
+    for (const id of ["trechos", "subestacoes", "caidos", "linhas-at"]) {
+      expect(!!c[id].props.pickable, `${id} ${derrubando}`).toBe(true);
+      expect(!!c[id].props.autoHighlight, `${id} ${derrubando}`).toBe(derrubando && id !== "linhas-at");
+    }
   }
 });
 
@@ -273,5 +277,5 @@ test("no Derrubar, linha AT e marcador de gargalo seguram o clique (não derruba
   const c = camadasCom([], "claro", true);
   expect(c["linhas-at"].props.pickable).toBe(true);
   expect(c["gargalos-alerta"].props.pickable).toBe(true);
-  expect(!!camadasCom([], "claro", false)["linhas-at"].props.pickable).toBe(false);
+  expect(!!camadasCom([], "claro", false)["gargalos-alerta"].props.pickable).toBe(false);
 });

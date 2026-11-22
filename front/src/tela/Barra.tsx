@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
 import type { Analise } from "../api/tipos";
 import type { Alvo } from "./falhas";
 import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
 import { Logo } from "./Logo";
+import { FECHAR, Icone, RESTAURAR } from "./Icone";
 
 export type Modo = "observar" | "derrubar";
 
@@ -10,17 +12,13 @@ interface Props {
   modo: Modo; aoMudarModo: (m: Modo) => void;
   falhas: { alvo: Alvo; rotulo: string }[]; calculando: boolean;
   aoRestaurar: (alvo: Alvo) => void; aoRestaurarTudo: () => void;
+  /** seção do que foi clicado (Observar e Religar), abaixo das falhas */
+  children?: ReactNode;
 }
 
 const MODOS: [Modo, string][] = [["observar", "Observar"], ["derrubar", "Derrubar"]];
-const Icone = ({ d }: { d: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
-    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
-);
-const FECHAR = "M6 6l12 12M18 6 6 18";
-const RESTAURAR = "M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5";
 
-export function Barra({ area, analise, usandoMock, modo, aoMudarModo, falhas, calculando, aoRestaurar, aoRestaurarTudo }: Props) {
+export function Barra({ area, analise, usandoMock, modo, aoMudarModo, falhas, calculando, aoRestaurar, aoRestaurarTudo, children }: Props) {
   const resumo = analise ? resumoDaCidade(analise) : null;
   const blocos: [string, string][] = [
     ["Energia entregue", analise ? formatarPotencia(analise.fluxoTotal) : "—"],
@@ -87,6 +85,8 @@ export function Barra({ area, analise, usandoMock, modo, aoMudarModo, falhas, ca
           </ul>
         </section>
       )}
+
+      {children}
 
       <dl className="blocos">
         {blocos.map(([rotulo, valor]) => (

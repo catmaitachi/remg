@@ -178,7 +178,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
   const semLuz = rgb(p.semLuz), caido = rgb(p.caido);
-  const destaque = { pickable: clicavel, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
+  // clicável em todo modo (o Observar seleciona); o destaque do mouse é só do Derrubar
+  const destaque = { pickable: true, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
   const fundo = rgb(p.fundo);
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
   const iconeX = { url: iconeCaido(p.caido, p.fundo), width: 24, height: 24, id: `caido-${tema}` };
@@ -209,8 +210,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
       getColor: rgb(p.at), getWidth: 6, widthUnits: "pixels", jointRounded: true, capRounded: true,
-      // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai
-      pickable: clicavel,
+      // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai; no Observar, seleciona
+      pickable: true,
     }),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,
