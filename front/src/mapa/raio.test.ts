@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 import type { Caminho, LonLat, Quadro } from "./camadas";
 import type { Faixa } from "./cores";
-import { RAIO, escolherRaio, montarRaio, ruido, tremer } from "./raio";
+import { RAIO, escolherRaio, montarRaio, raioDaAT, ruido, tremer } from "./raio";
 
 // Web Mercator do MapLibre: o mundo tem 512 · 2^zoom px
 const px = ([lon, lat]: LonLat, zoom: number): [number, number] => {
@@ -97,4 +97,21 @@ test("fio de fluxo negativo corre de para → de", () => {
     expect(fio.path[0]).toEqual(c.path[1]);
     expect(fio.path.at(-1)).toEqual(c.path[0]);
   }
+});
+
+test("AT vibra em qualquer zoom: dois fios por linha, pontas da linha presas", () => {
+  const at: Caminho = { id: "at:1", faixa: null, path: [[-43.95, -19.92], [-43.94, -19.92], [-43.93, -19.91]] };
+  const longe: Quadro = { tempo: 3, zoom: 11, limites: [-180, -85, 180, 85] };
+  const fios = raioDaAT([at], longe);
+  expect(fios.map((f) => f.id)).toEqual(["at:1#0", "at:1#1"]);
+  for (const f of fios) {
+    expect(f.path[0]).toEqual(at.path[0]);
+    expect(f.path.at(-1)).toEqual(at.path[2]);
+    expect(f.path.length).toBeGreaterThan(at.path.length); // os segmentos tremem, não só a linha reta
+  }
+});
+
+test("AT fora da tela não monta fio", () => {
+  const at: Caminho = { id: "at:1", faixa: null, path: [[-43.95, -19.92], [-43.94, -19.92]] };
+  expect(raioDaAT([at], { tempo: 1, zoom: 12, limites: [0, 0, 1, 1] })).toHaveLength(0);
 });

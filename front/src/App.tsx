@@ -109,7 +109,7 @@ export default function App() {
         id="mapa"
         initialViewState={CENTRO_BH}
         mapStyle={estiloDoMapa(tema === "escuro")}
-        attributionControl={{ compact: true, customAttribution: "© OpenStreetMap contributors" }}
+        attributionControl={false}
         style={{ position: "fixed", inset: 0 }}
       >
         <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} intensidade={intensidade}
@@ -122,7 +122,7 @@ export default function App() {
       {/* coluna presa à tela: console, avisos, cartão de contexto e, no pé, a legenda (o vão deixa o clique passar ao mapa) */}
       <div className="topo">
         {redeOk && (
-          <Console area={redeOk.area} analise={estado.atual} faltando={estado.faltando} calculando={estado.calculando}
+          <Console analise={estado.atual} faltando={estado.faltando} calculando={estado.calculando}
             ferramentas={
               <Ferramentas visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
                 animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />

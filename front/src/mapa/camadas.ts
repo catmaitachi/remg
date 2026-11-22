@@ -3,7 +3,7 @@ import type { Analise, Rede, Subestacao, TipoAresta } from "../api/tipos";
 import type { Alvo } from "../tela/falhas";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
-import { RAIO, escolherRaio, montarRaio } from "./raio";
+import { RAIO, escolherRaio, montarRaio, raioDaAT } from "./raio";
 import { agruparGargalos } from "./alertas";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
@@ -225,7 +225,9 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     }),
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
-      getColor: rgb(p.at), getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
+      // com animação vira trilho apagado (40%) e o raio da AT corre por cima, em qualquer zoom
+      getColor: quadro ? [...rgb(p.at), 102] : rgb(p.at), updateTriggers: { getColor: [tema, !!quadro] },
+      getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
       pickable: true,
     }),
     ...(rota ? [new PathLayer<Caminho>({
@@ -272,6 +274,13 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
-  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, quadro, cor, intensidade));
+  if (quadro) {
+    camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, quadro, cor, intensidade));
+    camadas.splice(camadas.findIndex((c) => c.id === "linhas-at") + 1, 0, new PathLayer<Caminho>({
+      id: "raio-at", data: raioDaAT(d.linhasAT, quadro), visible: visiveis.at, getPath: (c) => c.path,
+      getColor: [...rgb(p.at), INTENSIDADE[intensidade].alfaRaio], updateTriggers: { getColor: [tema, intensidade] },
+      getWidth: 1.5, widthUnits: "pixels", jointRounded: true,
+    }));
+  }
   return camadas;
 }

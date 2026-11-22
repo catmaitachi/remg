@@ -36,8 +36,3 @@ button { font: inherit; color: inherit; }
 }
 .aviso span { color: var(--texto-apoio); }
 .aviso-erro strong { color: var(--erro); }
-
-/* Atribuição do mapa no tema da tela, com o botão (i) centrado sob a coluna do zoom (50 px; o botão tem 24 px). */
-.maplibregl-ctrl-attrib { font-family: var(--fonte); }
-/* .maplibregl-ctrl a mais: o CSS do MapLibre carrega depois e empata na especificidade */
-.maplibregl-ctrl-bottom-right > .maplibregl-ctrl.maplibregl-ctrl-attrib { margin: 0 calc(var(--margem) + (50px - 24px) / 2) var(--margem) 0; }

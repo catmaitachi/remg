@@ -122,6 +122,12 @@ export function Ferramentas({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, 
               onClick={() => aoMudarIntensidade(nivel)}>{nome}</button>
           ))}
         </div>
+        {/* o botão (i) do MapLibre saiu: o crédito do mapa fica aqui, curto, com as fontes */}
+        <p className="painel-credito">
+          Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>
+          {" · "}<a href="https://openfreemap.org" target="_blank" rel="noreferrer">OpenFreeMap</a>
+          {" · "}<a href="https://www.openmaptiles.org" target="_blank" rel="noreferrer">OpenMapTiles</a>
+        </p>
       </section>
     </div>
   );

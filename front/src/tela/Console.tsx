@@ -6,15 +6,15 @@ import { Logo } from "./Logo";
 import { FECHAR, Icone, RESTAURAR } from "./Icone";
 
 interface Props {
-  area: string; analise: Analise | null;
+  analise: Analise | null;
   /** kVA que o religamento parcial não devolveu: a linha da cidade não pode dizer 100% */
   faltando: number; calculando: boolean;
   /** tema e camadas, no fim da linha */
   ferramentas?: ReactNode;
 }
 
-/** Console no topo (T21): uma linha com a logo, a cidade, os números e as ferramentas. Sem modos: o clique seleciona. */
-export function Console({ area, analise, faltando, calculando, ferramentas }: Props) {
+/** Console no topo (T21): uma linha com a logo, os números em destaque, a frase da cidade e as ferramentas. */
+export function Console({ analise, faltando, calculando, ferramentas }: Props) {
   const resumo = analise ? resumoDaCidade(analise, faltando) : null;
   const numeros: [string, string][] = [
     ["Entregue", analise ? formatarPotencia(analise.fluxoTotal) : "—"],
@@ -27,22 +27,6 @@ export function Console({ area, analise, faltando, calculando, ferramentas }: Pr
     <header className={`superficie console${calculando ? " console-calculando" : ""}`} aria-label="Resumo da rede">
       <h1 className="console-marca"><Logo /></h1>
 
-      <section className="cidade" aria-live="polite" aria-label="Situação da área">
-        <span className="cidade-area">{area}</span>
-        <span className="cidade-porcento">{resumo ? `${resumo.porcento}%` : "—"}</span>
-        <div
-          className="cidade-barra" role="progressbar" aria-label="Demanda com luz"
-          aria-valuemin={0} aria-valuemax={100} aria-valuenow={resumo?.porcento}
-        >
-          <span style={{ width: `${resumo?.porcento ?? 0}%` }} />
-        </div>
-        <span className="cidade-frase">{resumo?.frase ?? "Sem dados da análise"}</span>
-        {/* sempre no DOM: o leitor de tela só anuncia mudança dentro de um status que já existe */}
-        <span className="calculando" role="status">
-          {calculando && <><span className="calculando-ponto" aria-hidden="true" />Calculando…</>}
-        </span>
-      </section>
-
       <dl className="numeros">
         {numeros.map(([rotulo, valor]) => (
           <div key={rotulo}>
@@ -51,6 +35,14 @@ export function Console({ area, analise, faltando, calculando, ferramentas }: Pr
           </div>
         ))}
       </dl>
+
+      <section className="cidade" aria-live="polite" aria-label="Situação da área">
+        <span className="cidade-frase">{resumo?.frase ?? "Sem dados da análise"}</span>
+        {/* sempre no DOM: o leitor de tela só anuncia mudança dentro de um status que já existe */}
+        <span className="calculando" role="status">
+          {calculando && <><span className="calculando-ponto" aria-hidden="true" />Calculando…</>}
+        </span>
+      </section>
       {ferramentas}
     </header>
   );

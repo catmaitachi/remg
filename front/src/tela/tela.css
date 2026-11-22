@@ -20,18 +20,14 @@
 .logo { display: inline-flex; align-items: baseline; color: var(--texto); font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }
 .logo-m { width: auto; height: 0.72em; margin: 0 0.04em; overflow: visible; color: var(--primario); }
 
-/* a cidade não encolhe: quando falta espaço, os números descem de linha */
-.cidade { display: flex; flex: 1 0 auto; align-items: center; gap: var(--espaco-3); }
-.cidade-area { font-size: var(--texto-rotulo); font-weight: 600; white-space: nowrap; }
-.cidade-porcento { font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-.cidade-barra { flex: none; width: 120px; height: 6px; border-radius: var(--raio-pilula); background: var(--trilho); overflow: hidden; }
-.cidade-barra > span { display: block; height: 100%; border-radius: inherit; background: var(--primario); }
-.cidade-frase { font-size: 13px; color: var(--texto-apoio); white-space: nowrap; }
+/* a frase da cidade (com o calculando) ocupa o meio; os números vêm antes, em destaque */
+.cidade { display: flex; flex: 1 1 auto; align-items: center; gap: var(--espaco-3); min-width: 0; }
+.cidade-frase { min-width: 0; font-size: 13px; color: var(--texto-apoio); }
 
-.numeros { display: flex; flex-wrap: wrap; gap: var(--espaco-1) var(--espaco-4); margin: 0 0 0 auto; }
-.numeros div { display: flex; align-items: baseline; gap: 6px; }
-.numeros dt { font-size: 13px; color: var(--texto-apoio); }
-.numeros dd { margin: 0; font-size: var(--texto-rotulo); font-weight: 700; font-variant-numeric: tabular-nums; }
+.numeros { display: flex; flex-wrap: wrap; gap: var(--espaco-1) var(--espaco-6); margin: 0; }
+.numeros div { display: flex; flex-direction: column-reverse; }
+.numeros dt { font-size: 12px; color: var(--texto-apoio); }
+.numeros dd { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
 
 /* cartão de contexto (o item clicado) e, abaixo dele, o bloco de falhas; encolhem e rolam antes de empurrar a legenda */
 .contexto, .bloco-falhas {
@@ -59,8 +55,7 @@
 /* coluna de controles e painel de camadas */
 .controles {
   right: var(--margem);
-  /* logo acima do botão da atribuição do mapa (24 px) */
-  bottom: calc(var(--margem) + 24px + var(--espaco-2));
+  bottom: var(--margem);
   display: grid;
   gap: var(--espaco-1);
   padding: 6px;
@@ -91,6 +86,9 @@
 .painel-nome { font-size: var(--texto-rotulo); }
 .painel-nome small { display: block; font-size: 12px; color: var(--texto-apoio); }
 .painel-secao { margin-top: var(--espaco-4); padding-top: var(--espaco-4); border-top: 1px solid var(--separador); }
+.painel-credito { margin: var(--espaco-4) 0 0; padding-top: var(--espaco-3); border-top: 1px solid var(--separador); font-size: 12px; color: var(--texto-apoio); }
+.painel-credito a { color: inherit; text-underline-offset: 2px; }
+.painel-credito a:hover { color: var(--primario); }
 .painel-rotulo { margin: var(--espaco-4) 0 var(--espaco-2); font-size: 12px; color: var(--texto-apoio); }
 
 /* intensidade: botões segmentados (aria-pressed), no trilho do switch */
@@ -189,7 +187,7 @@
 .falhas-lista { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; max-height: 168px; overflow-y: auto; }
 .falhas-lista li {
   display: flex; align-items: center; justify-content: space-between; gap: var(--espaco-2);
-  min-height: 36px; padding-left: var(--espaco-3); border-radius: var(--raio-md); background: var(--bloco);
+  min-height: 36px; border-bottom: 1px solid var(--separador);
   font-size: var(--texto-rotulo);
 }
 .falhas-lista li > span { min-width: 0; overflow-wrap: anywhere; }
@@ -197,6 +195,12 @@
   display: grid; place-items: center; flex: none; width: 32px; height: 32px; padding: 0;
   border: 0; border-radius: var(--raio-pilula); background: transparent; color: var(--texto-apoio); cursor: pointer;
 }
+/* tudo encosta na mesma margem do cartão: o X e o "Restaurar tudo" compensam o próprio respiro para alinhar à direita */
+.falhas-topo .falhas-tirar { margin-right: -8px; }
+/* a lista rola na vertical: em vez do X sair da caixa (e criar rolagem lateral), a lista é que avança 8 px */
+.falhas-lista { margin-right: -8px; overflow-x: hidden; }
+.falhas-lista li { padding-right: 0; }
+.falhas-topo .botao-texto { margin-right: calc(var(--espaco-3) * -1); }
 .falhas-tirar:hover { background: var(--bloco-hover); color: var(--erro); }
 
 @media (prefers-reduced-motion: reduce) {
@@ -209,7 +213,7 @@
 .selecionado-linhas { display: grid; gap: 2px; margin: 0; }
 .selecionado-linhas div {
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--espaco-3);
-  min-height: 32px; padding: 6px var(--espaco-3); border-radius: var(--raio-md); background: var(--bloco);
+  min-height: 32px; padding: 6px 0; border-bottom: 1px solid var(--separador);
   font-size: var(--texto-rotulo);
 }
 .selecionado-linhas dt { color: var(--texto-apoio); }
@@ -224,18 +228,19 @@
 /* desligado fica quieto: depois do resultado ele não pode competir com o cartão */
 .botao-primario:disabled { cursor: not-allowed; background: var(--bloco); color: var(--texto-apoio); }
 .religamento p { margin: 0; }
-.religamento-resultado { display: grid; gap: var(--espaco-1); padding: var(--espaco-3); border-radius: var(--raio-md); background: var(--bloco); }
+.religamento-resultado { display: grid; gap: var(--espaco-1); }
 .religamento-total { font-size: var(--texto-rotulo); font-weight: 700; font-variant-numeric: tabular-nums; }
 .religamento-parcial { font-size: var(--texto-rotulo); font-weight: 700; color: var(--erro); }
 .religamento-completo, .religamento-nada { font-size: var(--texto-rotulo); color: var(--texto-apoio); }
 
 /* celular: só o M da logo, a ação numa linha própria, a leitura só com a cidade, e o cartão desce ao pé (T21) */
 @media (max-width: 639px) {
-  .logo-letra, .cidade-area, .numeros { display: none; }
-  .console { flex-wrap: nowrap; gap: var(--espaco-3); padding: var(--espaco-2) var(--espaco-3); }
-  .cidade { flex: 1 1 auto; flex-wrap: wrap; row-gap: var(--espaco-1); }
-  .cidade-barra { width: 72px; }
-  .cidade-frase { white-space: normal; }
+  .logo-letra { display: none; }
+  /* primeira linha: o M e as ferramentas; depois os números lado a lado e a frase da cidade */
+  .console { gap: var(--espaco-2) var(--espaco-3); padding: var(--espaco-2) var(--espaco-3); }
+  .numeros { order: 1; flex-basis: 100%; justify-content: space-between; gap: var(--espaco-1) var(--espaco-3); }
+  .numeros dd { font-size: 16px; }
+  .cidade { order: 2; flex-basis: 100%; flex-wrap: wrap; row-gap: var(--espaco-1); }
   /* os cartões descem ao pé, logo acima da legenda; cartões e legenda param antes da coluna do zoom */
   .console { margin-bottom: auto; }
   .legenda { margin-top: 0; }

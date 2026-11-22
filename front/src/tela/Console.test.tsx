@@ -3,7 +3,15 @@ import { expect, test } from "vitest";
 import { Console, Falhas } from "./Console";
 import { Contexto } from "./Contexto";
 
-const base = { area: "Belo Horizonte", analise: null, faltando: 0, calculando: false };
+const base = { analise: null, faltando: 0, calculando: false };
+
+test("sem nome da cidade nem indicador: os números ficam em destaque, e a frase da cidade continua", () => {
+  const html = renderToStaticMarkup(<Console {...base} />);
+  expect(html).not.toContain("Belo Horizonte");
+  expect(html).not.toContain('role="progressbar"');
+  expect(html).toContain("Sem dados da análise");
+  for (const rotulo of ["Entregue", "Demanda", "Gargalos", "Cálculo"]) expect(html).toContain(`<dt>${rotulo}</dt>`);
+});
 
 test("sem seletor de modo: o console é só leitura e ferramentas", () => {
   const html = renderToStaticMarkup(<Console {...base} ferramentas={<button type="button">Camadas</button>} />);

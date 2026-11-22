@@ -317,3 +317,12 @@ test("a rota é clicável: o clique nela seleciona o trecho", () => {
     { rota: prepararRota(dados, CAMINHO, ["c:1"], false)! }).map((c) => [c.id, c])) as Record<string, any>;
   expect(!!c.rota.props.pickable).toBe(true);
 });
+
+test("com animação, as linhas AT vibram em qualquer zoom e o traço de baixo apaga", () => {
+  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "claro", Q).map((c) => c.id);
+  expect(ids[ids.indexOf("linhas-at") + 1]).toBe("raio-at");
+  const at = comQuadro()["linhas-at"].props, parado = porId()["linhas-at"].props;
+  expect(at.getColor[3]).toBeLessThan(255);
+  expect(parado.getColor[3] ?? 255).toBe(255);
+  expect(porId()["raio-at"]).toBeUndefined();
+});
