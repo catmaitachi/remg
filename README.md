@@ -5,6 +5,8 @@
   <img src="docs/banner.gif" width="100%" alt="REMG: a câmera gira em volta da Praça Raul Soares, no centro de Belo Horizonte, com os prédios em 3D e os trechos da rede de distribuição sobre as ruas, em azul abaixo de 60% de uso e em laranja perto do limite">
 </picture>
 
+<br>
+
 <p>
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
@@ -14,6 +16,8 @@
 </p>
 
 A rede de distribuição de energia de **Belo Horizonte** simulada em um grafo, com **fluxo de energia**, **gargalos** e **pontos críticos**.
+
+</div>
 
 ## 🚀 Como rodar
 
@@ -25,6 +29,21 @@ A rede de distribuição de energia de **Belo Horizonte** simulada em um grafo, 
 python -m unittest discover -s tests -t .
 python adapters/http/servidor.py
 ```
+
+### 💻 CLI
+
+> Roda um algoritmo do núcleo num grafo de arquivo e mostra o resultado e o tempo. É o que o benchmark usa.
+
+```sh
+python adapters/cli/main.py caminhos     grafo.txt 0     # Dijkstra: distância de 0 até cada vértice
+python adapters/cli/main.py fluxo        grafo.txt 0 3   # Dinic: fluxo máximo de 0 a 3
+python adapters/cli/main.py componentes  grafo.txt       # BFS: componente de cada vértice
+python adapters/cli/main.py pontes       grafo.txt       # Tarjan: arestas que são pontes
+python adapters/cli/main.py articulacoes grafo.txt       # Tarjan: pontos de articulação
+python adapters/cli/main.py arvore       grafo.txt       # Kruskal: árvore geradora mínima
+```
+
+O `grafo.txt` é não direcionado: a primeira linha é o número de vértices e cada linha seguinte é `u v capacidade [peso]` (peso padrão 1). `#` começa um comentário. Com `--json`, a saída vira uma linha só, `{"resultado": …, "tempoMs": …}`.
 
 ### 🗺️ Front
 
@@ -51,6 +70,8 @@ npm run dev
 </picture>
 
 ---
+
+<div align="center">
 
 Mais detalhes em [docs/spec/README.md](docs/spec/README.md).
 
