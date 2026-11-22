@@ -15,9 +15,9 @@ test("o cartão de contexto vazio não aparece", () => {
   expect(renderToStaticMarkup(<Contexto><p>x</p></Contexto>)).toContain('aria-label="Detalhes"');
 });
 
-test("a falha sai pelo X e o Restaurar tudo não mora mais na lista", () => {
+test("o Derrubar mora no cartão: a falha sai pelo X e o Restaurar tudo fica junto da lista", () => {
   const alvo = { tipo: "subestacao" as const, id: "s:1" };
-  const html = renderToStaticMarkup(<Falhas falhas={[{ alvo, rotulo: "Subestação X" }]} aoRestaurar={() => {}} />);
+  const html = renderToStaticMarkup(<Falhas falhas={[{ alvo, rotulo: "Subestação X" }]} aoRestaurar={() => {}} aoRestaurarTudo={() => {}} />);
   expect(html).toContain("Restaurar Subestação X");
-  expect(html).not.toContain("Restaurar tudo");
+  expect(html).toContain("Restaurar tudo");
 });

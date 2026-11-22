@@ -3,7 +3,7 @@ import type { Analise } from "../api/tipos";
 import type { Alvo } from "./falhas";
 import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
 import { Logo } from "./Logo";
-import { FECHAR, Icone } from "./Icone";
+import { FECHAR, Icone, RESTAURAR } from "./Icone";
 
 export type Modo = "observar" | "derrubar" | "religar";
 
@@ -12,7 +12,7 @@ interface Props {
   /** kVA que o religamento parcial não devolveu: a linha da cidade não pode dizer 100% */
   faltando: number; calculando: boolean;
   modo: Modo; aoMudarModo: (m: Modo) => void;
-  /** botão do modo (Achar rota, Restaurar tudo), na linha de comando */
+  /** botão do modo (Achar rota), na linha de comando */
   acao?: ReactNode;
   /** tema e camadas, no fim da linha de comando */
   ferramentas?: ReactNode;
@@ -31,7 +31,7 @@ export function Console({ area, analise, faltando, calculando, modo, aoMudarModo
   ];
 
   return (
-    <header className="superficie console" aria-label="Resumo da rede">
+    <header className={`superficie console${calculando ? " console-calculando" : ""}`} aria-label="Resumo da rede">
       <div className="console-comando">
       <h1 className="console-marca"><Logo /></h1>
       <div className="segmentos console-modos" role="group" aria-label="Modo">
@@ -74,11 +74,18 @@ export function Console({ area, analise, faltando, calculando, modo, aoMudarModo
   );
 }
 
-/** Falhas no cartão de contexto: cada uma sai pelo X; o Restaurar tudo fica no console. */
-export function Falhas({ falhas, aoRestaurar }: { falhas: { alvo: Alvo; rotulo: string }[]; aoRestaurar: (alvo: Alvo) => void }) {
+/** Falhas no cartão de contexto: cada uma sai pelo X, ou todas pelo Restaurar tudo. */
+export function Falhas({ falhas, aoRestaurar, aoRestaurarTudo }: {
+  falhas: { alvo: Alvo; rotulo: string }[]; aoRestaurar: (alvo: Alvo) => void; aoRestaurarTudo: () => void;
+}) {
   return (
     <section className="falhas" aria-label="Falhas">
-      <h2 className="falhas-titulo">Falhas <span>{falhas.length}</span></h2>
+      <div className="falhas-topo">
+        <h2 className="falhas-titulo">Falhas <span>{falhas.length}</span></h2>
+        <button type="button" className="botao-texto" onClick={aoRestaurarTudo}>
+          <Icone d={RESTAURAR} />Restaurar tudo
+        </button>
+      </div>
       <ul className="falhas-lista">
         {falhas.map(({ alvo, rotulo }) => (
           <li key={alvo.id}>

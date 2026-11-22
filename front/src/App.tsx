@@ -11,7 +11,6 @@ import type { Tema } from "./mapa/cores";
 import { Console, Falhas, type Modo } from "./tela/Console";
 import { Contexto } from "./tela/Contexto";
 import { Controles, Ferramentas } from "./tela/Controles";
-import { Icone, RESTAURAR } from "./tela/Icone";
 import { Legenda } from "./tela/Legenda";
 import { ESTADO_INICIAL, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
 import { AcharRota, Religamento } from "./tela/Religamento";
@@ -123,13 +122,9 @@ export default function App() {
         {redeOk && (
           <Console area={redeOk.area} analise={estado.atual} faltando={estado.faltando} calculando={estado.calculando} modo={modo}
             aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
-            acao={modo === "religar"
-              ? <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
-              : modo === "derrubar" && estado.falhas.length > 0 && (
-                <button type="button" className="botao-texto" onClick={() => despachar({ tipo: "restaurarTudo" })}>
-                  <Icone d={RESTAURAR} />Restaurar tudo
-                </button>
-              )}
+            acao={modo === "religar" && (
+              <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
+            )}
             ferramentas={
               <Ferramentas visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
                 animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
@@ -161,7 +156,8 @@ export default function App() {
           <Contexto>
             {modo === "derrubar" && !estado.falhas.length && <p className="modo-dica">Clique num trecho ou numa subestação para derrubar.</p>}
             {modo === "religar" && <Religamento rota={estado.rota} faltando={estado.faltando} dica={dicaReligar} />}
-            {listaDeFalhas.length > 0 && <Falhas falhas={listaDeFalhas} aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })} />}
+            {listaDeFalhas.length > 0 && <Falhas falhas={listaDeFalhas} aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })}
+              aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })} />}
             {selecao && modo !== "derrubar" && (
               <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)} />
             )}

@@ -134,7 +134,20 @@
 /* modo Derrubar (T20) */
 .modo-dica { margin: 0; font-size: 13px; color: var(--texto-apoio); }
 
-.calculando { display: flex; align-items: center; gap: var(--espaco-2); min-height: 18px; font-size: 13px; font-weight: 600; color: var(--primario); }
+/* calculando em destaque: pílula na cor primária e uma barra que varre a base do console (a análise leva de 6 a 10 s) */
+.calculando {
+  display: inline-flex; align-items: center; gap: var(--espaco-2); padding: 3px var(--espaco-3);
+  border-radius: var(--raio-pilula); background: var(--primario); color: var(--primario-texto);
+  font-size: 13px; font-weight: 700; white-space: nowrap;
+}
+.console-calculando::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px;
+  border-radius: 0 0 var(--raio-md) var(--raio-md);
+  background: linear-gradient(90deg, transparent, var(--primario), transparent) no-repeat;
+  background-size: 40% 100%;
+  animation: varrer 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes varrer { from { background-position: -60% 0; } to { background-position: 160% 0; } }
 .calculando:empty { display: none; }
 .calculando-ponto { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulsar 900ms cubic-bezier(0.16, 1, 0.3, 1) infinite alternate; }
 @keyframes pulsar { from { opacity: 1; transform: scale(1); } to { opacity: 0.35; transform: scale(0.7); } }
@@ -167,6 +180,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .calculando-ponto { animation: none; }
+  .console-calculando::after { animation: none; background: var(--primario); }
 }
 
 /* Selecionado e Religamento (T21) */
