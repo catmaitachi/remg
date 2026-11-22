@@ -107,7 +107,9 @@ Hoje `f = abs(resultado.fluxo[e])`. Passa a devolver o fluxo do arco de ida (`2k
 
 ### 4. Q2 (`GerarRedeSintetica`)
 
-`FATOR_CABO = (1.1, 1.6)`. Atualizar a Q2 em `docs/spec/02-dados.md` para ✅ com a faixa e os números medidos, e marcar a Q2 como decidida em `docs/spec/01-decisoes.md`. O teste que confere a capacidade do cabo já lê a constante.
+> 🔁 **Mudou depois da verificação no navegador (21/11):** com 1,1 a 1,6, o uso fica entre ~63% e ~91%, então 97% dos cabos ficavam amarelos e só 1% verde. O Lucas escolheu **1,1 a 2,5**: 279 gargalos, 60% verdes, 40% amarelos e 100% entregue. Medido de novo, o tempo da análise não muda com a faixa (2,7 a 4,2 s sem o front aberto).
+
+`FATOR_CABO = (1.1, 2.5)`. Atualizar a Q2 em `docs/spec/02-dados.md` para ✅ com a faixa e os números medidos, e marcar a Q2 como decidida em `docs/spec/01-decisoes.md`. O teste que confere a capacidade do cabo já lê a constante.
 
 ### 5. Ponto de montagem (`adapters/http/servidor.py`)
 

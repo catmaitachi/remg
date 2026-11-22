@@ -54,7 +54,7 @@
 | # | Pergunta | Quem decide | Até quando |
 |---|---|---|---|
 | Q1 | A Etapa 1 (modelagem e plano) precisa de um **documento separado** ou entra no relatório final? | perguntar ao professor | 11/11 |
-| ~~Q2~~ | ~~Capacidade das subestações e demanda dos consumidores: que valores usar?~~ decidida na T16: cabo com folga de **1,1 a 1,6** ([02](02-dados.md)) | | |
+| ~~Q2~~ | ~~Capacidade das subestações e demanda dos consumidores: que valores usar?~~ decidida na T16: cabo com folga de **1,1 a 2,5** ([02](02-dados.md)) | | |
 | Q3 | O vídeo vai ser **um** vídeo do grupo ou um trecho gravado por pessoa? | grupo | 18/11 |
 | Q4 | Qual a **data da apresentação presencial** de 10 min? | perguntar ao professor | 11/11 |
 | ~~Q5~~ | ~~Rede sintética: gerar ao ligar ou salvar em CSV?~~ virou **D24** | | |
