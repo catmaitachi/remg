@@ -42,6 +42,7 @@
 ## 📐 UML
 
 > ✏️ Cada diagrama tem a fonte em Mermaid logo abaixo. Mudou? Gere o SVG de novo com a skill `diagram-design` (os arquivos ficam em [`docs/diagramas/`](../diagramas/)).
+> 🎨 Os SVGs usam os tokens da tela ([tokens](../design/tokens.md)): fonte Rawline e só cores de `front/src/estilo/tokens.css`, em claro e escuro. O teste `front/src/estilo/diagramas.test.ts` barra cor ou fonte de fora.
 
 ### Casos de uso
 
@@ -71,7 +72,7 @@ flowchart LR
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagramas/classes-dark.svg">
-  <img src="../diagramas/classes.svg" alt="Classes do núcleo: pacote grafo (Grafo, Dinic, Tarjan, Dijkstra, BFS) e pacote domínio (RedeEletrica com Subestacao, Ponto, Trecho, LinhaAT; Chave herda de Trecho)">
+  <img src="../diagramas/classes.svg" alt="Classes do núcleo: pacote grafo (Grafo, Dinic, EdmondsKarp, Tarjan, Alcance, BFS, Dijkstra com HeapBinaria, Kruskal com UnionFind) e pacote domínio (RedeEletrica com Subestacao, PontoDeSuprimento, Ponto, Trecho, LinhaAT; Chave herda de Trecho)">
 </picture>
 
 <details>
@@ -85,18 +86,30 @@ classDiagram
             +int V
             +list~int~ head, prox, para
             +list~int~ cap
-            +addAresta(u, v, cap) int
+            +add_aresta(u, v, capacidade) int
         }
         class Dinic {
-            +fluxoMaximo(Grafo, s, t) ResultadoFluxo
-            +corteMinimo() list~int~
+            +fluxo_maximo(Grafo, s, t) ResultadoFluxo
+            +corte_minimo() list~int~
+        }
+        class EdmondsKarp {
+            +fluxo_maximo(Grafo, s, t) ResultadoFluxo
+            +corte_minimo() list~int~
         }
         class Tarjan {
-            +pontes(Grafo) list~int~
-            +articulacoes(Grafo) list~int~
+            +pontes(Grafo, ignorar) list~int~
+            +articulacoes(Grafo, ignorar) list~int~
+        }
+        class Alcance {
+            +a_partir_de(Grafo, fontes, bloqueados) list~bool~
         }
         class Dijkstra {
             +caminhos(Grafo, fontes, peso) ResultadoCaminhos
+        }
+        class HeapBinaria {
+            +push(chave, valor)
+            +pop() tuple
+            +vazia() bool
         }
         class BFS {
             +componentes(Grafo) list~int~
@@ -117,6 +130,7 @@ classDiagram
             +chaves
             +linhas_at
             +pontos_de_suprimento
+            +subestacoes_sem_alta_tensao
             +montar_grafo(falhas, chaves_fechadas) Grafo
             +indice(id_externo) int
             +id_externo(indice) str
@@ -138,11 +152,14 @@ classDiagram
     RedeEletrica "1" *-- "*" PontoDeSuprimento : cria nas pontas de AT
     RedeEletrica ..> Grafo : monta
     Dinic ..> Grafo
+    EdmondsKarp ..> Grafo
     Tarjan ..> Grafo
+    Alcance ..> Grafo
     Dijkstra ..> Grafo
+    Dijkstra ..> HeapBinaria
     BFS ..> Grafo
     Kruskal ..> UnionFind
-    note for Dinic "um objeto novo por pedido (guarda estado entre fluxoMaximo e corteMinimo)"
+    note for Dinic "Dinic e EdmondsKarp: um objeto novo por pedido (guardam estado entre fluxo_maximo e corte_minimo)"
 ```
 
 </details>
@@ -153,7 +170,7 @@ classDiagram
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../diagramas/sequencia-simular-falha-dark.svg">
-  <img src="../diagramas/sequencia-simular-falha.svg" alt="Sequência de simular falha: Front, servidor Python, SimularFalha, RedeEletrica e algoritmos BFS e Dinic">
+  <img src="../diagramas/sequencia-simular-falha.svg" alt="Sequência de simular falha: Front, servidor Python, SimularFalha, RedeEletrica e os algoritmos Alcance e Dinic">
 </picture>
 
 <details>
@@ -167,11 +184,11 @@ sequenceDiagram
     participant C as 🎯 SimularFalha
     participant R as ⚡ RedeEletrica
     participant A as 🧮 Algoritmos
-    U->>F: clica num trecho → "derrubar"
+    U->>F: derruba um item pelo botão do cartão
     F->>H: POST /analise {falhas, chavesFechadas}
     H->>C: executar(falhas, chavesFechadas) pela porta ServicoDeAnalise
     C->>R: traduzir ids e marcar trechos em falha
-    C->>A: BFS a partir das subestações
+    C->>A: Alcance (BFS a partir da super-fonte S)
     A-->>C: pontos sem energia
     C->>A: Dinic no grafo atualizado
     A-->>C: novo fluxo por aresta
@@ -200,7 +217,7 @@ stateDiagram-v2
     state Chave {
         [*] --> Aberta
         Aberta --> Fechada: rota alternativa
-        Fechada --> Aberta: falha resolvida
+        Fechada --> Aberta: lista de falhas muda
     }
 ```
 
