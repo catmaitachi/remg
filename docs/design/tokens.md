@@ -2,7 +2,7 @@
 
 ## 🏛️ gov.br (T18) ✅ decidido
 
-> ✅ Decidido pelo Lucas em 21/11/2026, etapa por etapa ([design da T18](../superpowers/specs/2026-11-21-t18-camadas-e-cores-design.md)). **Vale para a tela e para os diagramas** de [`docs/diagramas/`](../diagramas/) (refeitos na T31, issue #37). Substitui o que as seções abaixo, da T02, dizem sobre cor de UI, fonte e cartão; elas ficam como histórico.
+> ✅ Decidido pelo Lucas em 21/11/2026, etapa por etapa ([design da T18](../superpowers/specs/2026-11-21-t18-camadas-e-cores-design.md)). **Vale para a tela e para os diagramas** de [`docs/diagramas/`](../diagramas/) (refeitos na T25, issue #21; o teste `front/src/estilo/diagramas.test.ts` confere cor e fonte). Substitui o que as seções abaixo, da T02, dizem sobre cor de UI, fonte e cartão; elas ficam como histórico.
 >
 > Fonte da verdade no código: [`front/src/estilo/tokens.css`](../../front/src/estilo/tokens.css) (UI) e [`front/src/mapa/cores.ts`](../../front/src/mapa/cores.ts) (mapa, com teste de contraste e daltonismo em `cores.test.ts`).
 
