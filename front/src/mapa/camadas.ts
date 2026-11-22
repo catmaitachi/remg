@@ -3,8 +3,7 @@ import type { Analise, Rede, Subestacao, TipoAresta } from "../api/tipos";
 import type { Alvo } from "../tela/falhas";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
-import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
-import { escolherRaio, montarRaio } from "./raio";
+import { RAIO, escolherRaio, montarRaio } from "./raio";
 import { agruparGargalos } from "./alertas";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
@@ -140,12 +139,12 @@ export function prepararRota(d: Dados, ids: string[], chavesFechadas: string[], 
 
 export interface Quadro { tempo: number; zoom: number; limites: [number, number, number, number] }
 
-/** Intensidade dos efeitos, escolhida no painel de camadas. A suave é a da prévia aprovada. */
+/** Intensidade do vibrar elétrico, escolhida no painel de camadas: a opacidade do raio. */
 export type Intensidade = "suave" | "media" | "forte";
-export const INTENSIDADE: Record<Intensidade, { ganho: number; largura: number; alfaRaio: number }> = {
-  suave: { ganho: 1, largura: 2, alfaRaio: 153 },
-  media: { ganho: 1.8, largura: 3, alfaRaio: 204 },
-  forte: { ganho: 2.6, largura: 4, alfaRaio: 255 },
+export const INTENSIDADE: Record<Intensidade, { alfaRaio: number }> = {
+  suave: { alfaRaio: 153 },
+  media: { alfaRaio: 204 },
+  forte: { alfaRaio: 255 },
 };
 export interface Opcoes {
   intensidade?: Intensidade;
@@ -157,24 +156,12 @@ export interface Opcoes {
   rota?: Rota | null;
 }
 
-const EXTENSAO_ONDA = new ExtensaoOnda();
-const SOMA_LUZ = {
-  blend: true, blendColorSrcFactor: "one", blendColorDstFactor: "one", blendAlphaSrcFactor: "one", blendAlphaDstFactor: "one",
-} as const;
-
-/** Camadas que só existem com a animação ligada; entram logo acima dos trechos. */
-function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>, intensidade: Intensidade) {
+/** Camadas que só existem com a animação ligada; entram logo acima dos trechos. A onda saiu (rede densa demais): fica o
+ * vibrar elétrico, que o escolherRaio só liga de perto. */
+function camadasAnimadas(d: Dados, visiveis: Visiveis, quadro: Quadro, cor: Record<Faixa, [number, number, number]>, intensidade: Intensidade) {
   const forca = INTENSIDADE[intensidade];
   const { fios, faiscas } = montarRaio(escolherRaio(d.comFluxo, quadro), quadro);
   return [
-    new PathLayer<Caminho, OndaProps<Caminho>>({
-      id: "ondas", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: (c) => cor[c.faixa!], updateTriggers: { getColor: tema },
-      getWidth: forca.largura, widthUnits: "pixels", widthMinPixels: 1,
-      extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro", ganho: forca.ganho,
-      getOnda: (c) => [c.sentido!.tempoInicio, c.sentido!.comprimento, c.sentido!.positivo ? 1 : -1, INDICE_DA_FAIXA[c.faixa!]],
-      parameters: tema === "escuro" ? SOMA_LUZ : {},
-    }),
     new PathLayer<Caminho>({
       id: "raio", data: fios, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], forca.alfaRaio], updateTriggers: { getColor: intensidade }, getWidth: 1, widthUnits: "pixels", jointRounded: true,
@@ -198,6 +185,7 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
   // clicável em todo modo (o Observar seleciona); o destaque do mouse é só do Derrubar
   const destaque = { pickable: true, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
   const fundo = rgb(p.fundo);
+  const vibrando = !!quadro && quadro.zoom >= RAIO.ZOOM;
   const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
   const iconeX = { url: iconeCaido(p.caido, p.fundo), width: 24, height: 24, id: `caido-${tema}` };
 
@@ -206,27 +194,29 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       // com animação, a onda faz o brilho das normais: o brilho largo nos 35 mil trechos custava metade do FPS no arraste
       id: "brilho", data: quadro ? d.destaques : d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], Math.round(BRILHO[c.faixa!].alfa[tema] * 255)],
-      getWidth: (c) => BRILHO[c.faixa!].largura, updateTriggers: { getColor: tema },
-      widthUnits: "pixels", capRounded: true, jointRounded: true,
+      // em metros: de longe some quase todo, de perto para em 12 px
+      getWidth: (c) => BRILHO[c.faixa!].largura * 4, updateTriggers: { getColor: tema },
+      widthUnits: "meters", widthMaxPixels: 12, capRounded: true, jointRounded: true,
     }),
     new PathLayer<Caminho>({
       id: "halo-gargalos", data: d.gargalos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: fundo, getWidth: 8, widthUnits: "pixels", capRounded: true,
+      getColor: fundo, getWidth: 25, widthUnits: "meters", widthMinPixels: 1, widthMaxPixels: 8, capRounded: true,
     }),
     new PathLayer<Caminho>({
       id: "trechos", data: d.trechos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      // com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e a onda e o raio correm por cima, como na prévia
+      // de perto e com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e o raio corre por cima, como na prévia
       getColor: (c): [number, number, number] | [number, number, number, number] => {
         if (caidos.ids.has(c.id)) return [0, 0, 0, 0]; // o tracejado da camada `caidos` ocupa o lugar
         if (c.semLuz) return semLuz;
-        return quadro ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"];
+        return vibrando ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"];
       },
-      updateTriggers: { getColor: [tema, !!quadro, caidos.ids] },
-      getWidth: 2, widthUnits: "pixels", widthMinPixels: 1, ...destaque,
+      updateTriggers: { getColor: [tema, vibrando, caidos.ids] },
+      // em metros: com a cidade inteira na tela fica em meio pixel; de perto para em 2 px
+      getWidth: 6, widthUnits: "meters", widthMinPixels: 0.5, widthMaxPixels: 2, ...destaque,
     }),
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
-      getColor: rgb(p.at), getWidth: 6, widthUnits: "pixels", jointRounded: true, capRounded: true,
+      getColor: rgb(p.at), getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
       // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai; no Observar, seleciona
       pickable: true,
     }),
@@ -274,6 +264,6 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
-  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, tema, quadro, cor, intensidade));
+  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, quadro, cor, intensidade));
   return camadas;
 }

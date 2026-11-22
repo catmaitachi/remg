@@ -88,12 +88,13 @@ test("tema escuro troca as cores e os gatilhos de cor", () => {
   expect(escuro.trechos.props.updateTriggers.getColor).not.toEqual(claro.trechos.props.updateTriggers.getColor);
 });
 
-test("larguras em pixels: 2 no trecho, 6 na alta tensão", () => {
+test("larguras em metros: com muita rede na tela as linhas ficam bem finas, de perto param num teto", () => {
   const c = porId();
-  expect(c.trechos.props.widthUnits).toBe("pixels");
-  expect(c["linhas-at"].props.widthUnits).toBe("pixels");
-  expect(c.trechos.props.getWidth).toBe(2);
-  expect(c["linhas-at"].props.getWidth).toBe(6);
+  for (const id of ["trechos", "linhas-at", "brilho", "halo-gargalos"]) expect(c[id].props.widthUnits).toBe("meters");
+  expect(c.trechos.props.widthMinPixels).toBeLessThan(1);
+  expect(c.trechos.props.widthMaxPixels).toBe(2);
+  expect(c["linhas-at"].props.widthMaxPixels).toBe(6);
+  expect(c["linhas-at"].props.widthMinPixels).toBeGreaterThan(c.trechos.props.widthMinPixels);
 });
 
 test("acessores entregam [lon, lat] iguais aos do mock", () => {
@@ -140,37 +141,29 @@ const Q: Quadro = { tempo: 12.5, zoom: 12, limites: [-44.1, -20.1, -43.8, -19.7]
 const comQuadro = (tema: "claro" | "escuro" = "claro", d = dados): Record<string, any> =>
   Object.fromEntries(montarCamadas(d, VISIVEIS_INICIAL, tema, Q).map((c) => [c.id, c]));
 
-test("com quadro, ondas logo acima dos trechos", () => {
+const PERTO: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
+
+test("sem onda: de longe a animação não acrescenta camada", () => {
   const ids = montarCamadas(dados, VISIVEIS_INICIAL, "claro", Q).map((c) => c.id);
-  expect(ids[ids.indexOf("trechos") + 1]).toBe("ondas");
-  const o = comQuadro().ondas.props;
-  expect(o.data).toBe(dados.comFluxo);
-  expect(o.tempo).toBe(Q.tempo);
-  expect(o.getOnda(dados.comFluxo.find((t) => t.id === "t:3"))[2]).toBe(-1);
+  expect(ids).not.toContain("ondas");
+  expect(ids[ids.indexOf("trechos") + 1]).toBe("raio");
+  expect(comQuadro().raio.props.data).toHaveLength(0);
 });
 
-test("ondas: mistura aditiva só no escuro", () => {
-  const escuro = comQuadro("escuro").ondas.props, claro = comQuadro("claro").ondas.props;
-  expect(escuro.parameters.blendColorDstFactor).toBe("one");
-  expect(escuro.aditivo).toBe(true);
-  expect(claro.parameters?.blendColorDstFactor).toBeUndefined();
-  expect(claro.aditivo).toBe(false);
-  expect(escuro.updateTriggers.getColor).not.toEqual(claro.updateTriggers.getColor);
-});
-
-test("sem análise não há ondas", () => {
-  expect(comQuadro("claro", prepararDados(rede, null)).ondas.props.data).toHaveLength(0);
-});
-
-test("com quadro de perto, raio e faíscas acima das ondas", () => {
-  const perto: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
-  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "escuro", perto).map((c) => c.id);
+test("de perto, só o vibrar elétrico: raio e faíscas logo acima dos trechos", () => {
+  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "escuro", PERTO).map((c) => c.id);
   const i = ids.indexOf("trechos");
-  expect(ids.slice(i, i + 5)).toEqual(["trechos", "ondas", "raio", "faiscas", "linhas-at"]);
+  expect(ids.slice(i, i + 4)).toEqual(["trechos", "raio", "faiscas", "linhas-at"]);
 });
 
-test("com animação, trecho com fluxo fica apagado para a onda aparecer", () => {
-  const parado = porId().trechos.props, animado = comQuadro().trechos.props;
+test("de longe, com animação, o trecho fica com a cor cheia (não há onda por cima)", () => {
+  const t2 = dados.trechos.find((t) => t.id === "t:2");
+  expect(comQuadro().trechos.props.getColor(t2)[3] ?? 255).toBe(255);
+});
+
+test("de perto, com animação, trecho com fluxo fica apagado para o raio aparecer", () => {
+  const parado = porId().trechos.props;
+  const animado = Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", PERTO).map((c) => [c.id, c])).trechos.props as Record<string, any>;
   const t2 = dados.trechos.find((t) => t.id === "t:2"), t4 = dados.trechos.find((t) => t.id === "t:4");
   expect(parado.getColor(t2)[3] ?? 255).toBe(255);
   expect(animado.getColor(t2)[3]).toBeLessThan(128);
@@ -188,18 +181,13 @@ test("com animação, o brilho parado fica só em alerta e gargalo", () => {
   expect(porId().brilho.props.data).toBe(dados.comFluxo);
 });
 
-test("intensidade: mais forte = onda com mais ganho, mais larga, raio mais opaco", () => {
-  const perto: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
-  const em = (intensidade: "suave" | "media" | "forte") =>
-    Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "escuro", perto, { intensidade }).map((c) => [c.id, c])) as Record<string, any>;
-  const [s, m, f] = [em("suave"), em("media"), em("forte")];
-  expect(s.ondas.props.ganho).toBeLessThan(m.ondas.props.ganho);
-  expect(m.ondas.props.ganho).toBeLessThan(f.ondas.props.ganho);
-  expect(s.ondas.props.getWidth).toBeLessThan(f.ondas.props.getWidth);
+test("intensidade: mais forte = raio mais opaco (padrão = média)", () => {
+  const em = (intensidade?: "suave" | "media" | "forte") =>
+    Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "escuro", PERTO, intensidade && { intensidade }).map((c) => [c.id, c])) as Record<string, any>;
   const alfa = (c: Record<string, any>) => c.raio.props.getColor(c.raio.props.data[0])[3];
-  expect(alfa(s)).toBeLessThan(alfa(f));
-  // padrão = média
-  expect(comQuadro().ondas.props.ganho).toBe(m.ondas.props.ganho);
+  expect(alfa(em("suave"))).toBeLessThan(alfa(em("media")));
+  expect(alfa(em("media"))).toBeLessThan(alfa(em("forte")));
+  expect(alfa(em())).toBe(alfa(em("media")));
 });
 
 test("marcadores de gargalo podem vir espalhados de fora (zoom atual)", () => {
