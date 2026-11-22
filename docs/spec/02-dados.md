@@ -74,6 +74,26 @@ Gerada **no núcleo** a partir das ruas (detalhes em [03-modelagem](03-modelagem
   | ✅ **1,1 a 2,5** | **279** | **100%** | **60% / 40%** |
 
   Com fator abaixo de 1, o cabo nascia menor que a demanda. Até 1,6, o mapa ficava todo amarelo. O tempo da análise não muda com a faixa.
+
+  ✅ **Socorro (#61)** · só com a regra acima, religar uma subestação caída não devolvia quase nada. Derrubando `s:173217432` (1.463 pontos, 10.040 kVA), a rota fechava `c:8129` e voltavam **2,7 kVA**. A chave não era o limite: mesmo com capacidade infinita, voltavam os mesmos 2,7 kVA, porque os cabos dos dois lados eram cabos de ponta de rede. Com todos os cabos infinitos, a folga de 20% da subestação vizinha ainda segurava em 1,9 MVA. Regra nova:
+  - a **chave de socorro** de cada área é a chave mais curta da sua fronteira. É ela que a rota alternativa fecha quando a área inteira apaga, porque todo ponto apagado é fonte do Dijkstra;
+  - os cabos do caminho dessa chave até as duas raízes aguentam a área socorrida: na área apagada, até a área toda; na vizinha, a própria subárvore mais a área socorrida. Tudo vezes o mesmo fator sorteado;
+  - a chave aguenta a área que socorre, e a subestação fica com (própria área + maior área que socorre) × 1,2.
+
+  Medido com BH em 21/11 (servidor e núcleo):
+
+  | | Antes | Depois |
+  |---|---|---|
+  | Religado ao derrubar `s:173217432` | 2,7 kVA | **10.040,4 kVA (100%)** |
+  | Subestações que voltam 100% ao cair | ❓ não medido | **17 de 18** |
+  | Gargalos na rede intacta | 279 | **272** |
+  | Cabos verdes / amarelos / vermelhos | 60% / 40% / ❓ | **60,9% / 38,3% / 0,8%** |
+  | Tempo da análise da rede intacta | 5,7 a 9,5 s | 7,0 a 7,8 s (igual) |
+  | Tempo da rota / da análise religada | 7,4 a 9,5 s | 11,1 a 15,5 s |
+
+  O tempo do religamento sobe porque o Dinic passa a empurrar 10 MVA a mais por caminhos longos. A máquina oscila muito, então os tempos são faixas de 3 rodadas. Reforçar os caminhos de **toda** chave dava o mesmo religamento, mas o mapa perdia gargalos (218) e ficava 71% verde.
+  - 🟡 `s:198024646` volta só 6,4 de 14,6 MVA. Quando ela cai, cai também a linha AT que alimenta outra subestação: duas áreas apagam juntas e a vizinha não foi dimensionada para as duas. `s:585526702` também fecha 2 chaves, mas volta 100%.
+  - 🟡 Falha num cabo só apaga uma subárvore, e a rota fecha a chave mais curta em volta dela, que nem sempre é a de socorro. Nesse caso o religamento pode continuar parcial.
 - 🎲 A geração usa **semente fixa**: o mesmo arquivo de entrada sempre gera a mesma rede.
 - ✅ **Gerada ao ligar** o servidor, nunca salva no git (D24). Para o benchmark ou para conferir, `cintilante-cli exportar` grava a rede num arquivo local.
 

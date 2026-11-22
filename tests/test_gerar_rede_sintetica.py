@@ -7,7 +7,8 @@ Ruas do teste (comprimento em metros). s:1 fica em cima de p:1 e s:2 em cima de 
 
 Feito no papel: as áreas são A = {1, 2, 3, 4} e B = {5, 6, 7} (p:4 empata em 300 m e fica com A,
 que sai primeiro da heap). Cabos: r1, r2, r3, r5, r6. Chaves: r4 (4–5) e r7 (2–6), que ligam áreas
-diferentes. Sem cabo: r8, que não chega a subestação nenhuma, e p:8 e p:9 ficam fora da rede.
+diferentes; r4, a mais curta, é a chave de socorro das duas áreas. Sem cabo: r8, que não chega a
+subestação nenhuma, e p:8 e p:9 ficam fora da rede.
 """
 
 import unittest
@@ -16,6 +17,7 @@ from pathlib import Path
 from adapters.dados.leitor_csv import LeitorCSV
 from core.casos_de_uso.gerar_rede_sintetica import (FATOR_CABO, FOLGA_SUBESTACAO, KVA_POR_METRO, GeradorAleatorio,
                                                     GerarRedeSintetica)
+from core.casos_de_uso.rota_alternativa import RotaAlternativa
 from core.dominio.rede_eletrica import RedeEletrica, va_para_kva
 from core.grafo.dinic import Dinic
 from core.portas.fonte_de_rede import DadosDaRede, PontoLido, SubestacaoLida, TrechoLido
@@ -86,19 +88,37 @@ class TestGerarRedeSintetica(unittest.TestCase):
 
     def test_cabo_com_folga_de_1_1_a_2_5(self):
         # Q2 ✅ (T16): abaixo de 1 o cabo nasce menor que a demanda e a cidade intacta já fica sem luz;
-        # até 1,6 quase todo cabo passa de 60% de uso e o mapa fica amarelo. 1,1 a 2,5 em BH: 279
-        # gargalos, 60% dos cabos verdes e 40% amarelos.
+        # até 1,6 quase todo cabo passa de 60% de uso e o mapa fica amarelo. 1,1 a 2,5 em BH, antes
+        # do socorro (#61): 279 gargalos, 60% dos cabos verdes e 40% amarelos.
         self.assertEqual(FATOR_CABO, (1.1, 2.5))
 
     def test_capacidades(self):
         rede = gerar()
         demanda = {p.id: p.demanda_kva for p in rede.pontos}
-        # O cabo r3 (3–4) leva só a demanda de p:4, vezes o fator sorteado.
-        t3 = next(t for t in rede.trechos if t.id == "t:3")
-        self.assertGreaterEqual(t3.capacidade_kva, demanda["p:4"] * FATOR_CABO[0] - 0.01)
-        self.assertLessEqual(t3.capacidade_kva, demanda["p:4"] * FATOR_CABO[1] + 0.01)
         area_a = sum(demanda[p] for p in ("p:1", "p:2", "p:3", "p:4"))
-        self.assertAlmostEqual(rede.subestacoes[0].capacidade_kva, area_a * FOLGA_SUBESTACAO, places=1)
+        area_b = sum(demanda[p] for p in ("p:5", "p:6", "p:7"))
+        # O cabo r3 (3–4) fica no caminho da c:4 até a raiz de A: no pior caso leva a área A inteira
+        # (B caída, ou A caída e socorrida por B), vezes o fator sorteado. Sem socorro, seria só p:4.
+        t3 = next(t for t in rede.trechos if t.id == "t:3")
+        pior = max(area_a, demanda["p:4"] + area_b)
+        self.assertGreaterEqual(t3.capacidade_kva, pior * FATOR_CABO[0] - 0.01)
+        self.assertLessEqual(t3.capacidade_kva, pior * FATOR_CABO[1] + 0.01)
+        # Cada subestação aguenta a própria área e a vizinha que ela socorre pela c:4.
+        self.assertAlmostEqual(rede.subestacoes[0].capacidade_kva, (area_a + area_b) * FOLGA_SUBESTACAO, places=1)
+
+    def test_religar_subestacao_caida_devolve_a_area_toda(self):
+        # c:4 é a chave mais curta da fronteira, a que a RotaAlternativa fecha: ela e os cabos até as
+        # duas raízes precisam levar a área inteira, não só a ponta de rede em volta dela.
+        gerada = gerar()
+        rede = gerada.montar_rede()
+        demanda = {p.id: p.demanda_kva for p in gerada.pontos}
+        areas = {"s:1": ("p:1", "p:2", "p:3", "p:4"), "s:2": ("p:5", "p:6", "p:7")}
+        for subestacao, pontos in areas.items():
+            with self.subTest(caida=subestacao):
+                r = RotaAlternativa(rede).executar(subestacoes_caidas=[subestacao])
+                self.assertEqual(r.chaves_para_fechar, ["c:4"])
+                self.assertFalse(r.parcial)
+                self.assertAlmostEqual(r.religado_demanda, sum(demanda[p] for p in pontos), places=2)
 
     def test_semente_fixa_repete_a_rede(self):
         caps = lambda r: [t.capacidade_kva for t in r.trechos]  # noqa: E731
