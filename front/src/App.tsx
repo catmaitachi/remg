@@ -5,7 +5,7 @@ import "./tela/tela.css";
 import { carregarAnalise, carregarRede, pedirAnalise } from "./api/carregar";
 import type { Analise, Rede } from "./api/tipos";
 import { animacaoInicial } from "./mapa/animacao";
-import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, type Intensidade, type Visiveis } from "./mapa/camadas";
+import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
 import { CamadasDeck } from "./mapa/CamadasDeck";
 import type { Tema } from "./mapa/cores";
 import { Barra, type Modo } from "./tela/Barra";
@@ -67,6 +67,10 @@ export default function App() {
 
   const redeOk = rede && "ok" in rede ? rede.ok : null;
   const dados = useMemo(() => (redeOk ? prepararDados(redeOk, estado.atual) : null), [redeOk, estado.atual]);
+  const rota = useMemo(
+    () => (dados ? prepararRota(dados, estado.rota?.resultado?.caminho ?? [], estado.chavesFechadas, estado.rota?.fase === "religando") : null),
+    [dados, estado.rota, estado.chavesFechadas],
+  );
   const listaDeFalhas = useMemo(
     () => (redeOk ? estado.falhas.map((alvo) => ({ alvo, rotulo: rotuloDoAlvo(alvo, redeOk) })) : []), [redeOk, estado.falhas],
   );
@@ -96,7 +100,7 @@ export default function App() {
       >
         <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} intensidade={intensidade}
           falhas={estado.falhas} derrubando={modo === "derrubar"} aoClicar={(alvo) => despachar({ tipo: "alternar", alvo })}
-          aoSelecionar={setSelecao} />
+          aoSelecionar={setSelecao} rota={rota} />
       </Map>
 
       <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
@@ -112,7 +116,8 @@ export default function App() {
           )}
         </Barra>
       )}
-      {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0} />}
+      {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0}
+        religou={estado.chavesFechadas.length > 0} />}
 
       {!rede && <p className="vidro aviso" role="status">Carregando a rede de Belo Horizonte…</p>}
       {rede && "erro" in rede && (

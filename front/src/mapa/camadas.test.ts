@@ -3,7 +3,9 @@ import analiseMock from "../mocks/analise.json";
 import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede } from "../api/tipos";
 import { PALETA, rgb } from "./cores";
-import { VISIVEIS_INICIAL, aplicarFalhas, estiloDoMapa, montarCamadas, prepararDados, type Quadro, type Visiveis } from "./camadas";
+import {
+  VISIVEIS_INICIAL, aplicarFalhas, estiloDoMapa, montarCamadas, prepararDados, prepararRota, type Quadro, type Visiveis,
+} from "./camadas";
 
 const rede = pequena as unknown as Rede;
 // Cópia local: o mock não tem nenhum trecho na faixa de alerta.
@@ -74,7 +76,7 @@ test("desligar distribuição só esconde, sem remontar os dados", () => {
 });
 
 test("cada switch controla a sua camada", () => {
-  const c = porId(dados, { at: false, distribuicao: true, subestacoes: false, chaves: false });
+  const c = porId(dados, { at: false, distribuicao: true, subestacoes: false, chaves: false, criticos: false });
   expect(c["linhas-at"].props.visible).toBe(false);
   expect(c.subestacoes.props.visible).toBe(false);
   expect(c.chaves.props.visible).toBe(false);
@@ -278,4 +280,39 @@ test("no Derrubar, linha AT e marcador de gargalo seguram o clique (não derruba
   expect(c["linhas-at"].props.pickable).toBe(true);
   expect(c["gargalos-alerta"].props.pickable).toBe(true);
   expect(!!camadasCom([], "claro", false)["gargalos-alerta"].props.pickable).toBe(false);
+});
+
+// ---------- T21: rota do religamento ----------
+const CAMINHO = ["t:2", "c:1", "t:3", "x:nao-existe"];
+const quadroEm = (tempo: number): Quadro => ({ tempo, zoom: 14, limites: [-180, -90, 180, 90] });
+const comRota = (piscando: boolean, quadro: Quadro | null) =>
+  Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", quadro, { rota: prepararRota(dados, CAMINHO, ["c:1"], piscando)! })
+    .map((c) => [c.id, c])) as Record<string, any>;
+
+test("prepararRota acha caminho e chaves pelo id", () => {
+  const r = prepararRota(dados, CAMINHO, ["c:1"], true)!;
+  expect(r.caminho.map((c) => c.id)).toEqual(["t:2", "c:1", "t:3"]);
+  expect(r.chaves.map((c) => c.id)).toEqual(["c:1"]);
+  expect(r.piscando).toBe(true);
+  expect(prepararRota(dados, [], [], false)).toBeNull();
+});
+
+test("rota entra entre os trechos e as chaves, com o anel por cima", () => {
+  const ids = Object.keys(comRota(false, null));
+  expect(ids.indexOf("rota")).toBeLessThan(ids.indexOf("chaves"));
+  expect(ids.indexOf("rota-chaves")).toBeGreaterThan(ids.indexOf("chaves"));
+  expect(comRota(false, null).rota.props.getColor).toEqual(rgb(PALETA.claro.primario));
+});
+
+test("anel pisca só com quadro e piscando", () => {
+  const alfa = (c: Record<string, any>) => c["rota-chaves"].props.getLineColor[3];
+  const gatilho = (c: Record<string, any>) => c["rota-chaves"].props.updateTriggers.getLineColor[1];
+  expect([alfa(comRota(true, quadroEm(0.5))), gatilho(comRota(true, quadroEm(0.5)))]).toEqual([255, 0.5]);
+  expect(alfa(comRota(true, quadroEm(1)))).toBe(90);
+  expect([alfa(comRota(false, quadroEm(1))), gatilho(comRota(false, quadroEm(1)))]).toEqual([255, 0]);
+  expect(alfa(comRota(true, null))).toBe(255);
+});
+
+test("críticos ficam guardados e desligados", () => {
+  expect(VISIVEIS_INICIAL.criticos).toBe(false);
 });

@@ -6,16 +6,17 @@ import { alvoDoClique, type Alvo } from "../tela/falhas";
 import { selecaoDoClique, type Selecao } from "../tela/selecao";
 import { criarLaco } from "./animacao";
 import { espalharAlertas } from "./alertas";
-import { aplicarFalhas, montarCamadas, type Dados, type Intensidade, type Quadro, type Visiveis } from "./camadas";
+import { aplicarFalhas, montarCamadas, type Dados, type Intensidade, type Quadro, type Rota, type Visiveis } from "./camadas";
 import type { Tema } from "./cores";
 
 interface Props {
   dados: Dados | null; visiveis: Visiveis; tema: Tema; animando: boolean; intensidade: Intensidade;
   falhas: Alvo[]; derrubando: boolean; aoClicar: (alvo: Alvo) => void; aoSelecionar: (s: Selecao) => void;
+  rota: Rota | null;
 }
 
 /** Fica dentro do <Map>: lê zoom e limites do mapa a cada quadro enquanto a animação está ligada. */
-export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falhas, derrubando, aoClicar, aoSelecionar }: Props) {
+export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falhas, derrubando, aoClicar, aoSelecionar, rota }: Props) {
   const { current: mapa } = useMap();
   const [quadro, setQuadro] = useState<Quadro | null>(null);
   // zoom em passos de 0,5, lido no fim do zoom: os marcadores de gargalo se espalham por ele
@@ -42,8 +43,8 @@ export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falh
   }, [animando, mapa]);
 
   const camadas = useMemo(
-    () => (vista ? montarCamadas(vista.dados, visiveis, tema, animando ? quadro : null, { intensidade, alertas, caidos: vista.caidos, derrubando }) : []),
-    [vista, visiveis, tema, animando, quadro, intensidade, alertas, derrubando],
+    () => (vista ? montarCamadas(vista.dados, visiveis, tema, animando ? quadro : null, { intensidade, alertas, caidos: vista.caidos, derrubando, rota }) : []),
+    [vista, visiveis, tema, animando, quadro, intensidade, alertas, derrubando, rota],
   );
   const overlay = useControl(() => new MapboxOverlay({ layers: camadas }));
   overlay.setProps({

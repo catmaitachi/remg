@@ -13,8 +13,10 @@ export function estiloDoMapa(escuro: boolean): string {
   return `https://tiles.openfreemap.org/styles/${escuro ? "dark" : "positron"}`;
 }
 
-export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean };
-export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true };
+export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean; criticos: boolean };
+// shortcut: `criticos` fica guardado sem interruptor nem camada; em BH são 25.689 pontes e 20.017 articulações (rede radial).
+// Desenhar quando houver um recorte útil.
+export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true, criticos: false };
 
 export type LonLat = [number, number];
 export interface Caminho {
@@ -123,6 +125,19 @@ const BRILHO: Record<Faixa, { largura: number; alfa: Record<Tema, number> }> = {
 };
 
 /** O que muda a cada quadro da animação. `limites` = [oeste, sul, leste, norte]. */
+/** Rota do religamento (T21): caminho e chaves fechadas; o anel pisca enquanto a análise com elas roda. */
+export interface Rota { caminho: Caminho[]; chaves: Marco[]; piscando: boolean }
+
+export function prepararRota(d: Dados, ids: string[], chavesFechadas: string[], piscando: boolean): Rota | null {
+  if (!ids.length && !chavesFechadas.length) return null;
+  const trechos = new Map(d.trechos.map((t) => [t.id, t])), chaves = new Map(d.chaves.map((c) => [c.id, c]));
+  return {
+    caminho: ids.flatMap((id) => trechos.get(id) ?? []), // id fora da rede: ignora
+    chaves: chavesFechadas.flatMap((id) => chaves.get(id) ?? []),
+    piscando,
+  };
+}
+
 export interface Quadro { tempo: number; zoom: number; limites: [number, number, number, number] }
 
 /** Intensidade dos efeitos, escolhida no painel de camadas. A suave é a da prévia aprovada. */
@@ -139,6 +154,7 @@ export interface Opcoes {
   caidos?: Caidos;
   /** modo Derrubar: trechos e subestações respondem ao mouse */
   derrubando?: boolean;
+  rota?: Rota | null;
 }
 
 const EXTENSAO_ONDA = new ExtensaoOnda();
@@ -177,7 +193,8 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
   const alertas = opcoes.alertas ?? d.alertas;
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
-  const semLuz = rgb(p.semLuz), caido = rgb(p.caido);
+  const semLuz = rgb(p.semLuz), caido = rgb(p.caido), primario = rgb(p.primario);
+  const rota = opcoes.rota ?? null;
   // clicável em todo modo (o Observar seleciona); o destaque do mouse é só do Derrubar
   const destaque = { pickable: true, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
   const fundo = rgb(p.fundo);
@@ -213,10 +230,21 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai; no Observar, seleciona
       pickable: true,
     }),
+    ...(rota ? [new PathLayer<Caminho>({
+      id: "rota", data: rota.caminho, getPath: (c) => c.path, getColor: primario,
+      getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, pickable: true,
+    })] : []),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,
       getIcon: () => icone, updateTriggers: { getIcon: tema }, getSize: 12, sizeUnits: "pixels",
     }),
+    ...(rota ? [new ScatterplotLayer<Marco>({
+      // anel da chave fechada; pisca (alfa) só com animação e enquanto a análise com ela roda
+      id: "rota-chaves", data: rota.chaves, getPosition: (m) => m.posicao,
+      filled: false, stroked: true, getRadius: 10, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 3,
+      getLineColor: [...primario, rota.piscando && quadro ? 90 + Math.round(165 * Math.abs(Math.sin(Math.PI * quadro.tempo))) : 255],
+      updateTriggers: { getLineColor: [tema, rota.piscando && quadro ? quadro.tempo : 0] },
+    })] : []),
     new ScatterplotLayer<Subestacao>({
       id: "subestacoes", data: d.subestacoes, visible: visiveis.subestacoes, getPosition: (s) => [s[3], s[2]],
       getFillColor: (s) => (caidos.ids.has(s[0]) ? [0, 0, 0, 0] : rgb(p.subestacao)),

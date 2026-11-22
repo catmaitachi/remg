@@ -6,9 +6,9 @@ const ITENS = [
   ["gargalo", "Gargalo, 90% ou mais"],
 ] as const;
 
-interface Props { tema: Tema; semLuz: boolean; caidos: boolean }
+interface Props { tema: Tema; semLuz: boolean; caidos: boolean; religou: boolean }
 
-export function Legenda({ tema, semLuz, caidos }: Props) {
+export function Legenda({ tema, semLuz, caidos, religou }: Props) {
   const p = PALETA[tema];
   return (
     <section className="vidro legenda" aria-label="Legenda do uso das linhas">
@@ -36,6 +36,15 @@ export function Legenda({ tema, semLuz, caidos }: Props) {
             <path d="M11 3l6 6M17 3l-6 6" stroke={p.caido} strokeWidth="2" strokeLinecap="round" />
           </svg>
           Linha caída
+        </span>
+      )}
+      {religou && (
+        <span className="legenda-item">
+          <svg width="28" height="12" viewBox="0 0 28 12" aria-hidden="true">
+            <path d="M3 6H25" stroke={p.primario} strokeWidth="3" strokeLinecap="round" />
+            <circle cx="14" cy="6" r="4.5" fill={p.fundo} stroke={p.primario} strokeWidth="2" />
+          </svg>
+          Chave fechada pelo religamento
         </span>
       )}
     </section>
