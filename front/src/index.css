@@ -26,13 +26,11 @@ button { font: inherit; color: inherit; }
 }
 
 .aviso {
-  top: var(--margem);
-  left: calc(var(--barra-largura) + var(--margem) * 2);
-  right: 76px;
+  align-self: center;
   display: grid;
   gap: var(--espaco-1);
   max-width: 60ch;
-  margin: 0 auto;
+  margin: 0;
   padding: var(--espaco-3) var(--espaco-4);
   font-size: var(--texto-rotulo);
 }

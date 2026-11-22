@@ -19,14 +19,9 @@ const SOL = "M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.
 const LUA = "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z";
 const NIVEIS: [Intensidade, string][] = [["suave", "Suave"], ["media", "Média"], ["forte", "Forte"]];
 
-/** Fica fora do <Map>, dentro do MapProvider do App: acha o mapa pelo id "mapa". */
-export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, animando, aoAlternarAnimacao, intensidade, aoMudarIntensidade }: Props) {
+/** Zoom e norte no canto de baixo; fica fora do <Map>, dentro do MapProvider do App: acha o mapa pelo id "mapa". */
+export function Controles() {
   const { mapa } = useMap();
-  const [aberto, setAberto] = useState(false);
-  const raiz = useRef<HTMLDivElement>(null);
-  const botao = useRef<HTMLButtonElement>(null);
-  const idPainel = useId();
-  const idIntensidade = useId();
   // rumo do mapa em graus: a agulha da bússola gira ao contrário para continuar apontando o norte
   const [rumo, setRumo] = useState(0);
 
@@ -37,6 +32,28 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
     mapa.on("rotate", ler);
     return () => { mapa.off("rotate", ler); };
   }, [mapa]);
+
+  return (
+    <div className="superficie controles" role="toolbar" aria-label="Controles do mapa" aria-orientation="vertical">
+        <button type="button" className="controle" aria-label="Aproximar" onClick={() => mapa?.zoomIn()}><Icone d={MAIS} /></button>
+        <button type="button" className="controle" aria-label="Afastar" onClick={() => mapa?.zoomOut()}><Icone d={MENOS} /></button>
+        <button type="button" className="controle" aria-label="Apontar para o norte" onClick={() => mapa?.resetNorthPitch()}>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style={{ transform: `rotate(${-rumo}deg)` }}>
+            <path d="M12 2.5 16 12H8z" fill="currentColor" />
+            <path d="M12 21.5 8 12h8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+          </svg>
+        </button>
+    </div>
+  );
+}
+
+/** Tema e camadas, no fim da linha de comando do console; o painel abre embaixo do botão. */
+export function Ferramentas({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, animando, aoAlternarAnimacao, intensidade, aoMudarIntensidade }: Props) {
+  const [aberto, setAberto] = useState(false);
+  const raiz = useRef<HTMLDivElement>(null);
+  const botao = useRef<HTMLButtonElement>(null);
+  const idPainel = useId();
+  const idIntensidade = useId();
   const p = PALETA[tema];
 
   useEffect(() => {
@@ -58,17 +75,9 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
     },
   ];
 
+
   return (
-    <div ref={raiz}>
-      <div className="superficie controles" role="toolbar" aria-label="Controles do mapa" aria-orientation="vertical">
-        <button type="button" className="controle" aria-label="Aproximar" onClick={() => mapa?.zoomIn()}><Icone d={MAIS} /></button>
-        <button type="button" className="controle" aria-label="Afastar" onClick={() => mapa?.zoomOut()}><Icone d={MENOS} /></button>
-        <button type="button" className="controle" aria-label="Apontar para o norte" onClick={() => mapa?.resetNorthPitch()}>
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style={{ transform: `rotate(${-rumo}deg)` }}>
-            <path d="M12 2.5 16 12H8z" fill="currentColor" />
-            <path d="M12 21.5 8 12h8z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-          </svg>
-        </button>
+    <div ref={raiz} className="ferramentas">
         <button type="button" className="controle" onClick={aoTrocarTema}
           aria-label={tema === "escuro" ? "Usar tema claro" : "Usar tema escuro"}>
           <Icone d={tema === "escuro" ? SOL : LUA} />
@@ -77,7 +86,6 @@ export function Controles({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, an
           onClick={() => setAberto((a) => !a)}>
           <Icone d={CAMADAS} />
         </button>
-      </div>
 
       <section id={idPainel} className="superficie painel" aria-label="Camadas" hidden={!aberto}>
         <h2 className="painel-titulo">Camadas</h2>

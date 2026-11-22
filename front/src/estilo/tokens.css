@@ -26,7 +26,6 @@
   --texto-corpo: 16px;
   --texto-rotulo: 14px;
 
-  --barra-largura: clamp(280px, 23vw, 340px);
   --margem: 12px;
 
   /* tema claro: superfície material branca */

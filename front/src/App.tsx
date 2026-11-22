@@ -8,8 +8,10 @@ import { animacaoInicial } from "./mapa/animacao";
 import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
 import { CamadasDeck } from "./mapa/CamadasDeck";
 import type { Tema } from "./mapa/cores";
-import { Barra, type Modo } from "./tela/Barra";
-import { Controles } from "./tela/Controles";
+import { Console, Falhas, type Modo } from "./tela/Console";
+import { Contexto } from "./tela/Contexto";
+import { Controles, Ferramentas } from "./tela/Controles";
+import { Icone, RESTAURAR } from "./tela/Icone";
 import { Legenda } from "./tela/Legenda";
 import { ESTADO_INICIAL, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
 import { AcharRota, Religamento } from "./tela/Religamento";
@@ -114,48 +116,62 @@ export default function App() {
           aoSelecionar={setSelecao} rota={rota} />
       </Map>
 
-      <Controles visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
-        animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
+      <Controles />
 
-      {redeOk && (
-        <Barra area={redeOk.area} analise={estado.atual} usandoMock={USANDO_MOCK} faltando={estado.faltando} modo={modo}
-          religamento={modo === "religar" && (
-            <>
-              <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
-              <Religamento rota={estado.rota} faltando={estado.faltando} dica={dicaReligar} />
-            </>
-          )}
-          aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
-          falhas={listaDeFalhas} calculando={estado.calculando}
-          aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })} aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })}>
-          {selecao && modo !== "derrubar" && (
-            <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)} />
-          )}
-        </Barra>
-      )}
-      {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0}
-        religou={estado.chavesFechadas.length > 0} />}
+      {/* coluna presa à tela: console, avisos, cartão de contexto e, no pé, a legenda (o vão deixa o clique passar ao mapa) */}
+      <div className="topo">
+        {redeOk && (
+          <Console area={redeOk.area} analise={estado.atual} faltando={estado.faltando} calculando={estado.calculando} modo={modo}
+            aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
+            acao={modo === "religar"
+              ? <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
+              : modo === "derrubar" && estado.falhas.length > 0 && (
+                <button type="button" className="botao-texto" onClick={() => despachar({ tipo: "restaurarTudo" })}>
+                  <Icone d={RESTAURAR} />Restaurar tudo
+                </button>
+              )}
+            ferramentas={
+              <Ferramentas visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
+                animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
+            } />
+        )}
 
-      {!rede && <p className="superficie aviso" role="status">Carregando a rede de Belo Horizonte…</p>}
-      {rede && "erro" in rede && (
-        <p className="superficie aviso aviso-erro" role="alert">
-          <strong>Não deu para carregar a rede.</strong>
-          <span>{rede.erro}</span>
-        </p>
-      )}
-      {estado.erro && (
-        <p className="superficie aviso aviso-erro" role="alert">
-          <strong>{estado.rota?.fase !== "erro" ? "Não deu para calcular a falha."
-            : estado.rota.resultado ? "Não deu para religar." : "Não deu para achar a rota."}</strong>
-          <span>{estado.erro}</span>
-        </p>
-      )}
-      {redeOk && analise && "erro" in analise && (
-        <p className="superficie aviso aviso-erro" role="alert">
-          <strong>Não deu para carregar a análise.</strong>
-          <span>{analise.erro}</span>
-        </p>
-      )}
+        {!rede && <p className="superficie aviso" role="status">Carregando a rede de Belo Horizonte…</p>}
+        {rede && "erro" in rede && (
+          <p className="superficie aviso aviso-erro" role="alert">
+            <strong>Não deu para carregar a rede.</strong>
+            <span>{rede.erro}</span>
+          </p>
+        )}
+        {estado.erro && (
+          <p className="superficie aviso aviso-erro" role="alert">
+            <strong>{estado.rota?.fase !== "erro" ? "Não deu para calcular a falha."
+              : estado.rota.resultado ? "Não deu para religar." : "Não deu para achar a rota."}</strong>
+            <span>{estado.erro}</span>
+          </p>
+        )}
+        {redeOk && analise && "erro" in analise && (
+          <p className="superficie aviso aviso-erro" role="alert">
+            <strong>Não deu para carregar a análise.</strong>
+            <span>{analise.erro}</span>
+          </p>
+        )}
+
+        {redeOk && (
+          <Contexto>
+            {modo === "derrubar" && !estado.falhas.length && <p className="modo-dica">Clique num trecho ou numa subestação para derrubar.</p>}
+            {modo === "religar" && <Religamento rota={estado.rota} faltando={estado.faltando} dica={dicaReligar} />}
+            {listaDeFalhas.length > 0 && <Falhas falhas={listaDeFalhas} aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })} />}
+            {selecao && modo !== "derrubar" && (
+              <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)} />
+            )}
+            {USANDO_MOCK && <p className="modo-dica">Dados de exemplo até o servidor ficar pronto.</p>}
+          </Contexto>
+        )}
+
+        {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0}
+          religou={estado.chavesFechadas.length > 0} />}
+      </div>
     </MapProvider>
   );
 }
