@@ -10,7 +10,7 @@ const status = (html: string) => html.match(/<div[^>]*role="status"[^>]*>(.*?)<\
 test("a dica segue a ordem mock → sem falhas → sem ponto sem luz", () => {
   const base = { usandoMock: false, temFalhas: true, temSemLuz: true, calculando: false, temResultado: false };
   expect(dicaDoReligar({ ...base, usandoMock: true, temFalhas: false })).toBe("O Religar precisa do servidor.");
-  expect(dicaDoReligar({ ...base, temFalhas: false })).toBe("Derrube algo no modo Derrubar primeiro.");
+  expect(dicaDoReligar({ ...base, temFalhas: false })).toBe("Derrube um item pelo cartão dele primeiro.");
   expect(dicaDoReligar({ ...base, temSemLuz: false })).toBe("Nenhum ponto sem luz para religar.");
   expect(dicaDoReligar({ ...base, temSemLuz: false, temResultado: true })).toBe("");
   expect(dicaDoReligar(base)).toBeNull();

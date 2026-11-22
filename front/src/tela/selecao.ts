@@ -47,3 +47,22 @@ export function detalheDe(
     ],
   };
 }
+
+/** Chave não se derruba no cartão: quem mexe em chave é o religamento. */
+export function podeDerrubar(sel: Selecao, rede: Rede): boolean {
+  return sel.tipo === "subestacao" || rede.arestas.find((a) => a[0] === sel.id)?.[3] !== "chave";
+}
+
+/** Para onde o mapa voa ao clicar numa falha: a subestação ou o meio da aresta, em [lon, lat]. */
+export function posicaoDoAlvo(alvo: Alvo, rede: Rede): [number, number] | null {
+  const lugar = (id: string): [number, number] | undefined => {
+    const s = rede.subestacoes.find((x) => x[0] === id);
+    if (s) return [s[3], s[2]];
+    const p = rede.pontos.find((x) => x[0] === id);
+    return p && [p[2], p[1]];
+  };
+  if (alvo.tipo === "subestacao") return lugar(alvo.id) ?? null;
+  const a = rede.arestas.find((x) => x[0] === alvo.id);
+  const de = a && lugar(a[1]), para = a && lugar(a[2]);
+  return de && para ? [(de[0] + para[0]) / 2, (de[1] + para[1]) / 2] : null;
+}

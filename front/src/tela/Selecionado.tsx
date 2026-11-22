@@ -1,9 +1,13 @@
 import { FECHAR, Icone } from "./Icone";
 
-interface Props { detalhe: { titulo: string; linhas: [string, string][] }; aoFechar: () => void }
+interface Props {
+  detalhe: { titulo: string; linhas: [string, string][] }; aoFechar: () => void;
+  /** Derrubar ou Restaurar: sem seletor de modo, a falha nasce aqui */
+  acao?: { texto: string; aoClicar: () => void };
+}
 
-/** O que foi clicado no Observar ou no Religar: capacidade, fluxo e uso (spec 07). */
-export function Selecionado({ detalhe, aoFechar }: Props) {
+/** O que foi clicado no mapa: capacidade, fluxo e uso (spec 07), e a ação de derrubar ou restaurar. */
+export function Selecionado({ detalhe, aoFechar, acao }: Props) {
   return (
     <section className="selecionado" aria-label="Selecionado" aria-live="polite">
       <div className="falhas-topo">
@@ -20,6 +24,7 @@ export function Selecionado({ detalhe, aoFechar }: Props) {
           </div>
         ))}
       </dl>
+      {acao && <button type="button" className="botao-secundario" onClick={acao.aoClicar}>{acao.texto}</button>}
     </section>
   );
 }

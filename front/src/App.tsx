@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
-import { Map, MapProvider } from "react-map-gl/maplibre";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { Map, MapProvider, type MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./tela/tela.css";
 import { carregarAnalise, carregarRede, pedirAnalise, pedirRota } from "./api/carregar";
@@ -7,15 +7,16 @@ import type { Analise, Rede } from "./api/tipos";
 import { animacaoInicial } from "./mapa/animacao";
 import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
 import { CamadasDeck } from "./mapa/CamadasDeck";
+import { Predios3D } from "./mapa/Predios3D";
 import type { Tema } from "./mapa/cores";
-import { Console, Falhas, type Modo } from "./tela/Console";
+import { Console, Falhas } from "./tela/Console";
 import { Contexto } from "./tela/Contexto";
 import { Controles, Ferramentas } from "./tela/Controles";
 import { Legenda } from "./tela/Legenda";
 import { ESTADO_INICIAL, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
 import { AcharRota, Religamento } from "./tela/Religamento";
 import { Selecionado } from "./tela/Selecionado";
-import { detalheDe, type Selecao } from "./tela/selecao";
+import { detalheDe, podeDerrubar, posicaoDoAlvo, type Selecao } from "./tela/selecao";
 
 const temaEscuro = matchMedia("(prefers-color-scheme: dark)");
 const temaDoSistema = (): Tema => (temaEscuro.matches ? "escuro" : "claro");
@@ -57,7 +58,7 @@ export default function App() {
   // A análise é opcional: sem ela o mapa fica em cinza e a barra mostra "—".
   const [analise, setAnalise] = useState<Carga<Analise>>(null);
   const [visiveis, setVisiveis] = useState<Visiveis>(VISIVEIS_INICIAL);
-  const [modo, setModo] = useState<Modo>("observar");
+  const mapaRef = useRef<MapRef>(null);
   const [selecao, setSelecao] = useState<Selecao | null>(null);
   // falhas, análise atual e "calculando": só vale a resposta da versão atual da lista (reducer testado em falhas.ts)
   const [estado, despachar] = useReducer(reduzirFalhas, ESTADO_INICIAL);
@@ -104,6 +105,7 @@ export default function App() {
   return (
     <MapProvider>
       <Map
+        ref={mapaRef}
         id="mapa"
         initialViewState={CENTRO_BH}
         mapStyle={estiloDoMapa(tema === "escuro")}
@@ -111,20 +113,16 @@ export default function App() {
         style={{ position: "fixed", inset: 0 }}
       >
         <CamadasDeck dados={dados} visiveis={visiveis} tema={tema} animando={animando} intensidade={intensidade}
-          falhas={estado.falhas} derrubando={modo === "derrubar"} aoClicar={(alvo) => despachar({ tipo: "alternar", alvo })}
-          aoSelecionar={setSelecao} rota={rota} />
+          falhas={estado.falhas} aoSelecionar={setSelecao} rota={rota} />
       </Map>
 
       <Controles />
+      <Predios3D ligado={visiveis.predios3d} tema={tema} />
 
       {/* coluna presa à tela: console, avisos, cartão de contexto e, no pé, a legenda (o vão deixa o clique passar ao mapa) */}
       <div className="topo">
         {redeOk && (
-          <Console area={redeOk.area} analise={estado.atual} faltando={estado.faltando} calculando={estado.calculando} modo={modo}
-            aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
-            acao={modo === "religar" && (
-              <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
-            )}
+          <Console area={redeOk.area} analise={estado.atual} faltando={estado.faltando} calculando={estado.calculando}
             ferramentas={
               <Ferramentas visiveis={visiveis} aoMudar={setVisiveis} temChaves={temChaves} tema={tema} aoTrocarTema={trocarTema}
                 animando={animando} aoAlternarAnimacao={alternarAnimacao} intensidade={intensidade} aoMudarIntensidade={setIntensidade} />
@@ -154,15 +152,30 @@ export default function App() {
 
         {redeOk && (
           <Contexto>
-            {modo === "derrubar" && !estado.falhas.length && <p className="modo-dica">Clique num trecho ou numa subestação para derrubar.</p>}
-            {modo === "religar" && <Religamento rota={estado.rota} faltando={estado.faltando} dica={dicaReligar} />}
-            {listaDeFalhas.length > 0 && <Falhas falhas={listaDeFalhas} aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })}
-              aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })} />}
-            {selecao && modo !== "derrubar" && (
-              <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)} />
+            {selecao && (
+              <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)}
+                acao={!podeDerrubar(selecao, redeOk) ? undefined : {
+                  texto: estado.falhas.some((f) => f.id === selecao.id) ? "Restaurar" : "Derrubar",
+                  aoClicar: () => despachar({ tipo: "alternar", alvo: selecao }),
+                }} />
             )}
             {USANDO_MOCK && <p className="modo-dica">Dados de exemplo até o servidor ficar pronto.</p>}
           </Contexto>
+        )}
+
+        {redeOk && listaDeFalhas.length > 0 && (
+          <Falhas falhas={listaDeFalhas} aoRestaurar={(alvo) => despachar({ tipo: "alternar", alvo })}
+            aoRestaurarTudo={() => despachar({ tipo: "restaurarTudo" })}
+            aoIr={(alvo) => {
+              const lugar = posicaoDoAlvo(alvo, redeOk);
+              if (lugar) mapaRef.current?.flyTo({ center: lugar, zoom: Math.max(16, mapaRef.current.getZoom()) });
+              setSelecao(alvo);
+            }}>
+            <div className="religar">
+              <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
+              <Religamento rota={estado.rota} faltando={estado.faltando} dica={dicaReligar} />
+            </div>
+          </Falhas>
         )}
 
         {redeOk && <Legenda tema={tema} semLuz={!!estado.atual?.semEnergia.pontos.length} caidos={estado.falhas.length > 0}

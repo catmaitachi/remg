@@ -12,10 +12,11 @@ export function estiloDoMapa(escuro: boolean): string {
   return `https://tiles.openfreemap.org/styles/${escuro ? "dark" : "positron"}`;
 }
 
-export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean; criticos: boolean };
+export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean; criticos: boolean; predios3d: boolean };
 // shortcut: `criticos` fica guardado sem interruptor nem camada; em BH são 25.689 pontes e 20.017 articulações (rede radial).
 // Desenhar quando houver um recorte útil.
-export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true, criticos: false };
+// predios3d não é camada do deck: o Predios3D põe a extrusão no estilo do MapLibre
+export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true, criticos: false, predios3d: false };
 
 export type LonLat = [number, number];
 export interface Caminho {
@@ -110,10 +111,18 @@ const iconeCaido = (cor: string, fundo: string) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" stroke="${fundo}" stroke-width="7"/><path d="M6 6l12 12M18 6 6 18" stroke="${cor}" stroke-width="3.5"/></svg>`,
   )}`;
 
-const iconeChave = (borda: string, fundo: string) =>
-  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect x="3" y="3" width="18" height="18" fill="${fundo}" stroke="${borda}" stroke-width="3"/></svg>`,
-  )}`;
+const svg = (corpo: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">${corpo}</svg>`)}`;
+/** Chave seccionadora aberta: dois bornes e a lâmina levantada, num quadrado da cor da AT. */
+export const iconeChave = (borda: string, fundo: string) => svg(
+  `<rect x="3" y="3" width="26" height="26" rx="5" fill="${fundo}" stroke="${borda}" stroke-width="3"/>` +
+  `<path d="M9 21h3M20 21h3M12 21l8.5-8" fill="none" stroke="${borda}" stroke-width="2.5" stroke-linecap="round"/>` +
+  `<circle cx="12" cy="21" r="2" fill="${borda}"/><circle cx="20.5" cy="21" r="2" fill="${borda}"/>`,
+);
+/** Subestação: círculo com um raio; caída, só o contorno na cor de caído. */
+export const iconeSubestacao = (cheio: string, borda: string, raio: string, caida = false) => svg(
+  `<circle cx="16" cy="16" r="13" fill="${caida ? "none" : cheio}" stroke="${borda}" stroke-width="2.5"/>` +
+  `<path d="M18 6.5 10.5 17.5h5L14 25.5l7.5-11h-5z" fill="${caida ? borda : raio}" stroke-linejoin="round"/>`,
+);
 
 // Brilho parado do efeito elétrico (T18): versão suave do protótipo, que ali ia de 26% a 65%. A rede de BH é
 // densa, então o normal quase não brilha. Fios e faíscas em movimento ficam para a T19.
@@ -151,8 +160,6 @@ export interface Opcoes {
   /** marcadores de gargalo já espalhados para o zoom atual; sem isso, todos os de `Dados.alertas` */
   alertas?: Marco[];
   caidos?: Caidos;
-  /** modo Derrubar: trechos e subestações respondem ao mouse */
-  derrubando?: boolean;
   rota?: Rota | null;
 }
 
@@ -175,18 +182,20 @@ function camadasAnimadas(d: Dados, visiveis: Visiveis, quadro: Quadro, cor: Reco
 
 export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null, opcoes: Opcoes = {}) {
   const intensidade = opcoes.intensidade ?? "media";
-  const caidos = opcoes.caidos ?? SEM_CAIDOS, clicavel = !!opcoes.derrubando;
+  const caidos = opcoes.caidos ?? SEM_CAIDOS;
   // os espalhados vêm de fora; com falhas, de aplicarFalhas (já sem os caídos)
   const alertas = opcoes.alertas ?? d.alertas;
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
   const semLuz = rgb(p.semLuz), caido = rgb(p.caido), primario = rgb(p.primario);
   const rota = opcoes.rota ?? null;
-  // clicável em todo modo (o Observar seleciona); o destaque do mouse é só do Derrubar
-  const destaque = { pickable: true, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
+  // sem modos: o clique sempre seleciona (o Derrubar mora no cartão do selecionado)
+  const destaque = { pickable: true };
   const fundo = rgb(p.fundo);
   const vibrando = !!quadro && quadro.zoom >= RAIO.ZOOM;
-  const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
+  const icone = { url: iconeChave(p.at, p.contorno), width: 32, height: 32, id: `chave-${tema}` };
+  const iconeSub = { url: iconeSubestacao(p.subestacao, p.contorno, p.fundo), width: 32, height: 32, id: `subestacao-${tema}` };
+  const iconeSubCaida = { url: iconeSubestacao(p.subestacao, p.caido, p.fundo, true), width: 32, height: 32, id: `subestacao-caida-${tema}` };
   const iconeX = { url: iconeCaido(p.caido, p.fundo), width: 24, height: 24, id: `caido-${tema}` };
 
   const camadas = [
@@ -217,17 +226,16 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
       getColor: rgb(p.at), getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
-      // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai; no Observar, seleciona
       pickable: true,
     }),
     ...(rota ? [new PathLayer<Caminho>({
       id: "rota", data: rota.caminho, getPath: (c) => c.path, getColor: primario,
-      // no Derrubar não segura o clique: o trecho de baixo é que cai
-      getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, pickable: !clicavel,
+      getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, pickable: true,
     })] : []),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,
-      getIcon: () => icone, updateTriggers: { getIcon: tema }, getSize: 12, sizeUnits: "pixels",
+      // em metros: de longe vira um ponto de 4 px, de perto para em 16
+      getIcon: () => icone, updateTriggers: { getIcon: tema }, getSize: 60, sizeUnits: "meters", sizeMinPixels: 4, sizeMaxPixels: 16,
     }),
     ...(rota ? [new ScatterplotLayer<Marco>({
       // anel da chave fechada; pisca (alfa) só com animação e enquanto a análise com ela roda
@@ -236,12 +244,11 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       getLineColor: [...primario, rota.piscando && quadro ? 90 + Math.round(165 * Math.abs(Math.sin(Math.PI * quadro.tempo))) : 255],
       updateTriggers: { getLineColor: [tema, rota.piscando && quadro ? quadro.tempo : 0] },
     })] : []),
-    new ScatterplotLayer<Subestacao>({
+    new IconLayer<Subestacao>({
       id: "subestacoes", data: d.subestacoes, visible: visiveis.subestacoes, getPosition: (s) => [s[3], s[2]],
-      getFillColor: (s) => (caidos.ids.has(s[0]) ? [0, 0, 0, 0] : rgb(p.subestacao)),
-      getLineColor: (s) => (caidos.ids.has(s[0]) ? caido : rgb(p.contorno)), stroked: true,
-      updateTriggers: { getFillColor: [tema, caidos.ids], getLineColor: [tema, caidos.ids] },
-      getRadius: 7, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, ...destaque,
+      getIcon: (s) => (caidos.ids.has(s[0]) ? iconeSubCaida : iconeSub), updateTriggers: { getIcon: [tema, caidos.ids] },
+      // em metros: de longe 6 px, de perto para em 22
+      getSize: 150, sizeUnits: "meters", sizeMinPixels: 6, sizeMaxPixels: 22, ...destaque,
     }),
     ...(caidos.ids.size ? [
       new PathLayer<Caminho>({
@@ -256,11 +263,12 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new ScatterplotLayer<Marco>({
       id: "gargalos-alerta", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getFillColor: cor.gargalo, getLineColor: fundo, stroked: true,
-      getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, pickable: clicavel,
+      // em metros: com a cidade inteira na tela fica em 3 px; de perto, os 9 px de antes
+      getRadius: 60, radiusUnits: "meters", radiusMinPixels: 3, radiusMaxPixels: 9, lineWidthUnits: "pixels", getLineWidth: 1.5,
     }),
     new TextLayer<Marco>({
       id: "gargalos-alerta-texto", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
-      getText: () => "!", getColor: [255, 255, 255], getSize: 13, sizeUnits: "pixels",
+      getText: () => "!", getColor: [255, 255, 255], getSize: 120, sizeUnits: "meters", sizeMaxPixels: 13,
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];

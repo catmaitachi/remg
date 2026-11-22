@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useControl, useMap } from "react-map-gl/maplibre";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { PickingInfo } from "@deck.gl/core";
-import { alvoDoClique, type Alvo } from "../tela/falhas";
+import type { Alvo } from "../tela/falhas";
 import { selecaoDoClique, type Selecao } from "../tela/selecao";
 import { criarLaco } from "./animacao";
 import { espalharAlertas } from "./alertas";
@@ -11,12 +11,12 @@ import type { Tema } from "./cores";
 
 interface Props {
   dados: Dados | null; visiveis: Visiveis; tema: Tema; animando: boolean; intensidade: Intensidade;
-  falhas: Alvo[]; derrubando: boolean; aoClicar: (alvo: Alvo) => void; aoSelecionar: (s: Selecao) => void;
+  falhas: Alvo[]; aoSelecionar: (s: Selecao) => void;
   rota: Rota | null;
 }
 
 /** Fica dentro do <Map>: lê zoom e limites do mapa a cada quadro enquanto a animação está ligada. */
-export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falhas, derrubando, aoClicar, aoSelecionar, rota }: Props) {
+export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falhas, aoSelecionar, rota }: Props) {
   const { current: mapa } = useMap();
   const [quadro, setQuadro] = useState<Quadro | null>(null);
   // zoom em passos de 0,5, lido no fim do zoom: os marcadores de gargalo se espalham por ele
@@ -43,8 +43,8 @@ export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falh
   }, [animando, mapa]);
 
   const camadas = useMemo(
-    () => (vista ? montarCamadas(vista.dados, visiveis, tema, animando ? quadro : null, { intensidade, alertas, caidos: vista.caidos, derrubando, rota }) : []),
-    [vista, visiveis, tema, animando, quadro, intensidade, alertas, derrubando, rota],
+    () => (vista ? montarCamadas(vista.dados, visiveis, tema, animando ? quadro : null, { intensidade, alertas, caidos: vista.caidos, rota }) : []),
+    [vista, visiveis, tema, animando, quadro, intensidade, alertas, rota],
   );
   const overlay = useControl(() => new MapboxOverlay({ layers: camadas }));
   overlay.setProps({
@@ -52,17 +52,12 @@ export function CamadasDeck({ dados, visiveis, tema, animando, intensidade, falh
     // linha de 2 px é difícil de acertar: o clique pega o que estiver a até 6 px
     pickingRadius: 6,
     onClick: (info: PickingInfo) => {
-      if (derrubando) {
-        const alvo = alvoDoClique(info.layer?.id, info.object);
-        if (alvo) aoClicar(alvo);
-        return;
-      }
       const sel = selecaoDoClique(info.layer?.id, info.object);
       if (sel) aoSelecionar(sel);
     },
     // o MapboxOverlay não mexe no cursor do canvas do mapa: a mão vem daqui
     onHover: (info: PickingInfo) => {
-      const acerta = derrubando ? alvoDoClique(info.layer?.id, info.object) : selecaoDoClique(info.layer?.id, info.object);
+      const acerta = selecaoDoClique(info.layer?.id, info.object);
       if (mapa) mapa.getCanvas().style.cursor = acerta ? "pointer" : "";
     },
   });

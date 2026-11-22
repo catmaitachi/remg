@@ -4,7 +4,7 @@ import rotaMock from "../mocks/rota-alternativa.json";
 import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede, RotaAlternativa } from "../api/tipos";
 import {
-  ESTADO_INICIAL, alternarFalha, alvoDoClique, pedidoDe, pedidoPendente, reduzirFalhas, rotuloDoAlvo, type Alvo, type EstadoFalhas,
+  ESTADO_INICIAL, alternarFalha, pedidoDe, pedidoPendente, reduzirFalhas, rotuloDoAlvo, type Alvo, type EstadoFalhas,
 } from "./falhas";
 
 const t1: Alvo = { tipo: "aresta", id: "t:1" };
@@ -31,17 +31,6 @@ test("rótulo usa o nome da subestação e o número do trecho", () => {
   expect(rotuloDoAlvo({ tipo: "aresta", id: "t:678" }, rede)).toBe("Trecho 678");
 });
 
-test("alvoDoClique ignora as outras camadas", () => {
-  for (const camada of ["linhas-at", "chaves", "gargalos-alerta"]) expect(alvoDoClique(camada, { id: "t:1", tipo: "trecho" })).toBeNull();
-  expect(alvoDoClique("trechos", { id: "t:1", tipo: "trecho" })).toEqual(t1);
-  expect(alvoDoClique("caidos", { id: "t:1", tipo: "trecho" })).toEqual(t1);
-  expect(alvoDoClique("subestacoes", ["s:1", "Centro", 0, 0, 1])).toEqual(s1);
-  expect(alvoDoClique("trechos", undefined)).toBeNull();
-});
-
-test("alvoDoClique não derruba chave", () => {
-  expect(alvoDoClique("trechos", { id: "c:1", tipo: "chave" })).toBeNull();
-});
 
 test("pôr e tirar antes da resposta volta ao início", () => {
   const um = passos(pronto, t1);

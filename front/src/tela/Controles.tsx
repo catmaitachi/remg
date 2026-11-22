@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMap } from "react-map-gl/maplibre";
-import type { Intensidade, Visiveis } from "../mapa/camadas";
+import { iconeChave, iconeSubestacao, type Intensidade, type Visiveis } from "../mapa/camadas";
 import { PALETA, type Tema } from "../mapa/cores";
 
 interface Props {
@@ -68,10 +68,14 @@ export function Ferramentas({ visiveis, aoMudar, temChaves, tema, aoTrocarTema, 
   const linhas: { chave: keyof Visiveis; nome: string; apoio?: string; amostra: ReactNode }[] = [
     { chave: "at", nome: "Alta tensão", amostra: <path d="M3 7H23" stroke={p.at} strokeWidth="5" strokeLinecap="round" /> },
     { chave: "distribuicao", nome: "Distribuição", amostra: <path d="M3 7H23" stroke={p.normal} strokeWidth="3" strokeLinecap="round" /> },
-    { chave: "subestacoes", nome: "Subestações", amostra: <circle cx="13" cy="7" r="5" fill={p.subestacao} stroke={p.contorno} strokeWidth="1.5" /> },
+    { chave: "subestacoes", nome: "Subestações", amostra: <image href={iconeSubestacao(p.subestacao, p.contorno, p.fundo)} x="6" y="0" width="14" height="14" /> },
     {
       chave: "chaves", nome: "Chaves", apoio: temChaves ? undefined : "nenhuma nesta rede",
-      amostra: <rect x="8" y="2" width="10" height="10" fill={p.contorno} stroke={p.at} strokeWidth="2" />,
+      amostra: <image href={iconeChave(p.at, p.contorno)} x="6" y="0" width="14" height="14" />,
+    },
+    {
+      chave: "predios3d", nome: "Prédios 3D", apoio: "de perto, inclina o mapa",
+      amostra: <path d="M8 12V5l5-3 5 3v7M8 5l5 3 5-3M13 8v5" fill="none" stroke={p.at} strokeWidth="1.5" strokeLinejoin="round" />,
     },
   ];
 

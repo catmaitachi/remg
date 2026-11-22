@@ -76,7 +76,7 @@ test("desligar distribuição só esconde, sem remontar os dados", () => {
 });
 
 test("cada switch controla a sua camada", () => {
-  const c = porId(dados, { at: false, distribuicao: true, subestacoes: false, chaves: false, criticos: false });
+  const c = porId(dados, { at: false, distribuicao: true, subestacoes: false, chaves: false, criticos: false, predios3d: false });
   expect(c["linhas-at"].props.visible).toBe(false);
   expect(c.subestacoes.props.visible).toBe(false);
   expect(c.chaves.props.visible).toBe(false);
@@ -199,9 +199,9 @@ test("marcadores de gargalo podem vir espalhados de fora (zoom atual)", () => {
 
 // ---------- T20: caído e sem luz ----------
 const t1 = { tipo: "aresta" as const, id: "t:1" };
-const camadasCom = (falhas: { tipo: "aresta" | "subestacao"; id: string }[], tema: "claro" | "escuro" = "claro", derrubando = false) => {
+const camadasCom = (falhas: { tipo: "aresta" | "subestacao"; id: string }[], tema: "claro" | "escuro" = "claro") => {
   const { dados: vista, caidos } = aplicarFalhas(dados, falhas);
-  return Object.fromEntries(montarCamadas(vista, VISIVEIS_INICIAL, tema, null, { caidos, derrubando }).map((c) => [c.id, c])) as Record<string, any>;
+  return Object.fromEntries(montarCamadas(vista, VISIVEIS_INICIAL, tema, null, { caidos }).map((c) => [c.id, c])) as Record<string, any>;
 };
 
 test("trecho com as duas pontas sem energia é sem luz", () => {
@@ -241,9 +241,22 @@ test("subestação caída fica vazada com ✕", () => {
   const { caidos } = aplicarFalhas(dados, [{ tipo: "subestacao", id: s[0] }]);
   expect(caidos.marcas).toEqual([{ id: s[0], posicao: [s[3], s[2]] }]);
   const c = camadasCom([{ tipo: "subestacao", id: s[0] }]);
-  expect(c.subestacoes.props.getFillColor(s)[3]).toBe(0);
-  expect(c.subestacoes.props.getLineColor(s)).toEqual(rgb(PALETA.claro.caido));
-  expect(c.subestacoes.props.getFillColor(rede.subestacoes[1])).toEqual(rgb(PALETA.claro.subestacao));
+  expect(c.subestacoes.props.getIcon(s).id).toBe("subestacao-caida-claro");
+  expect(c.subestacoes.props.getIcon(rede.subestacoes[1]).id).toBe("subestacao-claro");
+});
+
+test("marcadores pelo zoom: em metros, pequenos com a cidade inteira na tela e com teto de perto", () => {
+  const c = camadasCom([]);
+  const g = c["gargalos-alerta"].props, t = c["gargalos-alerta-texto"].props;
+  expect(g.radiusUnits).toBe("meters");
+  expect(g.radiusMinPixels).toBe(3);
+  expect(g.radiusMaxPixels).toBe(9);
+  expect(t.sizeUnits).toBe("meters");
+  expect(t.sizeMaxPixels).toBe(13);
+  expect(c.subestacoes.props.sizeUnits).toBe("meters");
+  expect(c.subestacoes.props.sizeMaxPixels).toBe(22);
+  expect(c.chaves.props.sizeUnits).toBe("meters");
+  expect(c.chaves.props.sizeMaxPixels).toBe(16);
 });
 
 test("caído muda de cor com o tema", () => {
@@ -252,22 +265,16 @@ test("caído muda de cor com o tema", () => {
   expect(cor("claro")).toEqual(rgb("#7f7f7f"));
 });
 
-test("fora do Derrubar, trechos, AT e subestações são clicáveis sem destaque", () => {
-  // T21: o Observar e o Religar abrem o Selecionado no clique; o destaque do mouse é só do Derrubar
-  for (const derrubando of [false, true]) {
-    const c = camadasCom([t1], "claro", derrubando);
-    for (const id of ["trechos", "subestacoes", "caidos", "linhas-at"]) {
-      expect(!!c[id].props.pickable, `${id} ${derrubando}`).toBe(true);
-      expect(!!c[id].props.autoHighlight, `${id} ${derrubando}`).toBe(derrubando && id !== "linhas-at");
-    }
+test("sem modos: trechos, AT, subestações e caídos são clicáveis (o clique seleciona), sem destaque do mouse", () => {
+  const c = camadasCom([t1], "claro");
+  for (const id of ["trechos", "subestacoes", "caidos", "linhas-at"]) {
+    expect(!!c[id].props.pickable, id).toBe(true);
+    expect(!!c[id].props.autoHighlight, id).toBe(false);
   }
 });
 
-test("no Derrubar, linha AT e marcador de gargalo seguram o clique (não derrubam o trecho de baixo)", () => {
-  const c = camadasCom([], "claro", true);
-  expect(c["linhas-at"].props.pickable).toBe(true);
-  expect(c["gargalos-alerta"].props.pickable).toBe(true);
-  expect(!!camadasCom([], "claro", false)["gargalos-alerta"].props.pickable).toBe(false);
+test("o marcador de gargalo deixa o clique passar ao trecho de baixo, que é o que se seleciona", () => {
+  expect(!!camadasCom([], "claro")["gargalos-alerta"].props.pickable).toBe(false);
 });
 
 // ---------- T21: rota do religamento ----------
@@ -305,9 +312,8 @@ test("críticos ficam guardados e desligados", () => {
   expect(VISIVEIS_INICIAL.criticos).toBe(false);
 });
 
-test("no Derrubar a rota não segura o clique (o trecho de baixo é que cai)", () => {
-  const com = (derrubando: boolean) => Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", null,
-    { derrubando, rota: prepararRota(dados, CAMINHO, ["c:1"], false)! }).map((c) => [c.id, c])) as Record<string, any>;
-  expect(!!com(true).rota.props.pickable).toBe(false);
-  expect(!!com(false).rota.props.pickable).toBe(true);
+test("a rota é clicável: o clique nela seleciona o trecho", () => {
+  const c = Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", null,
+    { rota: prepararRota(dados, CAMINHO, ["c:1"], false)! }).map((c) => [c.id, c])) as Record<string, any>;
+  expect(!!c.rota.props.pickable).toBe(true);
 });

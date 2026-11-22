@@ -1,6 +1,6 @@
 import type { Analise, Pedido, Rede, RotaAlternativa } from "../api/tipos";
 
-/** O que se derruba no modo Derrubar. Na T20, só trecho e subestação (o mock de BH não tem chave nem AT ligada). */
+/** O que se derruba (pelo cartão do selecionado). Na T20, só trecho e subestação (o mock de BH não tem chave nem AT ligada). */
 export type Alvo = { tipo: "aresta" | "subestacao"; id: string };
 
 export function alternarFalha(falhas: Alvo[], alvo: Alvo): Alvo[] {
@@ -15,16 +15,6 @@ export function pedidoDe(falhas: Alvo[], chavesFechadas: string[] = []): Pedido 
 export function rotuloDoAlvo(alvo: Alvo, rede: Rede): string {
   if (alvo.tipo === "subestacao") return rede.subestacoes.find((s) => s[0] === alvo.id)?.[1] ?? alvo.id;
   return `Trecho ${alvo.id.replace(/^t:/, "")}`;
-}
-
-/** Objeto que o deck.gl entregou no clique → alvo. A camada `trechos` também desenha chaves: elas não caem. */
-export function alvoDoClique(camada: string | undefined, objeto: unknown): Alvo | null {
-  if ((camada === "trechos" || camada === "caidos") && objeto && typeof objeto === "object") {
-    const { id, tipo } = objeto as { id?: unknown; tipo?: unknown };
-    return tipo === "trecho" && typeof id === "string" ? { tipo: "aresta", id } : null;
-  }
-  if (camada === "subestacoes" && Array.isArray(objeto) && typeof objeto[0] === "string") return { tipo: "subestacao", id: objeto[0] };
-  return null;
 }
 
 export interface EstadoFalhas {
@@ -125,7 +115,7 @@ interface SituacaoDoReligar { usandoMock: boolean; temFalhas: boolean; temSemLuz
 /** Por que "Achar rota" está desligado; `null` quando dá para pedir. `""` desliga sem texto (o resultado já explica). */
 export function dicaDoReligar({ usandoMock, temFalhas, temSemLuz, calculando, temResultado }: SituacaoDoReligar): string | null {
   if (usandoMock) return "O Religar precisa do servidor.";
-  if (!temFalhas) return "Derrube algo no modo Derrubar primeiro.";
+  if (!temFalhas) return "Derrube um item pelo cartão dele primeiro.";
   // sem ponto sem luz a rota não tem o que religar: o pedido levaria ~8 s em BH para responder "nada"
   if (!temSemLuz && !calculando) return temResultado ? "" : "Nenhum ponto sem luz para religar.";
   return null;
