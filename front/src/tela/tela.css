@@ -48,8 +48,8 @@
 /* coluna de controles e painel de camadas */
 .controles {
   right: var(--margem);
-  /* acima da atribuição do mapa */
-  bottom: calc(var(--margem) + 28px);
+  /* logo acima do botão da atribuição do mapa (24 px) */
+  bottom: calc(var(--margem) + 24px + var(--espaco-2));
   display: grid;
   gap: var(--espaco-1);
   padding: 6px;
