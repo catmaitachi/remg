@@ -16,16 +16,16 @@ Trabalho Prático de Grafos, tema 4. 📚 Spec completa em [`docs/spec/`](docs/s
 
 ### 🗺️ Front
 
-**Precisa ter:** Node 22 e npm. O front funciona sozinho, com os dados de exemplo, sem precisar do servidor.
+**Precisa ter:** Node 22 e npm, e o servidor ligado (acima). Sem o servidor, dá para usar os dados de exemplo.
 
 1. **Instalar:** `cd front && npm install`. Isso também liga os hooks do verificador.
 2. **Escolher de onde vêm os dados:** copie `front/.env.example` para `front/.env.local`.
-   - `VITE_USAR_MOCK=true` → usa a rede de BH de exemplo (`front/src/mocks/rede.bh.json`).
-   - Sem a linha → busca o servidor em `http://localhost:8080/api`.
+   - `VITE_USAR_MOCK=false` (o padrão) → busca o servidor em `http://localhost:8080/api`, com os números do núcleo.
+   - `VITE_USAR_MOCK=true` → usa a rede de BH de exemplo (`front/src/mocks/rede.bh.json`), sem servidor.
 3. **Rodar:** `npm run dev` e abra <http://localhost:5173>.
 4. **Testes:** `npm test`.
 
-- 🗺️ A geometria da rede de exemplo é real (ruas e linhas de BH, da T06). Capacidade e demanda são **valores fixos de mentira** (1000 kVA e 1 kVA), porque quem calcula os valores de verdade é o núcleo.
+- 🗺️ No exemplo, a geometria é real (ruas e linhas de BH, da T06), mas capacidade e demanda são **valores fixos de mentira** (1000 kVA e 1 kVA), porque quem calcula os valores de verdade é o núcleo.
 - 🔁 Os CSV de `data/bh/` mudaram? Rode `npm run mock:bh` para gerar o mock de novo.
 - 🔌 `Não deu para carregar a rede` → o servidor não está ligado. Ligue o servidor ou use `VITE_USAR_MOCK=true`.
 

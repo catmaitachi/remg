@@ -1,23 +1,12 @@
 """🌊 CalcularFluxo: fluxo total, fluxo e uso por aresta e gargalos (spec 04, T13)."""
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
 
 from core.dominio.gargalo import eh_gargalo
 from core.dominio.rede_eletrica import RedeEletrica, va_para_kva
 from core.grafo.dinic import Dinic
 from core.grafo.grafo import Grafo
-
-
-@dataclass
-class ResultadoAnalise:
-    """Mesmos campos do POST /analise (06), menos o tempoMs, que o adaptador mede."""
-    fluxo_total: float                        # kVA que chegam em T
-    demanda_total: float                      # kVA pedidos por todos os pontos
-    fluxo: list[tuple[str, float, float]]     # (id, fluxo kVA, uso 0..1), só arestas com fluxo > 0
-    gargalos: list[str]
-    sem_energia: list[str]                    # pontos sem energia (a SimularFalha preenche)
-    demanda_sem_energia: float
+from core.portas.servico_de_analise import ResultadoAnalise
 
 
 class CalcularFluxo:
@@ -38,15 +27,15 @@ class CalcularFluxo:
         no_corte = {e >> 1 for e in dinic.corte_minimo()}
 
         fluxo, gargalos = [], []
-        # Cada aresta é o par de arcos (2k, 2k+1) e fluxo[e ^ 1] == -fluxo[e]: o valor absoluto é o
-        # fluxo da aresta, seja qual for o sentido.
+        # Cada aresta é o par de arcos (2k, 2k+1), e o arco 2k vai de `de` para `para` (a RedeEletrica
+        # cria a aresta com u = de). O sinal de fluxo[2k] é o sentido que o 06 pede: positivo = de → para.
         for e in range(0, len(g.para), 2):
             id_ = rede.id_do_arco(e)
             if id_ is None:
                 continue  # aresta virtual (S, T, transformação): não aparece no mapa
-            f = abs(resultado.fluxo[e])
+            f = resultado.fluxo[e]
             uso = resultado.uso[e]
-            if f > 0:
+            if f != 0:
                 fluxo.append((id_, va_para_kva(f), uso))
             if eh_gargalo((e >> 1) in no_corte, uso):
                 gargalos.append(id_)

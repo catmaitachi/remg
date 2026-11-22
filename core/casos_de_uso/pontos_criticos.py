@@ -4,16 +4,9 @@ Numa rede radial quase todo trecho é ponte. O dado útil é onde a chave de man
 isso o Tarjan roda com todas as chaves fechadas. Resposta do GET /criticos (06), menos o tempoMs.
 """
 
-from dataclasses import dataclass
-
 from core.dominio.rede_eletrica import RedeEletrica
 from core.grafo.tarjan import Tarjan
-
-
-@dataclass
-class ResultadoCriticos:
-    pontes: list[str]
-    articulacoes: list[str]
+from core.portas.servico_de_analise import ResultadoCriticos
 
 
 class PontosCriticos:

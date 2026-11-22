@@ -93,6 +93,11 @@ class RedeEletrica:
         return len(self._ids)
 
     @property
+    def num_arestas(self) -> int:
+        """Arestas do grafo, contando as virtuais (S, T e transformação)."""
+        return len(self._arestas)
+
+    @property
     def s(self) -> int:
         return self._indice[ID_S]
 

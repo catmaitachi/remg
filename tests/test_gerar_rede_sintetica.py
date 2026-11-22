@@ -84,6 +84,12 @@ class TestGerarRedeSintetica(unittest.TestCase):
         self.assertAlmostEqual(demanda["p:1"], KVA_POR_METRO * 100 / 2)
         self.assertAlmostEqual(demanda["p:2"], KVA_POR_METRO * (100 + 100 + 1000) / 2)
 
+    def test_cabo_com_folga_de_1_1_a_2_5(self):
+        # Q2 ✅ (T16): abaixo de 1 o cabo nasce menor que a demanda e a cidade intacta já fica sem luz;
+        # até 1,6 quase todo cabo passa de 60% de uso e o mapa fica amarelo. 1,1 a 2,5 em BH: 279
+        # gargalos, 60% dos cabos verdes e 40% amarelos.
+        self.assertEqual(FATOR_CABO, (1.1, 2.5))
+
     def test_capacidades(self):
         rede = gerar()
         demanda = {p.id: p.demanda_kva for p in rede.pontos}

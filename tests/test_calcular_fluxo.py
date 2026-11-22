@@ -71,8 +71,20 @@ class TestCalcularFluxo(unittest.TestCase):
         self.assertEqual(r.fluxo_total, 70)
         # A divisão entre t:2 e c:1 não é única; só se sabe que p:3 passa a receber pela chave.
         fluxo = dict((i, f) for i, f, _ in r.fluxo)
-        self.assertGreaterEqual(fluxo["c:1"], 10)
-        self.assertEqual(fluxo["t:3"], 10 + fluxo["c:1"])
+        # c:1 vai de p:3 para p:4, mas a energia corre de p:4 para p:3: fluxo negativo (06).
+        self.assertLessEqual(fluxo["c:1"], -10)
+        self.assertEqual(fluxo["t:3"], 10 - fluxo["c:1"])
+
+    def test_fluxo_contra_o_sentido_da_aresta_e_negativo(self):
+        r = rede()
+        r_invertida = RedeEletrica(
+            subestacoes=r.subestacoes, pontos=r.pontos,
+            trechos=[Trecho("t:1", "p:2", "p:1", 60), Trecho("t:2", "p:2", "p:3", 30),
+                     Trecho("t:3", "p:1", "p:4", 50)],
+            chaves=r.chaves,
+        )
+        fluxo = {id_: (f, round(uso, 2)) for id_, f, uso in calcular(r_invertida).fluxo}
+        self.assertEqual(fluxo["t:1"], (-50, 0.83))
 
     def test_trecho_caido_nao_e_gargalo(self):
         r = calcular(rede(), falhas=["t:3"])
