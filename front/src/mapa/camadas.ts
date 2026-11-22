@@ -3,8 +3,7 @@ import type { Analise, Rede, Subestacao, TipoAresta } from "../api/tipos";
 import type { Alvo } from "../tela/falhas";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
-import { ExtensaoOnda, INDICE_DA_FAIXA, type OndaProps } from "./onda";
-import { escolherRaio, montarRaio } from "./raio";
+import { RAIO, escolherRaio, montarRaio } from "./raio";
 import { agruparGargalos } from "./alertas";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
@@ -13,8 +12,11 @@ export function estiloDoMapa(escuro: boolean): string {
   return `https://tiles.openfreemap.org/styles/${escuro ? "dark" : "positron"}`;
 }
 
-export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean };
-export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true };
+export type Visiveis = { at: boolean; distribuicao: boolean; subestacoes: boolean; chaves: boolean; criticos: boolean; predios3d: boolean };
+// shortcut: `criticos` fica guardado sem interruptor nem camada; em BH são 25.689 pontes e 20.017 articulações (rede radial).
+// Desenhar quando houver um recorte útil.
+// predios3d não é camada do deck: o Predios3D põe a extrusão no estilo do MapLibre
+export const VISIVEIS_INICIAL: Visiveis = { at: true, distribuicao: true, subestacoes: true, chaves: true, criticos: false, predios3d: false };
 
 export type LonLat = [number, number];
 export interface Caminho {
@@ -109,10 +111,29 @@ const iconeCaido = (cor: string, fundo: string) =>
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18" stroke="${fundo}" stroke-width="7"/><path d="M6 6l12 12M18 6 6 18" stroke="${cor}" stroke-width="3.5"/></svg>`,
   )}`;
 
-const iconeChave = (borda: string, fundo: string) =>
-  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect x="3" y="3" width="18" height="18" fill="${fundo}" stroke="${borda}" stroke-width="3"/></svg>`,
-  )}`;
+const svg = (corpo: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">${corpo}</svg>`)}`;
+/** Chave seccionadora aberta: dois bornes e a lâmina levantada, num quadrado da cor da AT. */
+export const iconeChave = (borda: string, fundo: string) => svg(
+  `<rect x="3" y="3" width="26" height="26" rx="5" fill="${fundo}" stroke="${borda}" stroke-width="3"/>` +
+  `<path d="M9 21h3M20 21h3M12 21l8.5-8" fill="none" stroke="${borda}" stroke-width="2.5" stroke-linecap="round"/>` +
+  `<circle cx="12" cy="21" r="2" fill="${borda}"/><circle cx="20.5" cy="21" r="2" fill="${borda}"/>`,
+);
+/** Ícone do item no cartão do selecionado: os mesmos do mapa para subestação e chave; trecho e AT como traço. */
+export function iconeDoTipo(tipo: "subestacao" | "trecho" | "chave" | "linha_at", tema: Tema): string {
+  const p = PALETA[tema];
+  if (tipo === "subestacao") return iconeSubestacao(p.subestacao, p.contorno, p.fundo);
+  if (tipo === "chave") return iconeChave(p.at, p.contorno);
+  const [cor, largura] = tipo === "linha_at" ? [p.at, 6] : [p.normal, 3.5];
+  return svg(
+    `<path d="M5 25 27 7" stroke="${cor}" stroke-width="${largura}" stroke-linecap="round"/>` +
+    (tipo === "trecho" ? `<circle cx="5" cy="25" r="3" fill="${cor}"/><circle cx="27" cy="7" r="3" fill="${cor}"/>` : ""),
+  );
+}
+/** Subestação: círculo com um raio; caída, só o contorno na cor de caído. */
+export const iconeSubestacao = (cheio: string, borda: string, raio: string, caida = false) => svg(
+  `<circle cx="16" cy="16" r="13" fill="${caida ? "none" : cheio}" stroke="${borda}" stroke-width="2.5"/>` +
+  `<path d="M18 6.5 10.5 17.5h5L14 25.5l7.5-11h-5z" fill="${caida ? borda : raio}" stroke-linejoin="round"/>`,
+);
 
 // Brilho parado do efeito elétrico (T18): versão suave do protótipo, que ali ia de 26% a 65%. A rede de BH é
 // densa, então o normal quase não brilha. Fios e faíscas em movimento ficam para a T19.
@@ -123,42 +144,42 @@ const BRILHO: Record<Faixa, { largura: number; alfa: Record<Tema, number> }> = {
 };
 
 /** O que muda a cada quadro da animação. `limites` = [oeste, sul, leste, norte]. */
+/** Rota do religamento (T21): caminho e chaves fechadas; o anel pisca enquanto a análise com elas roda. */
+export interface Rota { caminho: Caminho[]; chaves: Marco[]; piscando: boolean }
+
+export function prepararRota(d: Dados, ids: string[], chavesFechadas: string[], piscando: boolean): Rota | null {
+  if (!ids.length && !chavesFechadas.length) return null;
+  const trechos = new Map(d.trechos.map((t) => [t.id, t])), chaves = new Map(d.chaves.map((c) => [c.id, c]));
+  return {
+    caminho: ids.flatMap((id) => trechos.get(id) ?? []), // id fora da rede: ignora
+    chaves: chavesFechadas.flatMap((id) => chaves.get(id) ?? []),
+    piscando,
+  };
+}
+
 export interface Quadro { tempo: number; zoom: number; limites: [number, number, number, number] }
 
-/** Intensidade dos efeitos, escolhida no painel de camadas. A suave é a da prévia aprovada. */
+/** Intensidade do vibrar elétrico, escolhida no painel de camadas: a opacidade do raio. */
 export type Intensidade = "suave" | "media" | "forte";
-export const INTENSIDADE: Record<Intensidade, { ganho: number; largura: number; alfaRaio: number }> = {
-  suave: { ganho: 1, largura: 2, alfaRaio: 153 },
-  media: { ganho: 1.8, largura: 3, alfaRaio: 204 },
-  forte: { ganho: 2.6, largura: 4, alfaRaio: 255 },
+export const INTENSIDADE: Record<Intensidade, { alfaRaio: number }> = {
+  suave: { alfaRaio: 153 },
+  media: { alfaRaio: 204 },
+  forte: { alfaRaio: 255 },
 };
 export interface Opcoes {
   intensidade?: Intensidade;
   /** marcadores de gargalo já espalhados para o zoom atual; sem isso, todos os de `Dados.alertas` */
   alertas?: Marco[];
   caidos?: Caidos;
-  /** modo Derrubar: trechos e subestações respondem ao mouse */
-  derrubando?: boolean;
+  rota?: Rota | null;
 }
 
-const EXTENSAO_ONDA = new ExtensaoOnda();
-const SOMA_LUZ = {
-  blend: true, blendColorSrcFactor: "one", blendColorDstFactor: "one", blendAlphaSrcFactor: "one", blendAlphaDstFactor: "one",
-} as const;
-
-/** Camadas que só existem com a animação ligada; entram logo acima dos trechos. */
-function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro, cor: Record<Faixa, [number, number, number]>, intensidade: Intensidade) {
+/** Camadas que só existem com a animação ligada; entram logo acima dos trechos. A onda saiu (rede densa demais): fica o
+ * vibrar elétrico, que o escolherRaio só liga de perto. */
+function camadasAnimadas(d: Dados, visiveis: Visiveis, quadro: Quadro, cor: Record<Faixa, [number, number, number]>, intensidade: Intensidade) {
   const forca = INTENSIDADE[intensidade];
   const { fios, faiscas } = montarRaio(escolherRaio(d.comFluxo, quadro), quadro);
   return [
-    new PathLayer<Caminho, OndaProps<Caminho>>({
-      id: "ondas", data: d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: (c) => cor[c.faixa!], updateTriggers: { getColor: tema },
-      getWidth: forca.largura, widthUnits: "pixels", widthMinPixels: 1,
-      extensions: [EXTENSAO_ONDA], tempo: quadro.tempo, aditivo: tema === "escuro", ganho: forca.ganho,
-      getOnda: (c) => [c.sentido!.tempoInicio, c.sentido!.comprimento, c.sentido!.positivo ? 1 : -1, INDICE_DA_FAIXA[c.faixa!]],
-      parameters: tema === "escuro" ? SOMA_LUZ : {},
-    }),
     new PathLayer<Caminho>({
       id: "raio", data: fios, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], forca.alfaRaio], updateTriggers: { getColor: intensidade }, getWidth: 1, widthUnits: "pixels", jointRounded: true,
@@ -172,15 +193,20 @@ function camadasAnimadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadr
 
 export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: Quadro | null = null, opcoes: Opcoes = {}) {
   const intensidade = opcoes.intensidade ?? "media";
-  const caidos = opcoes.caidos ?? SEM_CAIDOS, clicavel = !!opcoes.derrubando;
+  const caidos = opcoes.caidos ?? SEM_CAIDOS;
   // os espalhados vêm de fora; com falhas, de aplicarFalhas (já sem os caídos)
   const alertas = opcoes.alertas ?? d.alertas;
   const p = PALETA[tema];
   const cor = { normal: rgb(p.normal), alerta: rgb(p.alerta), gargalo: rgb(p.gargalo), semFluxo: rgb(p.semFluxo) };
-  const semLuz = rgb(p.semLuz), caido = rgb(p.caido);
-  const destaque = { pickable: clicavel, autoHighlight: clicavel, highlightColor: [...rgb(p.primario), 200] as [number, number, number, number] };
+  const semLuz = rgb(p.semLuz), caido = rgb(p.caido), primario = rgb(p.primario);
+  const rota = opcoes.rota ?? null;
+  // sem modos: o clique sempre seleciona (o Derrubar mora no cartão do selecionado)
+  const destaque = { pickable: true };
   const fundo = rgb(p.fundo);
-  const icone = { url: iconeChave(p.at, p.contorno), width: 24, height: 24, id: `chave-${tema}` };
+  const vibrando = !!quadro && quadro.zoom >= RAIO.ZOOM;
+  const icone = { url: iconeChave(p.at, p.contorno), width: 32, height: 32, id: `chave-${tema}` };
+  const iconeSub = { url: iconeSubestacao(p.subestacao, p.contorno, p.fundo), width: 32, height: 32, id: `subestacao-${tema}` };
+  const iconeSubCaida = { url: iconeSubestacao(p.subestacao, p.caido, p.fundo, true), width: 32, height: 32, id: `subestacao-caida-${tema}` };
   const iconeX = { url: iconeCaido(p.caido, p.fundo), width: 24, height: 24, id: `caido-${tema}` };
 
   const camadas = [
@@ -188,40 +214,52 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       // com animação, a onda faz o brilho das normais: o brilho largo nos 35 mil trechos custava metade do FPS no arraste
       id: "brilho", data: quadro ? d.destaques : d.comFluxo, visible: visiveis.distribuicao, getPath: (c) => c.path,
       getColor: (c) => [...cor[c.faixa!], Math.round(BRILHO[c.faixa!].alfa[tema] * 255)],
-      getWidth: (c) => BRILHO[c.faixa!].largura, updateTriggers: { getColor: tema },
-      widthUnits: "pixels", capRounded: true, jointRounded: true,
+      // em metros: de longe some quase todo, de perto para em 12 px
+      getWidth: (c) => BRILHO[c.faixa!].largura * 4, updateTriggers: { getColor: tema },
+      widthUnits: "meters", widthMaxPixels: 12, capRounded: true, jointRounded: true,
     }),
     new PathLayer<Caminho>({
       id: "halo-gargalos", data: d.gargalos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      getColor: fundo, getWidth: 8, widthUnits: "pixels", capRounded: true,
+      getColor: fundo, getWidth: 25, widthUnits: "meters", widthMinPixels: 1, widthMaxPixels: 8, capRounded: true,
     }),
     new PathLayer<Caminho>({
       id: "trechos", data: d.trechos, visible: visiveis.distribuicao, getPath: (c) => c.path,
-      // com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e a onda e o raio correm por cima, como na prévia
+      // de perto e com animação, a linha vira trilho apagado (com fluxo 30%, sem fluxo 50%) e o raio corre por cima, como na prévia
       getColor: (c): [number, number, number] | [number, number, number, number] => {
         if (caidos.ids.has(c.id)) return [0, 0, 0, 0]; // o tracejado da camada `caidos` ocupa o lugar
         if (c.semLuz) return semLuz;
-        return quadro ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"];
+        return vibrando ? [...cor[c.faixa ?? "semFluxo"], c.faixa ? 77 : 128] : cor[c.faixa ?? "semFluxo"];
       },
-      updateTriggers: { getColor: [tema, !!quadro, caidos.ids] },
-      getWidth: 2, widthUnits: "pixels", widthMinPixels: 1, ...destaque,
+      updateTriggers: { getColor: [tema, vibrando, caidos.ids] },
+      // em metros: com a cidade inteira na tela fica em meio pixel; de perto para em 2 px
+      getWidth: 6, widthUnits: "meters", widthMinPixels: 0.5, widthMaxPixels: 2, ...destaque,
     }),
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
-      getColor: rgb(p.at), getWidth: 6, widthUnits: "pixels", jointRounded: true, capRounded: true,
-      // no Derrubar segura o clique (alvoDoClique ignora): senão a rua escondida embaixo é que cai
-      pickable: clicavel,
+      getColor: rgb(p.at), getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
+      pickable: true,
     }),
+    ...(rota ? [new PathLayer<Caminho>({
+      id: "rota", data: rota.caminho, getPath: (c) => c.path, getColor: primario,
+      getWidth: 6, widthUnits: "pixels", capRounded: true, jointRounded: true, pickable: true,
+    })] : []),
     new IconLayer<Marco>({
       id: "chaves", data: d.chaves, visible: visiveis.chaves, getPosition: (m) => m.posicao,
-      getIcon: () => icone, updateTriggers: { getIcon: tema }, getSize: 12, sizeUnits: "pixels",
+      // em metros: de longe vira um ponto de 4 px, de perto para em 16
+      getIcon: () => icone, updateTriggers: { getIcon: tema }, getSize: 60, sizeUnits: "meters", sizeMinPixels: 4, sizeMaxPixels: 16,
     }),
-    new ScatterplotLayer<Subestacao>({
+    ...(rota ? [new ScatterplotLayer<Marco>({
+      // anel da chave fechada; pisca (alfa) só com animação e enquanto a análise com ela roda
+      id: "rota-chaves", data: rota.chaves, getPosition: (m) => m.posicao,
+      filled: false, stroked: true, getRadius: 10, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 3,
+      getLineColor: [...primario, rota.piscando && quadro ? 90 + Math.round(165 * Math.abs(Math.sin(Math.PI * quadro.tempo))) : 255],
+      updateTriggers: { getLineColor: [tema, rota.piscando && quadro ? quadro.tempo : 0] },
+    })] : []),
+    new IconLayer<Subestacao>({
       id: "subestacoes", data: d.subestacoes, visible: visiveis.subestacoes, getPosition: (s) => [s[3], s[2]],
-      getFillColor: (s) => (caidos.ids.has(s[0]) ? [0, 0, 0, 0] : rgb(p.subestacao)),
-      getLineColor: (s) => (caidos.ids.has(s[0]) ? caido : rgb(p.contorno)), stroked: true,
-      updateTriggers: { getFillColor: [tema, caidos.ids], getLineColor: [tema, caidos.ids] },
-      getRadius: 7, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, ...destaque,
+      getIcon: (s) => (caidos.ids.has(s[0]) ? iconeSubCaida : iconeSub), updateTriggers: { getIcon: [tema, caidos.ids] },
+      // em metros: de longe 6 px, de perto para em 22
+      getSize: 150, sizeUnits: "meters", sizeMinPixels: 6, sizeMaxPixels: 22, ...destaque,
     }),
     ...(caidos.ids.size ? [
       new PathLayer<Caminho>({
@@ -236,14 +274,15 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     new ScatterplotLayer<Marco>({
       id: "gargalos-alerta", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
       getFillColor: cor.gargalo, getLineColor: fundo, stroked: true,
-      getRadius: 9, radiusUnits: "pixels", lineWidthUnits: "pixels", getLineWidth: 2, pickable: clicavel,
+      // em metros: com a cidade inteira na tela fica em 3 px; de perto, os 9 px de antes
+      getRadius: 60, radiusUnits: "meters", radiusMinPixels: 3, radiusMaxPixels: 9, lineWidthUnits: "pixels", getLineWidth: 1.5,
     }),
     new TextLayer<Marco>({
       id: "gargalos-alerta-texto", data: alertas, visible: visiveis.distribuicao, getPosition: (m) => m.posicao,
-      getText: () => "!", getColor: [255, 255, 255], getSize: 13, sizeUnits: "pixels",
+      getText: () => "!", getColor: [255, 255, 255], getSize: 120, sizeUnits: "meters", sizeMaxPixels: 13,
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
-  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, tema, quadro, cor, intensidade));
+  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, quadro, cor, intensidade));
   return camadas;
 }

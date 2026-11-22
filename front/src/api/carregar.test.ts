@@ -1,7 +1,9 @@
 import { expect, test } from "vitest";
 import analise from "../mocks/analise.json";
 import pequena from "../mocks/rede.pequena.json";
-import { carregarAnalise, carregarRede, pedirAnalise, urlDaAnalise, urlDaRede } from "./carregar";
+import rota from "../mocks/rota-alternativa.json";
+import { carregarAnalise, carregarCriticos, carregarRede, pedirAnalise, pedirRota, urlDaAnalise, urlDaRede } from "./carregar";
+import criticos from "../mocks/criticos.json";
 import { validarAnalise } from "./validar";
 
 const resposta = (status: number, corpo: unknown) =>
@@ -84,4 +86,28 @@ test("pedirAnalise com mock não calcula pedido já cancelado", async () => {
   const pedido = pedirAnalise(pedidoT1, pequena as never, controle.signal, true);
   controle.abort();
   await expect(pedido).rejects.toMatchObject({ name: "AbortError" });
+});
+
+test("rota faz POST no /rota-alternativa com o pedido", async () => {
+  let url = "", init: RequestInit | undefined;
+  const buscar = (u: RequestInfo | URL, i?: RequestInit) => { url = String(u); init = i; return resposta(200, rota); };
+  const controle = new AbortController();
+  await expect(pedirRota(pedidoT1, controle.signal, buscar as typeof fetch)).resolves.toEqual(rota);
+  expect(url).toBe("http://localhost:8080/api/rota-alternativa");
+  expect(init?.method).toBe("POST");
+  expect(init?.body).toBe(JSON.stringify(pedidoT1));
+  expect(init?.signal).toBe(controle.signal);
+});
+
+test("rota fora do contrato é recusada", async () => {
+  await expect(pedirRota(pedidoT1, undefined, () => resposta(200, {}))).rejects.toThrow(/contrato/);
+});
+
+test("críticos: GET /criticos validado; no mock não há (o exemplo não bate com a rede de BH)", async () => {
+  const urls: string[] = [];
+  const buscar = (url: string) => { urls.push(url); return resposta(200, criticos); };
+  await expect(carregarCriticos(false, buscar as unknown as typeof fetch)).resolves.toEqual(criticos);
+  expect(urls).toEqual(["http://localhost:8080/api/criticos"]);
+  await expect(carregarCriticos(false, () => resposta(200, { pontes: [] }))).rejects.toThrow(/contrato/);
+  await expect(carregarCriticos(true, () => { throw new Error("não deveria buscar"); })).resolves.toBeNull();
 });

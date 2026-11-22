@@ -1,7 +1,7 @@
 import urlBh from "../mocks/rede.bh.json?url"; // ?url: o JSON de 4 MB fica fora do bundle e é lido por fetch
 import urlAnaliseBh from "../mocks/analise.bh.json?url";
-import type { Analise, Pedido, Rede } from "./tipos";
-import { validarAnalise, validarRede } from "./validar";
+import type { Analise, Criticos, Pedido, Rede, RotaAlternativa } from "./tipos";
+import { validarAnalise, validarCriticos, validarRede, validarRota } from "./validar";
 
 export const SERVIDOR = "http://localhost:8080/api";
 
@@ -40,6 +40,12 @@ export function carregarRede(usarMock = usarMockPadrao(), buscar: typeof fetch =
   return buscarValidado(urlDaRede(usarMock), undefined, usarMock, buscar, validarRede, "a rede");
 }
 
+/** Pontes e articulações da rede sem falhas. No mock não há: o exemplo de críticos não é o da rede de BH. */
+export async function carregarCriticos(usarMock = usarMockPadrao(), buscar: typeof fetch = fetch): Promise<Criticos | null> {
+  if (usarMock) return null;
+  return buscarValidado(`${SERVIDOR}/criticos`, undefined, usarMock, buscar, validarCriticos, "os pontos críticos");
+}
+
 /** Análise da rede sem falhas (pedido vazio). */
 export function carregarAnalise(usarMock = usarMockPadrao(), buscar: typeof fetch = fetch): Promise<Analise> {
   const init = usarMock ? undefined : { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" };
@@ -64,4 +70,10 @@ export async function pedirAnalise(
   }
   const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pedido), signal };
   return buscarValidado(urlDaAnalise(false), init, false, buscar, validarAnalise, "a análise");
+}
+
+/** Rota alternativa (T21). Sem caminho de mock: o mock de BH não tem chaves, e o Religar fica desligado nele. */
+export function pedirRota(pedido: Pedido, signal?: AbortSignal, buscar: typeof fetch = fetch): Promise<RotaAlternativa> {
+  const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(pedido), signal };
+  return buscarValidado(`${SERVIDOR}/rota-alternativa`, init, false, buscar, validarRota, "a rota");
 }

@@ -3,7 +3,10 @@ import analiseMock from "../mocks/analise.json";
 import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede } from "../api/tipos";
 import { PALETA, rgb } from "./cores";
-import { VISIVEIS_INICIAL, aplicarFalhas, estiloDoMapa, montarCamadas, prepararDados, type Quadro, type Visiveis } from "./camadas";
+import {
+  iconeDoTipo,
+  VISIVEIS_INICIAL, aplicarFalhas, estiloDoMapa, montarCamadas, prepararDados, prepararRota, type Quadro, type Visiveis,
+} from "./camadas";
 
 const rede = pequena as unknown as Rede;
 // Cópia local: o mock não tem nenhum trecho na faixa de alerta.
@@ -74,7 +77,7 @@ test("desligar distribuição só esconde, sem remontar os dados", () => {
 });
 
 test("cada switch controla a sua camada", () => {
-  const c = porId(dados, { at: false, distribuicao: true, subestacoes: false, chaves: false });
+  const c = porId(dados, { at: false, distribuicao: true, subestacoes: false, chaves: false, criticos: false, predios3d: false });
   expect(c["linhas-at"].props.visible).toBe(false);
   expect(c.subestacoes.props.visible).toBe(false);
   expect(c.chaves.props.visible).toBe(false);
@@ -86,12 +89,13 @@ test("tema escuro troca as cores e os gatilhos de cor", () => {
   expect(escuro.trechos.props.updateTriggers.getColor).not.toEqual(claro.trechos.props.updateTriggers.getColor);
 });
 
-test("larguras em pixels: 2 no trecho, 6 na alta tensão", () => {
+test("larguras em metros: com muita rede na tela as linhas ficam bem finas, de perto param num teto", () => {
   const c = porId();
-  expect(c.trechos.props.widthUnits).toBe("pixels");
-  expect(c["linhas-at"].props.widthUnits).toBe("pixels");
-  expect(c.trechos.props.getWidth).toBe(2);
-  expect(c["linhas-at"].props.getWidth).toBe(6);
+  for (const id of ["trechos", "linhas-at", "brilho", "halo-gargalos"]) expect(c[id].props.widthUnits).toBe("meters");
+  expect(c.trechos.props.widthMinPixels).toBeLessThan(1);
+  expect(c.trechos.props.widthMaxPixels).toBe(2);
+  expect(c["linhas-at"].props.widthMaxPixels).toBe(6);
+  expect(c["linhas-at"].props.widthMinPixels).toBeGreaterThan(c.trechos.props.widthMinPixels);
 });
 
 test("acessores entregam [lon, lat] iguais aos do mock", () => {
@@ -138,37 +142,29 @@ const Q: Quadro = { tempo: 12.5, zoom: 12, limites: [-44.1, -20.1, -43.8, -19.7]
 const comQuadro = (tema: "claro" | "escuro" = "claro", d = dados): Record<string, any> =>
   Object.fromEntries(montarCamadas(d, VISIVEIS_INICIAL, tema, Q).map((c) => [c.id, c]));
 
-test("com quadro, ondas logo acima dos trechos", () => {
+const PERTO: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
+
+test("sem onda: de longe a animação não acrescenta camada", () => {
   const ids = montarCamadas(dados, VISIVEIS_INICIAL, "claro", Q).map((c) => c.id);
-  expect(ids[ids.indexOf("trechos") + 1]).toBe("ondas");
-  const o = comQuadro().ondas.props;
-  expect(o.data).toBe(dados.comFluxo);
-  expect(o.tempo).toBe(Q.tempo);
-  expect(o.getOnda(dados.comFluxo.find((t) => t.id === "t:3"))[2]).toBe(-1);
+  expect(ids).not.toContain("ondas");
+  expect(ids[ids.indexOf("trechos") + 1]).toBe("raio");
+  expect(comQuadro().raio.props.data).toHaveLength(0);
 });
 
-test("ondas: mistura aditiva só no escuro", () => {
-  const escuro = comQuadro("escuro").ondas.props, claro = comQuadro("claro").ondas.props;
-  expect(escuro.parameters.blendColorDstFactor).toBe("one");
-  expect(escuro.aditivo).toBe(true);
-  expect(claro.parameters?.blendColorDstFactor).toBeUndefined();
-  expect(claro.aditivo).toBe(false);
-  expect(escuro.updateTriggers.getColor).not.toEqual(claro.updateTriggers.getColor);
-});
-
-test("sem análise não há ondas", () => {
-  expect(comQuadro("claro", prepararDados(rede, null)).ondas.props.data).toHaveLength(0);
-});
-
-test("com quadro de perto, raio e faíscas acima das ondas", () => {
-  const perto: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
-  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "escuro", perto).map((c) => c.id);
+test("de perto, só o vibrar elétrico: raio e faíscas logo acima dos trechos", () => {
+  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "escuro", PERTO).map((c) => c.id);
   const i = ids.indexOf("trechos");
-  expect(ids.slice(i, i + 5)).toEqual(["trechos", "ondas", "raio", "faiscas", "linhas-at"]);
+  expect(ids.slice(i, i + 4)).toEqual(["trechos", "raio", "faiscas", "linhas-at"]);
 });
 
-test("com animação, trecho com fluxo fica apagado para a onda aparecer", () => {
-  const parado = porId().trechos.props, animado = comQuadro().trechos.props;
+test("de longe, com animação, o trecho fica com a cor cheia (não há onda por cima)", () => {
+  const t2 = dados.trechos.find((t) => t.id === "t:2");
+  expect(comQuadro().trechos.props.getColor(t2)[3] ?? 255).toBe(255);
+});
+
+test("de perto, com animação, trecho com fluxo fica apagado para o raio aparecer", () => {
+  const parado = porId().trechos.props;
+  const animado = Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", PERTO).map((c) => [c.id, c])).trechos.props as Record<string, any>;
   const t2 = dados.trechos.find((t) => t.id === "t:2"), t4 = dados.trechos.find((t) => t.id === "t:4");
   expect(parado.getColor(t2)[3] ?? 255).toBe(255);
   expect(animado.getColor(t2)[3]).toBeLessThan(128);
@@ -186,18 +182,13 @@ test("com animação, o brilho parado fica só em alerta e gargalo", () => {
   expect(porId().brilho.props.data).toBe(dados.comFluxo);
 });
 
-test("intensidade: mais forte = onda com mais ganho, mais larga, raio mais opaco", () => {
-  const perto: Quadro = { tempo: 1, zoom: 15, limites: [-180, -85, 180, 85] };
-  const em = (intensidade: "suave" | "media" | "forte") =>
-    Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "escuro", perto, { intensidade }).map((c) => [c.id, c])) as Record<string, any>;
-  const [s, m, f] = [em("suave"), em("media"), em("forte")];
-  expect(s.ondas.props.ganho).toBeLessThan(m.ondas.props.ganho);
-  expect(m.ondas.props.ganho).toBeLessThan(f.ondas.props.ganho);
-  expect(s.ondas.props.getWidth).toBeLessThan(f.ondas.props.getWidth);
+test("intensidade: mais forte = raio mais opaco (padrão = média)", () => {
+  const em = (intensidade?: "suave" | "media" | "forte") =>
+    Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "escuro", PERTO, intensidade && { intensidade }).map((c) => [c.id, c])) as Record<string, any>;
   const alfa = (c: Record<string, any>) => c.raio.props.getColor(c.raio.props.data[0])[3];
-  expect(alfa(s)).toBeLessThan(alfa(f));
-  // padrão = média
-  expect(comQuadro().ondas.props.ganho).toBe(m.ondas.props.ganho);
+  expect(alfa(em("suave"))).toBeLessThan(alfa(em("media")));
+  expect(alfa(em("media"))).toBeLessThan(alfa(em("forte")));
+  expect(alfa(em())).toBe(alfa(em("media")));
 });
 
 test("marcadores de gargalo podem vir espalhados de fora (zoom atual)", () => {
@@ -209,9 +200,9 @@ test("marcadores de gargalo podem vir espalhados de fora (zoom atual)", () => {
 
 // ---------- T20: caído e sem luz ----------
 const t1 = { tipo: "aresta" as const, id: "t:1" };
-const camadasCom = (falhas: { tipo: "aresta" | "subestacao"; id: string }[], tema: "claro" | "escuro" = "claro", derrubando = false) => {
+const camadasCom = (falhas: { tipo: "aresta" | "subestacao"; id: string }[], tema: "claro" | "escuro" = "claro") => {
   const { dados: vista, caidos } = aplicarFalhas(dados, falhas);
-  return Object.fromEntries(montarCamadas(vista, VISIVEIS_INICIAL, tema, null, { caidos, derrubando }).map((c) => [c.id, c])) as Record<string, any>;
+  return Object.fromEntries(montarCamadas(vista, VISIVEIS_INICIAL, tema, null, { caidos }).map((c) => [c.id, c])) as Record<string, any>;
 };
 
 test("trecho com as duas pontas sem energia é sem luz", () => {
@@ -251,9 +242,22 @@ test("subestação caída fica vazada com ✕", () => {
   const { caidos } = aplicarFalhas(dados, [{ tipo: "subestacao", id: s[0] }]);
   expect(caidos.marcas).toEqual([{ id: s[0], posicao: [s[3], s[2]] }]);
   const c = camadasCom([{ tipo: "subestacao", id: s[0] }]);
-  expect(c.subestacoes.props.getFillColor(s)[3]).toBe(0);
-  expect(c.subestacoes.props.getLineColor(s)).toEqual(rgb(PALETA.claro.caido));
-  expect(c.subestacoes.props.getFillColor(rede.subestacoes[1])).toEqual(rgb(PALETA.claro.subestacao));
+  expect(c.subestacoes.props.getIcon(s).id).toBe("subestacao-caida-claro");
+  expect(c.subestacoes.props.getIcon(rede.subestacoes[1]).id).toBe("subestacao-claro");
+});
+
+test("marcadores pelo zoom: em metros, pequenos com a cidade inteira na tela e com teto de perto", () => {
+  const c = camadasCom([]);
+  const g = c["gargalos-alerta"].props, t = c["gargalos-alerta-texto"].props;
+  expect(g.radiusUnits).toBe("meters");
+  expect(g.radiusMinPixels).toBe(3);
+  expect(g.radiusMaxPixels).toBe(9);
+  expect(t.sizeUnits).toBe("meters");
+  expect(t.sizeMaxPixels).toBe(13);
+  expect(c.subestacoes.props.sizeUnits).toBe("meters");
+  expect(c.subestacoes.props.sizeMaxPixels).toBe(22);
+  expect(c.chaves.props.sizeUnits).toBe("meters");
+  expect(c.chaves.props.sizeMaxPixels).toBe(16);
 });
 
 test("caído muda de cor com o tema", () => {
@@ -262,16 +266,63 @@ test("caído muda de cor com o tema", () => {
   expect(cor("claro")).toEqual(rgb("#7f7f7f"));
 });
 
-test("fora do Derrubar nada é pickable", () => {
-  for (const [derrubando, esperado] of [[false, false], [true, true]] as const) {
-    const c = camadasCom([t1], "claro", derrubando);
-    for (const id of ["trechos", "subestacoes", "caidos"]) expect(!!c[id].props.pickable, `${id} ${derrubando}`).toBe(esperado);
+test("sem modos: trechos, AT, subestações e caídos são clicáveis (o clique seleciona), sem destaque do mouse", () => {
+  const c = camadasCom([t1], "claro");
+  for (const id of ["trechos", "subestacoes", "caidos", "linhas-at"]) {
+    expect(!!c[id].props.pickable, id).toBe(true);
+    expect(!!c[id].props.autoHighlight, id).toBe(false);
   }
 });
 
-test("no Derrubar, linha AT e marcador de gargalo seguram o clique (não derrubam o trecho de baixo)", () => {
-  const c = camadasCom([], "claro", true);
-  expect(c["linhas-at"].props.pickable).toBe(true);
-  expect(c["gargalos-alerta"].props.pickable).toBe(true);
-  expect(!!camadasCom([], "claro", false)["linhas-at"].props.pickable).toBe(false);
+test("o marcador de gargalo deixa o clique passar ao trecho de baixo, que é o que se seleciona", () => {
+  expect(!!camadasCom([], "claro")["gargalos-alerta"].props.pickable).toBe(false);
+});
+
+// ---------- T21: rota do religamento ----------
+const CAMINHO = ["t:2", "c:1", "t:3", "x:nao-existe"];
+const quadroEm = (tempo: number): Quadro => ({ tempo, zoom: 14, limites: [-180, -90, 180, 90] });
+const comRota = (piscando: boolean, quadro: Quadro | null) =>
+  Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", quadro, { rota: prepararRota(dados, CAMINHO, ["c:1"], piscando)! })
+    .map((c) => [c.id, c])) as Record<string, any>;
+
+test("prepararRota acha caminho e chaves pelo id", () => {
+  const r = prepararRota(dados, CAMINHO, ["c:1"], true)!;
+  expect(r.caminho.map((c) => c.id)).toEqual(["t:2", "c:1", "t:3"]);
+  expect(r.chaves.map((c) => c.id)).toEqual(["c:1"]);
+  expect(r.piscando).toBe(true);
+  expect(prepararRota(dados, [], [], false)).toBeNull();
+});
+
+test("rota entra entre os trechos e as chaves, com o anel por cima", () => {
+  const ids = Object.keys(comRota(false, null));
+  expect(ids.indexOf("rota")).toBeLessThan(ids.indexOf("chaves"));
+  expect(ids.indexOf("rota-chaves")).toBeGreaterThan(ids.indexOf("chaves"));
+  expect(comRota(false, null).rota.props.getColor).toEqual(rgb(PALETA.claro.primario));
+});
+
+test("anel pisca só com quadro e piscando", () => {
+  const alfa = (c: Record<string, any>) => c["rota-chaves"].props.getLineColor[3];
+  const gatilho = (c: Record<string, any>) => c["rota-chaves"].props.updateTriggers.getLineColor[1];
+  expect([alfa(comRota(true, quadroEm(0.5))), gatilho(comRota(true, quadroEm(0.5)))]).toEqual([255, 0.5]);
+  expect(alfa(comRota(true, quadroEm(1)))).toBe(90);
+  expect([alfa(comRota(false, quadroEm(1))), gatilho(comRota(false, quadroEm(1)))]).toEqual([255, 0]);
+  expect(alfa(comRota(true, null))).toBe(255);
+});
+
+test("críticos ficam guardados e desligados", () => {
+  expect(VISIVEIS_INICIAL.criticos).toBe(false);
+});
+
+test("a rota é clicável: o clique nela seleciona o trecho", () => {
+  const c = Object.fromEntries(montarCamadas(dados, VISIVEIS_INICIAL, "claro", null,
+    { rota: prepararRota(dados, CAMINHO, ["c:1"], false)! }).map((c) => [c.id, c])) as Record<string, any>;
+  expect(!!c.rota.props.pickable).toBe(true);
+});
+
+test("cada tipo de item tem o seu ícone para o cartão, no tema da tela", () => {
+  const tipos = ["subestacao", "trecho", "chave", "linha_at"] as const;
+  const claros = tipos.map((t) => iconeDoTipo(t, "claro"));
+  expect(new Set(claros).size).toBe(4);
+  for (const u of claros) expect(u.startsWith("data:image/svg+xml")).toBe(true);
+  expect(iconeDoTipo("linha_at", "escuro")).not.toBe(iconeDoTipo("linha_at", "claro"));
 });

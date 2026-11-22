@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import type { Analise } from "../api/tipos";
-import { formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
+import { formatarEntregue, formatarPotencia, formatarTempo, resumoDaCidade } from "./resumo";
 
 const analise = (pontos: number, demanda: number, demandaTotal: number): Analise => ({
   fluxoTotal: 0, demandaTotal, fluxo: [], gargalos: [], tempoMs: 0,
@@ -36,4 +36,22 @@ test("potência em kVA ou MVA e tempo em ms", () => {
 
 test("demanda total zero com pontos sem luz não inventa 99%", () => {
   expect(resumoDaCidade(analise(3, 0, 0))).toEqual({ porcento: 100, frase: "3 pontos sem luz" });
+});
+
+test("religamento parcial não diz cidade toda com luz", () => {
+  expect(resumoDaCidade(analise(0, 0, 243553), 10037)).toEqual({ porcento: 95, frase: "Religado em parte: faltam 10 MVA" });
+});
+
+test("sem faltante, nada muda", () => {
+  expect(resumoDaCidade(analise(702, 702, 35829), 0)).toEqual(resumoDaCidade(analise(702, 702, 35829)));
+});
+
+test("parcial com pontos ainda sem luz não conta duas vezes", () => {
+  expect(resumoDaCidade(analise(3, 4000, 243553), 10037)).toEqual({ porcento: 95, frase: "3 pontos sem luz" });
+});
+
+test("entregue x de y: a unidade aparece uma vez quando é a mesma", () => {
+  expect(formatarEntregue(233_512, 243_600)).toBe("233,5 de 243,6 MVA");
+  expect(formatarEntregue(800, 243_600)).toBe("800 kVA de 243,6 MVA");
+  expect(formatarEntregue(0, 0)).toBe("0 de 0 kVA");
 });
