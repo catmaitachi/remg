@@ -8,13 +8,17 @@ Spec 02 ("Rede de distribuição sintética") e 04 ("Gerar a rede"):
 4. Q2 ✅: demanda proporcional à rua em volta do ponto, e cabo = demanda que passa por ele × fator
    aleatório entre 1,1 e 2,5. Abaixo de 1 o cabo nasce menor que a demanda; abaixo de ~1,11 o uso
    passa de 90% e o cabo vira gargalo; acima de ~1,67 o uso fica abaixo de 60% (verde no mapa).
-   Em BH: 279 gargalos, 60% dos cabos verdes e 40% amarelos. Semente fixa (D24).
+   Semente fixa (D24);
+5. socorro (#61): a chave mais curta da fronteira de cada área é a que a RotaAlternativa fecha
+   quando a subestação cai. Ela, os cabos do caminho até as duas raízes e a subestação vizinha
+   passam a aguentar a área socorrida inteira. Em BH: 272 gargalos, 61% dos cabos verdes e 38%
+   amarelos, e 17 das 18 subestações caídas voltam 100% (spec 02, Q2).
 
 Entrada: os DadosDaRede da porta FonteDeRede (T10). Saída: as peças do domínio e, com
 RedeGerada.montar_rede(), a RedeEletrica (T11) pronta para os outros casos de uso.
 
 Big-O: O(P·S) para achar as raízes (S ≈ 19 subestações) + Dijkstra O((V + E) log V) + ordenar por
-distância O(V log V).
+distância O(V log V) + subir das chaves de socorro até as raízes O(S·V) no pior caso.
 """
 
 import math
@@ -31,7 +35,7 @@ TIPO_DISTRIBUICAO = "distribution"
 # 🟡 Q2: com ~35 mil pontos e ~53 mil ruas em BH, isto dá algumas centenas de MVA na cidade inteira.
 KVA_POR_METRO = 0.05
 FATOR_CABO = (1.1, 2.5)
-# A subestação aguenta a demanda da área com folga; quem deve gargalar é o cabo, não ela.
+# A subestação aguenta com folga a própria área e a maior que socorre; quem deve gargalar é o cabo.
 FOLGA_SUBESTACAO = 1.2
 CAPACIDADE_MINIMA_KVA = 1.0
 # 🟡 O OSM não traz a capacidade da linha AT. Folgada de propósito: quem limita é a subestação.
@@ -104,6 +108,11 @@ class GerarRedeSintetica:
             if cam.pai[v] != -1:
                 abaixo[cam.pai[v]] += abaixo[v]
 
+        demanda_area = {}
+        for v in alcancados:
+            demanda_area[cam.fonte[v]] = demanda_area.get(cam.fonte[v], 0.0) + demanda[v]
+        carga, socorre, socorro_chave = self._socorro(g, cam, ruas_validas, abaixo, demanda_area)
+
         sorteio = GeradorAleatorio(self._semente)
         cap_cabo_pai = [0.0] * len(pontos)
         rede = RedeGerada()
@@ -113,7 +122,7 @@ class GerarRedeSintetica:
                 rede.ruas_sem_cabo += 1
             elif cam.arco_pai[v] >> 1 == k or cam.arco_pai[u] >> 1 == k:
                 filho = v if cam.arco_pai[v] >> 1 == k else u
-                cap = max(abaixo[filho] * sorteio.uniforme(*FATOR_CABO), CAPACIDADE_MINIMA_KVA)
+                cap = max(carga[filho] * sorteio.uniforme(*FATOR_CABO), CAPACIDADE_MINIMA_KVA)
                 cap_cabo_pai[filho] = cap
                 rede.trechos.append(Trecho(f"t:{r.id}", f"p:{r.de}", f"p:{r.para}", round(cap, 2),
                                                     r.comprimento_m))
@@ -122,18 +131,17 @@ class GerarRedeSintetica:
             else:
                 rede.ruas_sem_cabo += 1
 
-        # 🟡 A chave aguenta o maior cabo que chega nas suas pontas: fechar a chave não deve virar o
-        # gargalo antes do cabo que já existia ali.
+        # 🟡 A chave aguenta o maior cabo que chega nas suas pontas (fechar a chave não deve virar o
+        # gargalo antes do cabo que já existia ali) e, se for chave de socorro, a área que ela socorre.
         rede.chaves = [Chave(f"c:{r.id}", f"p:{r.de}", f"p:{r.para}",
-                                      round(max(cap_cabo_pai[u], cap_cabo_pai[v], CAPACIDADE_MINIMA_KVA), 2),
+                                      round(max(cap_cabo_pai[u], cap_cabo_pai[v], socorro_chave.get(k, 0.0),
+                                                CAPACIDADE_MINIMA_KVA), 2),
                                       r.comprimento_m)
                        for k, r, u, v in rede.chaves]
 
-        demanda_area = {}
-        for v in alcancados:
-            demanda_area[cam.fonte[v]] = demanda_area.get(cam.fonte[v], 0.0) + demanda[v]
         for s, raiz in zip(subestacoes, raizes):
-            cap = max(demanda_area.get(raiz, 0.0) * FOLGA_SUBESTACAO, CAPACIDADE_MINIMA_KVA)
+            cap = max((demanda_area.get(raiz, 0.0) + socorre.get(raiz, 0.0)) * FOLGA_SUBESTACAO,
+                      CAPACIDADE_MINIMA_KVA)
             rede.subestacoes.append(Subestacao(f"s:{s.id_osm}", s.nome, s.lat, s.lon, round(cap, 2),
                                                         ponto_raiz=f"p:{pontos[raiz].id_osm}"))
         rede.pontos = [Ponto(f"p:{pontos[v].id_osm}", pontos[v].lat, pontos[v].lon, round(demanda[v], 3))
@@ -142,6 +150,42 @@ class GerarRedeSintetica:
         rede.linhas_at = [LinhaAT(f"at:{l.id_osm}", l.tensao or 0, CAPACIDADE_LINHA_AT_KVA, list(l.coords))
                           for l in dados.linhas_at]
         return rede
+
+    @staticmethod
+    def _socorro(g, cam, ruas_validas, abaixo, demanda_area):
+        """Q2: o que a chave de socorro de cada área, os cabos e a subestação vizinha precisam levar.
+
+        A chave de socorro é a mais curta da fronteira da área: quando a área inteira apaga, todo ponto
+        dela é fonte do Dijkstra da RotaAlternativa, que então fecha a chave mais curta. Com ela
+        fechada, o fluxo da área toda desce da raiz vizinha até a chave e sobe, ao contrário, até a
+        raiz apagada. Devolve (carga do cabo pai de cada ponto, maior área socorrida por raiz,
+        área socorrida por chave).
+        """
+        fronteira = {}  # raiz da área → [(comprimento, ponto da área, ponto do outro lado, k)]
+        for k, r in enumerate(ruas_validas):
+            u, v = g.para[2 * k + 1], g.para[2 * k]
+            if cam.dist[u] != INFINITO and cam.fonte[u] != cam.fonte[v]:
+                fronteira.setdefault(cam.fonte[u], []).append((r.comprimento_m, u, v, k))
+                fronteira.setdefault(cam.fonte[v], []).append((r.comprimento_m, v, u, k))
+
+        carga, socorre, socorro_chave = abaixo[:], {}, {}
+        for area, lista in fronteira.items():
+            menor = min(c for c, *_ in lista)
+            d = demanda_area[area]
+            for c, dentro, fora, k in lista:
+                if c != menor:
+                    continue
+                x = dentro
+                while x != -1:  # na área apagada, o cabo leva no máximo a área toda
+                    carga[x] = max(carga[x], d)
+                    x = cam.pai[x]
+                x = fora
+                while x != -1:  # na vizinha, a própria subárvore mais a área socorrida
+                    carga[x] = max(carga[x], abaixo[x] + d)
+                    x = cam.pai[x]
+                socorre[cam.fonte[fora]] = max(socorre.get(cam.fonte[fora], 0.0), d)
+                socorro_chave[k] = max(socorro_chave.get(k, 0.0), d)
+        return carga, socorre, socorro_chave
 
     @staticmethod
     def _raizes(subestacoes, pontos) -> list[int]:
