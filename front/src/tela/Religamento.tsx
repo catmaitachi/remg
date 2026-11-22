@@ -1,27 +1,26 @@
 import type { EstadoRota } from "./falhas";
 import { formatarPotencia, formatarTempo } from "./resumo";
 
-interface Props {
-  rota: EstadoRota | null; faltando: number; temFalhas: boolean; temSemLuz: boolean; usandoMock: boolean; calculando: boolean;
-  aoAcharRota: () => void;
-}
-
 const plural = (n: number, um: string, varios: string) => `${n.toLocaleString("pt-BR")} ${n === 1 ? um : varios}`;
 const TEXTO_DO_BOTAO = { buscando: "Procurando rota…", religando: "Religando…" } as const;
 
-/** Modo Religar (T21): acha a rota pelas chaves abertas e diz quanto voltou, inclusive quando volta só em parte. */
-export function Religamento({ rota, faltando, temFalhas, temSemLuz, usandoMock, calculando, aoAcharRota }: Props) {
+/** Botão do modo Religar, que mora no console (T21). */
+export function AcharRota({ rota, dica, calculando, aoAcharRota }: {
+  rota: EstadoRota | null; dica: string | null; calculando: boolean; aoAcharRota: () => void;
+}) {
   const fase = rota?.fase;
-  const r = fase === "pronta" ? rota?.resultado : null;
-  // sem ponto sem luz a rota não tem o que religar: o pedido levaria ~8 s em BH para responder "nada"
-  const dica = usandoMock ? "O Religar precisa do servidor." : !temFalhas ? "Derrube algo no modo Derrubar primeiro."
-    : !temSemLuz && !calculando ? (r ? "" : "Nenhum ponto sem luz para religar.") : null;
+  return (
+    <button type="button" className="botao-primario" disabled={dica !== null || calculando} onClick={aoAcharRota}>
+      {fase === "buscando" || fase === "religando" ? TEXTO_DO_BOTAO[fase] : "Achar rota"}
+    </button>
+  );
+}
 
+/** Resultado do Religar no cartão de contexto: diz quanto voltou, inclusive quando volta só em parte. */
+export function Religamento({ rota, faltando, dica }: { rota: EstadoRota | null; faltando: number; dica: string | null }) {
+  const r = rota?.fase === "pronta" ? rota.resultado : null;
   return (
     <section className="religamento" aria-label="Religamento">
-      <button type="button" className="botao-primario" disabled={dica !== null || calculando} onClick={aoAcharRota}>
-        {fase === "buscando" || fase === "religando" ? TEXTO_DO_BOTAO[fase] : "Achar rota"}
-      </button>
       {dica && <p className="modo-dica">{dica}</p>}
       {/* sempre no DOM: o leitor de tela só anuncia mudança dentro de um status que já existe */}
       <div role="status">

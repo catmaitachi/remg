@@ -119,3 +119,14 @@ export function pedidoPendente(e: EstadoFalhas): { tipo: "rota" | "analise"; ped
   if (!e.calculando || !e.falhas.length) return null;
   return { tipo: e.rota?.fase === "buscando" ? "rota" : "analise", pedido: pedidoDe(e.falhas, e.chavesFechadas) };
 }
+
+interface SituacaoDoReligar { usandoMock: boolean; temFalhas: boolean; temSemLuz: boolean; calculando: boolean; temResultado: boolean }
+
+/** Por que "Achar rota" está desligado; `null` quando dá para pedir. `""` desliga sem texto (o resultado já explica). */
+export function dicaDoReligar({ usandoMock, temFalhas, temSemLuz, calculando, temResultado }: SituacaoDoReligar): string | null {
+  if (usandoMock) return "O Religar precisa do servidor.";
+  if (!temFalhas) return "Derrube algo no modo Derrubar primeiro.";
+  // sem ponto sem luz a rota não tem o que religar: o pedido levaria ~8 s em BH para responder "nada"
+  if (!temSemLuz && !calculando) return temResultado ? "" : "Nenhum ponto sem luz para religar.";
+  return null;
+}

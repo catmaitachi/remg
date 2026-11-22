@@ -11,8 +11,8 @@ import type { Tema } from "./mapa/cores";
 import { Barra, type Modo } from "./tela/Barra";
 import { Controles } from "./tela/Controles";
 import { Legenda } from "./tela/Legenda";
-import { ESTADO_INICIAL, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
-import { Religamento } from "./tela/Religamento";
+import { ESTADO_INICIAL, dicaDoReligar, pedidoPendente, reduzirFalhas, rotuloDoAlvo } from "./tela/falhas";
+import { AcharRota, Religamento } from "./tela/Religamento";
 import { Selecionado } from "./tela/Selecionado";
 import { detalheDe, type Selecao } from "./tela/selecao";
 
@@ -75,6 +75,10 @@ export default function App() {
   const listaDeFalhas = useMemo(
     () => (redeOk ? estado.falhas.map((alvo) => ({ alvo, rotulo: rotuloDoAlvo(alvo, redeOk) })) : []), [redeOk, estado.falhas],
   );
+  const dicaReligar = dicaDoReligar({
+    usandoMock: USANDO_MOCK, temFalhas: estado.falhas.length > 0, temSemLuz: !!estado.atual?.semEnergia.pontos.length,
+    calculando: estado.calculando, temResultado: estado.rota?.fase === "pronta",
+  });
 
   // Cada versão nova pede uma coisa (pedidoPendente, testado em falhas.ts): a rota ou a análise da lista inteira com as
   // chaves (a API não tem estado). O abort cobre clique novo e saída. Só a versão entra nas dependências: ela sobe a cada
@@ -116,9 +120,10 @@ export default function App() {
       {redeOk && (
         <Barra area={redeOk.area} analise={estado.atual} usandoMock={USANDO_MOCK} faltando={estado.faltando} modo={modo}
           religamento={modo === "religar" && (
-            <Religamento rota={estado.rota} faltando={estado.faltando} temFalhas={estado.falhas.length > 0}
-              temSemLuz={!!estado.atual?.semEnergia.pontos.length} usandoMock={USANDO_MOCK}
-              calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
+            <>
+              <AcharRota rota={estado.rota} dica={dicaReligar} calculando={estado.calculando} aoAcharRota={() => despachar({ tipo: "acharRota" })} />
+              <Religamento rota={estado.rota} faltando={estado.faltando} dica={dicaReligar} />
+            </>
           )}
           aoMudarModo={(m) => { setModo(m); if (m === "derrubar") setSelecao(null); }}
           falhas={listaDeFalhas} calculando={estado.calculando}
