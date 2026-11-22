@@ -26,6 +26,32 @@ python -m unittest discover -s tests -t .
 python adapters/http/servidor.py
 ```
 
+### 💻 CLI
+
+> Roda um algoritmo do núcleo num grafo de arquivo e mostra o resultado e o tempo. É o que o benchmark usa.
+
+```sh
+python adapters/cli/main.py caminhos     grafo.txt 0     # Dijkstra: distância de 0 até cada vértice
+python adapters/cli/main.py fluxo        grafo.txt 0 3   # Dinic: fluxo máximo de 0 a 3
+python adapters/cli/main.py componentes  grafo.txt       # BFS: componente de cada vértice
+python adapters/cli/main.py pontes       grafo.txt       # Tarjan: arestas que são pontes
+python adapters/cli/main.py articulacoes grafo.txt       # Tarjan: pontos de articulação
+python adapters/cli/main.py arvore       grafo.txt       # Kruskal: árvore geradora mínima
+```
+
+O `grafo.txt` é não direcionado: a primeira linha é o número de vértices, e cada linha depois é `u v capacidade [peso]` (peso padrão 1). `#` começa um comentário.
+
+```text
+# 0 ─ 1 ─ 3, com o atalho 0 ─ 2 ─ 1; o 4 fica sozinho
+5
+0 1 5 4
+0 2 5 1
+2 1 5 2
+1 3 5 1
+```
+
+Com esse arquivo, `fluxo grafo.txt 0 3` imprime `5`, e `pontes grafo.txt` imprime `3` (a aresta 1 ─ 3, a quarta do arquivo, contando do 0). Com `--json`, a saída vira uma linha só, `{"resultado": 5, "tempoMs": …}`, para o benchmark ler.
+
 ### 🗺️ Front
 
 > 📦 Dependências: Node 22, npm 10 ou mais novo.
