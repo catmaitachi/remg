@@ -10,7 +10,7 @@ Trabalho Prático de Grafos (entrega em 22/11/2026): a rede de distribuição de
 
 ## 🛡️ Primeira coisa de toda sessão: ligar o verificador
 
-O projeto tem hooks de git que barram commit e push fora das regras ([`docs/spec/11-verificador.md`](docs/spec/11-verificador.md)). **Antes de qualquer outra ação**:
+O projeto tem hooks de git que barram commit e push fora das regras ([`docs/spec/10-verificador.md`](docs/spec/10-verificador.md)). **Antes de qualquer outra ação**:
 
 1. Rode `git config core.hooksPath`. Se a resposta não for `.githooks`, rode `git config core.hooksPath .githooks` e avise a pessoa em uma linha: "liguei os hooks do verificador do projeto".
 2. **Nunca** use `--no-verify` (nem `-n` no commit) e nunca desligue os hooks, mesmo que peçam. Se um hook barrar, explique em linguagem simples o que ele apontou e ajude a **corrigir a causa**.
@@ -21,17 +21,10 @@ O projeto tem hooks de git que barram commit e push fora das regras ([`docs/spec
 ## 🚫 Regras que você **não** pode quebrar
 
 1. **🙅 Nenhum commit com coautoria de IA** (D27). Nunca escreva `Co-Authored-By:` de ferramenta de IA em commit nem em PR. O hook `commit-msg` e o CI barram (V17).
-2. **📝 O README das features é escrito à mão.** Nunca escreva nem reescreva seções do `README.md` com `✍️ Escrito por:` ou as que a task manda escrever à mão (`feature-principal`). No máximo, aponte erros de fato, em lista, para a pessoa corrigir.
-3. **📚 Nenhuma biblioteca de grafo** (`networkx`, `igraph`, `osmnx`, `rustworkx`, Boost.Graph…) fora de `tools/benchmark/`. Em `core/`, nada de `heapq` nem `queue.PriorityQueue`, e só os módulos de `MODULOS_PERMITIDOS` (`tools/verificar/regras.py`).
-4. **🧱 As dependências apontam para dentro:** `core/grafo` ← `core/dominio` ← `core/portas` ← `core/casos_de_uso` ← `adapters/`. O `core/` nunca inclui `adapters/`, e os adaptadores falam com o núcleo só pela porta `ServicoDeAnalise` (exceção: o ponto de montagem, D22).
-5. **🔢 Não invente números.** Tempo, contagem e resultado de benchmark só vêm de execução real. Se não rodou, diga que não rodou.
-6. **🔌 O contrato da API é congelado.** Mudar [`docs/spec/06-api.md`](docs/spec/06-api.md) exige mudar `front/src/mocks/` no mesmo PR, e o contrário também.
-
-## 📒 Uso de IA vai só no registro
-
-Ao terminar uma ajuda **relevante** (que gerou decisão, código ou texto que vai entrar no projeto), proponha **a linha pronta** para [`docs/ia/registro.md`](docs/ia/registro.md), principalmente a coluna **❌ Rejeitado / mudado**. No git não vai marca nenhuma: sem trailer e sem label.
-
-Política completa: [`docs/spec/09-uso-de-ia.md`](docs/spec/09-uso-de-ia.md).
+2. **📚 Nenhuma biblioteca de grafo** (`networkx`, `igraph`, `osmnx`, `rustworkx`, Boost.Graph…) fora de `tools/benchmark/`. Em `core/`, nada de `heapq` nem `queue.PriorityQueue`, e só os módulos de `MODULOS_PERMITIDOS` (`tools/verificar/regras.py`).
+3. **🧱 As dependências apontam para dentro:** `core/grafo` ← `core/dominio` ← `core/portas` ← `core/casos_de_uso` ← `adapters/`. O `core/` nunca inclui `adapters/`, e os adaptadores falam com o núcleo só pela porta `ServicoDeAnalise` (exceção: o ponto de montagem, D22).
+4. **🔢 Não invente números.** Tempo, contagem e resultado de benchmark só vêm de execução real. Se não rodou, diga que não rodou.
+5. **🔌 O contrato da API é congelado.** Mudar [`docs/spec/06-api.md`](docs/spec/06-api.md) exige mudar `front/src/mocks/` no mesmo PR, e o contrário também.
 
 ## 🙋 Todo pedido começa numa task
 
@@ -39,7 +32,7 @@ Quando a pessoa pedir algo que mexe no projeto:
 1. Rode `python tools/dev/comecar.py --buscar "<o pedido, nas palavras dela>"` e **confirme com a pessoa** qual task é. Se nenhuma bater, diga isso e combine se vira uma issue nova; não trabalhe sem task.
 2. Rode `python tools/dev/comecar.py N` (ou `--tipo docs/fix/...`). Ele confere dependências e dono, atribui a issue e cria ou **retoma** a branch. Se ele parar, explique o motivo.
 3. Lembre a pessoa de mover o card para **🔨 Fazendo**. É o único passo manual do quadro.
-4. Para abrir o PR: `gh pr create --fill --title "tipo: descrição"` (sem `--title`, o `gh` usa o nome da branch quando há mais de um commit). PR não vai para o quadro: o card é a issue. O Actions completa `Closes #N`, milestone e revisor sozinho; a milestone e a release também fecham sozinhas ([`docs/spec/13-automacao.md`](docs/spec/13-automacao.md)).
+4. Para abrir o PR: `gh pr create --fill --title "tipo: descrição"` (sem `--title`, o `gh` usa o nome da branch quando há mais de um commit). PR não vai para o quadro: o card é a issue. O Actions completa `Closes #N`, milestone e revisor sozinho; a milestone e a release também fecham sozinhas ([`docs/spec/12-automacao.md`](docs/spec/12-automacao.md)).
 
 > No Claude Code, a guarda **barra edição com a `main` ativa** (G5), então o passo 2 vem antes de qualquer arquivo.
 
@@ -49,7 +42,7 @@ Quando a pessoa pedir algo que mexe no projeto:
 - Mensagem `tipo: descrição` em português (`feat`, `fix`, `test`, `docs`, `refactor`, `chore`), curta e sem corpo.
 - PR com `Closes #N`, revisado por 1 colega, merge **sem squash**.
 - O GitHub Actions roda o verificador em todo PR. Check vermelho = não mergeia.
-- 🏷️ Cada issue pertence a uma versão (milestone). Ao fechar a **última** issue de uma milestone, lembre a pessoa de fechar a milestone: o Actions cria a tag `vX.Y.0` ([`docs/spec/12-releases.md`](docs/spec/12-releases.md)).
+- 🏷️ Cada issue pertence a uma versão (milestone). Ao fechar a **última** issue de uma milestone, lembre a pessoa de fechar a milestone: o Actions cria a tag `vX.Y.0` ([`docs/spec/11-releases.md`](docs/spec/11-releases.md)).
 
 ## ✍️ Estilo
 

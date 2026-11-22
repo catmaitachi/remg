@@ -5,7 +5,7 @@
 
 Com N: confere se a issue está aberta, se é sua (ou de ninguém) e se as dependências já fecharam;
 então entra na branch da issue (se já existe, local ou no GitHub) ou cria `tipo/N-descricao` a partir
-da main atualizada, e atribui a issue a você. Regras: docs/spec/13-automacao.md
+da main atualizada, e atribui a issue a você. Regras: docs/spec/12-automacao.md
 """
 import argparse
 import json

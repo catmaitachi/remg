@@ -18,11 +18,10 @@ Cada arquivo cuida de um assunto só. Se você vai pegar uma task, leia o **00**
 | 06 | [API](06-api.md) | contrato JSON entre front e back | front e back |
 | 07 | [Front-end](07-frontend.md) | tela, interações e animação | front |
 | 08 | [Processo](08-processo.md) | kanban, issues, branches e definição de pronto | todos |
-| 09 | [Uso de IA](09-uso-de-ia.md) | regras para usar IA com responsabilidade | todos |
-| 10 | [Entregas e cronograma](10-entregas.md) | o que entregar, quando e o checklist final | todos |
-| 11 | [Verificador](11-verificador.md) | script que confere se o commit ou PR segue as regras | todos |
-| 12 | [Releases](12-releases.md) | versões v0.1 → v1.0, o que entra em cada uma e quando | todos |
-| 13 | [Automação](13-automacao.md) | o ciclo da task: o que é automático, o que é do agente e o que é seu | todos |
+| 09 | [Entregas e cronograma](09-entregas.md) | o que entregar, quando e o checklist final | todos |
+| 10 | [Verificador](10-verificador.md) | script que confere se o commit ou PR segue as regras | todos |
+| 11 | [Releases](11-releases.md) | versões v0.1 → v1.0, o que entra em cada uma e quando | todos |
+| 12 | [Automação](12-automacao.md) | o ciclo da task: o que é automático, o que é do agente e o que é seu | todos |
 
 📋 **Tasks:** [`docs/tasks/`](../tasks/), uma por arquivo, com descrição amigável · 🤖 **Regras para IA:** [`AGENTS.md`](../../AGENTS.md) · 📒 **Registro de IA:** [`docs/ia/registro.md`](../ia/registro.md)
 

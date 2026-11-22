@@ -1,6 +1,6 @@
 """🛡️ Verificador do projeto Cintilante: confere se commit, push ou PR seguem as regras.
 
-Regras e motivos: docs/spec/11-verificador.md · Instalar os hooks: git config core.hooksPath .githooks
+Regras e motivos: docs/spec/10-verificador.md · Instalar os hooks: git config core.hooksPath .githooks
 
   python tools/verificar/verificar.py                 relatório da branch atual contra a main
   python tools/verificar/verificar.py --pre-commit    (hook) arquivos preparados para o commit
@@ -126,7 +126,7 @@ def relatorio(titulo, achados):
     texto += [f"{a.nivel} {a.regra}  {a.msg}\n       → {a.dica}" for a in achados] or ["✅ tudo certo"]
     texto += ["", f"Resultado: ❌ {erros} bloqueio(s) · ⚠️ {len(achados) - erros} aviso(s)"]
     if erros:
-        texto.append("Regras e motivos: docs/spec/11-verificador.md")
+        texto.append("Regras e motivos: docs/spec/10-verificador.md")
     saida = "\n".join(texto)
     print(saida)
     if os.environ.get("GITHUB_STEP_SUMMARY"):

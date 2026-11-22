@@ -12,4 +12,4 @@ Vídeo de **12 a 18 minutos** com cada um explicando a própria feature.
 - [ ] todos aparecem
 - [ ] link no README
 
-📚 [10 · Entregas](../spec/10-entregas.md)
+📚 [09 · Entregas](../spec/09-entregas.md)

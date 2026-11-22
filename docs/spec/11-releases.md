@@ -1,4 +1,4 @@
-# 12 · 🏷️ Releases
+# 11 · 🏷️ Releases
 
 ✅ **D19.** Cada fase do backlog vira uma **versão** com data-alvo. Quando a última task de uma versão entra na `main`, sai uma **tag + release no GitHub**. Assim o grupo vê se está em dia, e o relatório e o vídeo podem citar "o que tinha na v0.3".
 
@@ -24,7 +24,7 @@
 |---|---|
 | 1. Cada task tem `release:` no topo do arquivo em `docs/tasks/` | já preenchido |
 | 2. `python tools/kanban/criar_issues.py --criar` cria as **milestones** (com a data-alvo) e põe cada issue na sua | quem criar as issues |
-| 3. Quando a última issue da milestone fecha, a **milestone fecha sozinha** | automático ([13](13-automacao.md)) |
+| 3. Quando a última issue da milestone fecha, a **milestone fecha sozinha** | automático ([12](12-automacao.md)) |
 | 4. O workflow [`release.yml`](../../.github/workflows/release.yml) cria a tag `vX.Y.0` na `main` e a release com as notas geradas pelos PRs | automático |
 | 5. Correção depois da release → tag de patch à mão: `gh release create v0.3.1 --generate-notes` | quem corrigiu |
 

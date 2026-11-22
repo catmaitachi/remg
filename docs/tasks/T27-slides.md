@@ -11,4 +11,4 @@ Slides e roteiro da apresentação de **10 minutos**, com todos falando e demo a
 - [ ] slides em `docs/apresentacao/`
 - [ ] 1 ensaio cronometrado com todos
 
-📚 [10 · Entregas](../spec/10-entregas.md)
+📚 [09 · Entregas](../spec/09-entregas.md)

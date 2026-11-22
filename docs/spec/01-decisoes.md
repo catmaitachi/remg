@@ -16,7 +16,7 @@
 | D7 | 09/11 | 🗺️ Front | **React + MapLibre GL**, com deck.gl para animar muitas arestas | mapa vetorial com camadas animáveis |
 | D8 | 09/11 | 🧮 Algoritmos essenciais | **Fluxo máximo + corte mínimo** (gargalos) · **falhas** (Tarjan + BFS) · **rotas alternativas** (Dijkstra) | as quatro perguntas do problema |
 | D9 | 09/11 | 📝 README | Cada feature principal é descrita no README **à mão, por quem fez a task** | todo integrante precisa saber como o sistema funciona |
-| D10 | 09/11 | 🤖 IA | Uso de IA **declarado e registrado**, com as decisões tomadas por pessoas. ~~Trailer e label no git~~ saíram na **D27** | ver [09-uso-de-ia](09-uso-de-ia.md) |
+| D10 | 09/11 | 🤖 IA | Uso de IA **declarado e registrado**, com as decisões tomadas por pessoas. ~~Trailer e label no git~~ saíram na **D27** | — |
 | D11 | 09/11 | 👥 Papéis | **Sem dono fixo.** As tasks vão para o GitHub sem responsável e cada um se atribui | basta fazer o assign depois |
 | D12 | 09/11 | 🔍 Revisões primeiro | **Arquitetura (T01) e direção visual (T02)** são as primeiras tasks, decididas em grupo | o resto do trabalho depende delas |
 | D13 | 09/11 | 📋 Tasks | Cada task tem um arquivo em `docs/tasks/` com **descrição amigável** e vira issue por script | todo integrante entende o que fazer sem precisar perguntar |
@@ -46,7 +46,7 @@
 | P5 | 📦 Download dos dados | Overpass para BH (uma vez só) com o arquivo processado salvo no repo · Geofabrik como plano B | [02](02-dados.md) |
 | P6 | 🔀 Merge de PR | merge commit, **sem squash**, para preservar os commits individuais | [08](08-processo.md) |
 | P7 | 🗺️ Mapa de fundo | OpenFreeMap (gratuito, sem chave de API) | [07](07-frontend.md) |
-| ~~P8~~ | 🛡️ Verificador | virou **D15** | [11](11-verificador.md) |
+| ~~P8~~ | 🛡️ Verificador | virou **D15** | [10](10-verificador.md) |
 | P9 | 📐 Diagramas do relatório e dos slides | skill `diagram-design`, ligada só neste projeto, no `.claude/settings.local.json` de quem usa | T01, T25 |
 
 ## ❓ Pendentes

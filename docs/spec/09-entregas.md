@@ -1,11 +1,11 @@
-# 10 · 📦 Entregas e cronograma
+# 09 · 📦 Entregas e cronograma
 
 > [!CAUTION]
 > **A falta de qualquer item zera a nota, e cada integrante entrega a própria cópia.** Quem não entregar fica com zero, mesmo que o resto do grupo entregue.
 
 ## 🗓️ Cronograma (09/11 → 22/11)
 
-🏷️ Cada marco abaixo fecha uma versão: ver [12-releases](12-releases.md).
+🏷️ Cada marco abaixo fecha uma versão: ver [11-releases](11-releases.md).
 
 | Quando | Meta | Pronto quando… |
 |---|---|---|
@@ -29,7 +29,7 @@
 - [ ] responsabilidades e o que **cada membro** fez
 - [ ] modelagem, diagramas UML, resultados e **telas**
 - [ ] corretude, complexidade e limitações
-- [ ] seção **Papel da IA** ([09](09-uso-de-ia.md))
+- [ ] seção **Papel da IA**
 
 **Apresentação**
 - [ ] slides
@@ -57,7 +57,7 @@ Cada seção puxa de um arquivo da spec:
 | 5 | Arquitetura e ferramenta (telas) | [05](05-arquitetura.md), [07](07-frontend.md) | 2 |
 | 6 | Resultados e desempenho (× NetworkX, × Edmonds-Karp) | benchmark | 2 |
 | 7 | Limitações | [00](00-visao-geral.md), [04](04-algoritmos.md) | 0,5 |
-| 8 | Papel da IA | [09](09-uso-de-ia.md), registro | 1 |
+| 8 | Papel da IA | — | 1 |
 | 9 | Responsabilidades por membro | kanban | 0,5 |
 | 10 | Conclusão | — | 0,5 |
 
