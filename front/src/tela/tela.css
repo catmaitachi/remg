@@ -210,6 +210,8 @@
 
 /* Selecionado e Religamento (T21) */
 .selecionado { display: grid; gap: var(--espaco-2); }
+.selecionado-titulo { display: flex; align-items: center; gap: var(--espaco-2); min-width: 0; }
+.selecionado-icone { flex: none; }
 .selecionado-linhas { display: grid; gap: 2px; margin: 0; }
 .selecionado-linhas div {
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--espaco-3);

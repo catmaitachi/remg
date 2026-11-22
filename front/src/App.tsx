@@ -5,7 +5,7 @@ import "./tela/tela.css";
 import { carregarAnalise, carregarRede, pedirAnalise, pedirRota } from "./api/carregar";
 import type { Analise, Rede } from "./api/tipos";
 import { animacaoInicial } from "./mapa/animacao";
-import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
+import { CENTRO_BH, VISIVEIS_INICIAL, estiloDoMapa, iconeDoTipo, prepararDados, prepararRota, type Intensidade, type Visiveis } from "./mapa/camadas";
 import { CamadasDeck } from "./mapa/CamadasDeck";
 import { Predios3D } from "./mapa/Predios3D";
 import type { Tema } from "./mapa/cores";
@@ -77,6 +77,7 @@ export default function App() {
   const listaDeFalhas = useMemo(
     () => (redeOk ? estado.falhas.map((alvo) => ({ alvo, rotulo: rotuloDoAlvo(alvo, redeOk) })) : []), [redeOk, estado.falhas],
   );
+  const detalhe = selecao && redeOk ? detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas) : null;
   const dicaReligar = dicaDoReligar({
     usandoMock: USANDO_MOCK, temFalhas: estado.falhas.length > 0, temSemLuz: !!estado.atual?.semEnergia.pontos.length,
     calculando: estado.calculando, temResultado: estado.rota?.fase === "pronta",
@@ -153,7 +154,7 @@ export default function App() {
         {redeOk && (
           <Contexto>
             {selecao && (
-              <Selecionado detalhe={detalheDe(selecao, redeOk, estado.atual, estado.falhas, estado.chavesFechadas)} aoFechar={() => setSelecao(null)}
+              <Selecionado detalhe={detalhe!} icone={iconeDoTipo(detalhe!.tipo, tema)} aoFechar={() => setSelecao(null)}
                 acao={!podeDerrubar(selecao, redeOk) ? undefined : {
                   texto: estado.falhas.some((f) => f.id === selecao.id) ? "Restaurar" : "Derrubar",
                   aoClicar: () => despachar({ tipo: "alternar", alvo: selecao }),

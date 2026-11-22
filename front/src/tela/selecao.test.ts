@@ -41,7 +41,7 @@ test("linha AT e trecho caído", () => {
 
 test("subestação caída", () => {
   const d = detalheDe({ tipo: "subestacao", id: "s:1" }, rede, analise, [{ tipo: "subestacao", id: "s:1" }], []);
-  expect(d).toEqual({ titulo: "Subestação Centro (exemplo)", linhas: [["Capacidade", "50 MVA"], ["Estado", "caída"]] });
+  expect(d).toEqual({ tipo: "subestacao", titulo: "Subestação Centro (exemplo)", linhas: [["Capacidade", "50 MVA"], ["Estado", "caída"]] });
 });
 
 test("derruba trecho, linha AT e subestação; chave não (quem fecha chave é o religamento)", () => {
@@ -57,4 +57,11 @@ test("posição da falha: meio da aresta ou a subestação, em [lon, lat]", () =
   expect(lon).toBeCloseTo(-43.944, 9);
   expect(lat).toBeCloseTo(-19.925, 9);
   expect(posicaoDoAlvo({ tipo: "aresta", id: "x:1" }, rede)).toBeNull();
+});
+
+test("o detalhe diz o tipo do item, para o cartão mostrar o ícone certo", () => {
+  expect(detalheDe({ tipo: "subestacao", id: "s:1" }, rede, analise, [], []).tipo).toBe("subestacao");
+  expect(detalheDe({ tipo: "aresta", id: "t:1" }, rede, analise, [], []).tipo).toBe("trecho");
+  const comChave = { ...rede, arestas: [...rede.arestas, ["c:9", "p:1", "p:2", "chave", 100]] } as Rede;
+  expect(detalheDe({ tipo: "aresta", id: "c:9" }, comChave, analise, [], []).tipo).toBe("chave");
 });

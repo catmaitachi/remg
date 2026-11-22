@@ -3,7 +3,7 @@ import type { Analise, Rede, Subestacao, TipoAresta } from "../api/tipos";
 import type { Alvo } from "../tela/falhas";
 import { PALETA, faixaDoUso, rgb, type Faixa, type Tema } from "./cores";
 import { sentidoDoFluxo, type Sentido } from "./sentido";
-import { RAIO, escolherRaio, montarRaio, raioDaAT } from "./raio";
+import { RAIO, escolherRaio, montarRaio } from "./raio";
 import { agruparGargalos } from "./alertas";
 
 export const CENTRO_BH = { latitude: -19.92, longitude: -43.94, zoom: 11.5 };
@@ -118,6 +118,17 @@ export const iconeChave = (borda: string, fundo: string) => svg(
   `<path d="M9 21h3M20 21h3M12 21l8.5-8" fill="none" stroke="${borda}" stroke-width="2.5" stroke-linecap="round"/>` +
   `<circle cx="12" cy="21" r="2" fill="${borda}"/><circle cx="20.5" cy="21" r="2" fill="${borda}"/>`,
 );
+/** Ícone do item no cartão do selecionado: os mesmos do mapa para subestação e chave; trecho e AT como traço. */
+export function iconeDoTipo(tipo: "subestacao" | "trecho" | "chave" | "linha_at", tema: Tema): string {
+  const p = PALETA[tema];
+  if (tipo === "subestacao") return iconeSubestacao(p.subestacao, p.contorno, p.fundo);
+  if (tipo === "chave") return iconeChave(p.at, p.contorno);
+  const [cor, largura] = tipo === "linha_at" ? [p.at, 6] : [p.normal, 3.5];
+  return svg(
+    `<path d="M5 25 27 7" stroke="${cor}" stroke-width="${largura}" stroke-linecap="round"/>` +
+    (tipo === "trecho" ? `<circle cx="5" cy="25" r="3" fill="${cor}"/><circle cx="27" cy="7" r="3" fill="${cor}"/>` : ""),
+  );
+}
 /** Subestação: círculo com um raio; caída, só o contorno na cor de caído. */
 export const iconeSubestacao = (cheio: string, borda: string, raio: string, caida = false) => svg(
   `<circle cx="16" cy="16" r="13" fill="${caida ? "none" : cheio}" stroke="${borda}" stroke-width="2.5"/>` +
@@ -225,9 +236,7 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
     }),
     new PathLayer<Caminho>({
       id: "linhas-at", data: d.linhasAT, visible: visiveis.at, getPath: (c) => c.path,
-      // com animação vira trilho apagado (40%) e o raio da AT corre por cima, em qualquer zoom
-      getColor: quadro ? [...rgb(p.at), 102] : rgb(p.at), updateTriggers: { getColor: [tema, !!quadro] },
-      getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
+      getColor: rgb(p.at), getWidth: 40, widthUnits: "meters", widthMinPixels: 1.5, widthMaxPixels: 6, jointRounded: true, capRounded: true,
       pickable: true,
     }),
     ...(rota ? [new PathLayer<Caminho>({
@@ -274,13 +283,6 @@ export function montarCamadas(d: Dados, visiveis: Visiveis, tema: Tema, quadro: 
       fontWeight: 800, fontFamily: "Rawline, Raleway, sans-serif", characterSet: ["!"],
     }),
   ];
-  if (quadro) {
-    camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, quadro, cor, intensidade));
-    camadas.splice(camadas.findIndex((c) => c.id === "linhas-at") + 1, 0, new PathLayer<Caminho>({
-      id: "raio-at", data: raioDaAT(d.linhasAT, quadro), visible: visiveis.at, getPath: (c) => c.path,
-      getColor: [...rgb(p.at), INTENSIDADE[intensidade].alfaRaio], updateTriggers: { getColor: [tema, intensidade] },
-      getWidth: 1.5, widthUnits: "pixels", jointRounded: true,
-    }));
-  }
+  if (quadro) camadas.splice(camadas.findIndex((c) => c.id === "trechos") + 1, 0, ...camadasAnimadas(d, visiveis, quadro, cor, intensidade));
   return camadas;
 }

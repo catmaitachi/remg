@@ -4,6 +4,7 @@ import pequena from "../mocks/rede.pequena.json";
 import type { Analise, Rede } from "../api/tipos";
 import { PALETA, rgb } from "./cores";
 import {
+  iconeDoTipo,
   VISIVEIS_INICIAL, aplicarFalhas, estiloDoMapa, montarCamadas, prepararDados, prepararRota, type Quadro, type Visiveis,
 } from "./camadas";
 
@@ -318,11 +319,10 @@ test("a rota é clicável: o clique nela seleciona o trecho", () => {
   expect(!!c.rota.props.pickable).toBe(true);
 });
 
-test("com animação, as linhas AT vibram em qualquer zoom e o traço de baixo apaga", () => {
-  const ids = montarCamadas(dados, VISIVEIS_INICIAL, "claro", Q).map((c) => c.id);
-  expect(ids[ids.indexOf("linhas-at") + 1]).toBe("raio-at");
-  const at = comQuadro()["linhas-at"].props, parado = porId()["linhas-at"].props;
-  expect(at.getColor[3]).toBeLessThan(255);
-  expect(parado.getColor[3] ?? 255).toBe(255);
-  expect(porId()["raio-at"]).toBeUndefined();
+test("cada tipo de item tem o seu ícone para o cartão, no tema da tela", () => {
+  const tipos = ["subestacao", "trecho", "chave", "linha_at"] as const;
+  const claros = tipos.map((t) => iconeDoTipo(t, "claro"));
+  expect(new Set(claros).size).toBe(4);
+  for (const u of claros) expect(u.startsWith("data:image/svg+xml")).toBe(true);
+  expect(iconeDoTipo("linha_at", "escuro")).not.toBe(iconeDoTipo("linha_at", "claro"));
 });

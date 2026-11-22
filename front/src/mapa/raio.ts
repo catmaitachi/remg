@@ -80,22 +80,3 @@ export function montarRaio(sel: Caminho[], quadro: Quadro, aleatorio: () => numb
   }
   return { fios, faiscas };
 }
-
-/** Linhas AT vibram o tempo todo (com a animação ligada), em qualquer zoom: dois fios por linha, ponto a ponto da geometria. */
-export function raioDaAT(linhas: Caminho[], quadro: Quadro): Caminho[] {
-  const [oeste, sul, leste, norte] = quadro.limites;
-  const fase = Math.floor(quadro.tempo * 24), desloc = (quadro.tempo * ONDA.VEL[0]) / 25;
-  const fios: Caminho[] = [];
-  for (const c of linhas) {
-    const xs = c.path.map((p) => p[0]), ys = c.path.map((p) => p[1]);
-    if (Math.max(...xs) < oeste || Math.min(...xs) > leste || Math.max(...ys) < sul || Math.min(...ys) > norte) continue;
-    for (let f = 0; f < 2; f++) {
-      const path: LonLat[] = [c.path[0]];
-      for (let k = 1; k < c.path.length; k++) {
-        path.push(...tremer(c.path[k - 1], c.path[k], RAIO.AMP_PX[0], quadro.zoom, fase + f * 7.3 + k, desloc + f * 17).slice(1));
-      }
-      fios.push({ id: `${c.id}#${f}`, faixa: null, path });
-    }
-  }
-  return fios;
-}
