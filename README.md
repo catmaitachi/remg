@@ -23,6 +23,9 @@ A rede de distribuição de energia de **Belo Horizonte** simulada em um grafo, 
 
 - [Vídeo no YouTube](https://youtu.be/XknTZmISgS4)
 - [Vídeo no Google Drive](https://drive.google.com/file/d/1kZfWUKoKRcz-UQVe7cYbcfVxxSwFGoO0/view?usp=sharing)
+- [Relatório (PDF)](docs/relatorio/relatorio.pdf)
+
+> 📊 A Tabela 5 do relatório vem de uma rodada do benchmark no Windows (Python 3.13.14, 22/11/2026). Os arquivos em `tools/benchmark/resultados/` são de outra rodada, no Linux (Python 3.13.18, 22/11/2026): os tempos mudam com a máquina, e as respostas são as mesmas nas duas, iguais às do NetworkX em todos os casos que terminaram.
 
 ## 🚀 Como rodar
 
