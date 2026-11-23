@@ -19,6 +19,11 @@ A rede de distribuição de energia de **Belo Horizonte** simulada em um grafo, 
 
 </div>
 
+## 🔗 Referências
+
+- [Vídeo no YouTube](https://youtu.be/XknTZmISgS4)
+- [Vídeo no Google Drive](https://drive.google.com/file/d/1kZfWUKoKRcz-UQVe7cYbcfVxxSwFGoO0/view?usp=sharing)
+
 ## 🚀 Como rodar
 
 ### 🐍 Núcleo e servidor
@@ -68,8 +73,6 @@ npm run dev
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagramas/casos-de-uso-dark.svg">
   <img src="docs/diagramas/casos-de-uso.svg" alt="Casos de uso: o operador vê a rede e o fluxo, vê gargalos, simula falha (que inclui calcular quem ficou sem energia), vê rota alternativa (que estende simular falha) e vê pontos críticos">
 </picture>
-
----
 
 <div align="center">
 
